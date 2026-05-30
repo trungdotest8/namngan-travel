@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-blue:    #005BAA;
+  --brand-light:   #0078D7;
+  --brand-accent:  #FF6B00;
+  --brand-bg:      #F0F7FF;
+  --text-primary:  #1A1A2E;
+  --text-secondary:#666666;
+  --text-muted:    #999999;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    color: var(--text-primary);
+    background: #ffffff;
+    font-family: 'Be Vietnam Pro', Inter, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  .container-main {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
