@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Phone, Calendar, Users, ChevronRight, RefreshCw, AlertCircle } from 'lucide-react'
+import { Phone, Calendar, Users, ChevronRight, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
+import { createClient } from '@/lib/supabase/client'
 import { useCalendarStore } from '@/store/calendar.store'
 import type { TourSchedule } from '@/types'
 
@@ -66,9 +67,26 @@ export default function LichKhoiHanhPage() {
   const [selectedCountry,  setSelectedCountry]  = useState<string | null>(null)
   const [selectedDest,     setSelectedDest]     = useState<string | null>(null)
   const [selectedMonth,    setSelectedMonth]    = useState<string | null>(null)
+  const [syncToast,        setSyncToast]        = useState<string | null>(null)
 
+  // Fetch lần đầu
   useEffect(() => {
     fetchSchedules({ limit: 200 })
+  }, [fetchSchedules])
+
+  // Lắng nghe event sync từ CRM → tự refetch
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('schedule-sync')
+      .on('broadcast', { event: 'updated' }, (payload) => {
+        fetchSchedules({ limit: 200 })
+        const count = (payload.payload as { synced?: number })?.synced
+        setSyncToast(count ? `Đã cập nhật ${count} lịch khởi hành mới` : 'Đã cập nhật lịch khởi hành')
+        setTimeout(() => setSyncToast(null), 5000)
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
   }, [fetchSchedules])
 
   // ── Derived filter options ──────────────────────────────────────────────────
@@ -144,6 +162,14 @@ export default function LichKhoiHanhPage() {
         </div>
 
         <div className="container-main py-6 space-y-5">
+
+          {/* ── Sync toast ── */}
+          {syncToast && (
+            <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-green-700 animate-pulse">
+              <CheckCircle size={18} className="shrink-0" />
+              <span className="text-sm font-medium">{syncToast}</span>
+            </div>
+          )}
 
           {/* ── Error ── */}
           {error && (

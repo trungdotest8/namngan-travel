@@ -81,6 +81,18 @@ export async function POST(request: Request) {
     }
 
     const result = await syncSeaStarSchedules()
+
+    // Broadcast realtime để trang /lich-khoi-hanh tự refetch
+    try {
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const supabase = createAdminClient()
+      await supabase.channel('schedule-sync').send({
+        type: 'broadcast',
+        event: 'updated',
+        payload: { synced: result.synced, at: new Date().toISOString() },
+      })
+    } catch (_) { /* broadcast lỗi không block response */ }
+
     return NextResponse.json({ ok: true, result })
   } catch (err) {
     console.error('[POST /api/departures]', err)
