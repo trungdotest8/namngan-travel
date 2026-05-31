@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useCustomerProfileStore } from '@/store/customer-profile.store'
 import { CustomerTable } from '@/components/customer-profile/CustomerTable'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { CustomerProfileDrawer } from '@/components/customer-profile/CustomerProfileDrawer'
 import type { Lead } from '@/types/lead.types'
 
@@ -387,9 +388,11 @@ const TAB_TITLES: Record<TabId, string> = {
   config:    'Cấu hình Webhook & Email',
 }
 
-export default function CRMPage() {
+function CRMPage() {
   const [activeTab, setActiveTab] = useState<TabId>('overview')
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<{ synced: number; errors: string[] } | null>(null)
   const setCustomers = useCustomerProfileStore((s) => s.setCustomers)
   const setLoading   = useCustomerProfileStore((s) => s.setLoading)
   const leads        = useCustomerProfileStore((s) => s.customers)
@@ -400,7 +403,9 @@ export default function CRMPage() {
     setLoading(true)
     setFetchError(null)
     try {
-      const res = await fetch('/api/customer-profile?limit=100')
+      const res = await fetch('/api/customer-profile?limit=100', {
+        headers: { 'x-admin-secret': process.env.NEXT_PUBLIC_ADMIN_SECRET ?? '' },
+      })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const { leads: data } = await res.json()
       setCustomers(data ?? [])
@@ -412,6 +417,27 @@ export default function CRMPage() {
   }, [setCustomers, setLoading])
 
   useEffect(() => { fetchLeads() }, [fetchLeads])
+
+  async function handleSyncSeastar() {
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const res = await fetch('/api/departures', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-webhook-secret': process.env.NEXT_PUBLIC_ADMIN_SECRET ?? '',
+        },
+        body: JSON.stringify({ force: false }),
+      })
+      const json = await res.json()
+      setSyncResult(json.result ?? { synced: 0, errors: ['Không có kết quả trả về'] })
+    } catch {
+      setSyncResult({ synced: 0, errors: ['Không thể kết nối server'] })
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 font-sans">
@@ -541,6 +567,37 @@ export default function CRMPage() {
                     </div>
                   </div>
                   <ConfigTab />
+
+                  {/* ── Đồng bộ dữ liệu ── */}
+                  <div className="mt-6 bg-white rounded-xl border border-gray-200 p-5">
+                    <div className="font-semibold text-[#1A1A2E] mb-1">Đồng bộ lịch SeaStar</div>
+                    <div className="text-sm text-gray-400 mb-4">
+                      Cào dữ liệu lịch trình mới nhất từ lich.seastartravel.vn và lưu vào database.
+                    </div>
+                    <button
+                      onClick={handleSyncSeastar}
+                      disabled={syncing}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#005BAA] text-white text-sm font-medium rounded-lg hover:bg-[#0078D7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {syncing && <Loader2 size={14} className="animate-spin" />}
+                      {syncing ? 'Đang đồng bộ...' : 'Đồng bộ lịch SeaStar'}
+                    </button>
+                    {syncResult && (
+                      <div className="mt-3 flex items-start gap-2 text-sm">
+                        {syncResult.errors.length === 0 ? (
+                          <CheckCircle2 size={15} className="text-green-500 mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <AlertCircle size={15} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                        )}
+                        <span className="text-gray-700">
+                          Đã sync <strong>{syncResult.synced}</strong> lịch trình
+                          {syncResult.errors.length > 0 && (
+                            <span className="text-amber-600"> · {syncResult.errors.length} lỗi: {syncResult.errors[0]}</span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </>
@@ -549,7 +606,18 @@ export default function CRMPage() {
       </div>
 
       {/* Drawer: bọc ở ngoài cùng, Principle #4 */}
-      <CustomerProfileDrawer />
+      <ErrorBoundary moduleName="CustomerProfileDrawer">
+        <CustomerProfileDrawer />
+      </ErrorBoundary>
     </div>
   )
 }
+
+// Wrap toàn bộ CRM để một lỗi bất kỳ không crash app (Nguyên tắc #4)
+const CRMPageWrapped = () => (
+  <ErrorBoundary moduleName="CRM Admin">
+    <CRMPage />
+  </ErrorBoundary>
+)
+
+export default CRMPageWrapped

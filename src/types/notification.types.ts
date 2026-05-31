@@ -33,5 +33,6 @@ export interface NotificationTriggerPayload {
   booking_id?: string
   customer_name?: string
   tour_title?: string
+  depart_date?: string
   customer_email?: string
 }

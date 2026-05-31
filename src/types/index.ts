@@ -1,4 +1,4 @@
-export type { Tour, TourSchedule, TourScheduleStatus, TourItineraryDay } from './tour.types'
+export type { Tour, TourSchedule, TourScheduleStatus, TourItineraryDay, TourSearchResult } from './tour.types'
 export type { Departure } from './departure.types'   // alias → TourSchedule
 export type { User, UserRole, UserGender, Wallet, WalletTransaction, WalletTransactionType } from './user.types'
 export type { Booking, BookingStatus, PaymentStatus, PaymentMethod, BookingFormData } from './booking.types'

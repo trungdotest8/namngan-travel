@@ -7,13 +7,13 @@ export async function triggerN8n(
   const webhookUrl = process.env.N8N_WEBHOOK_URL
   if (!webhookUrl) return
 
+  // Secret chỉ gửi trong header, không serialize vào body để tránh lộ trong n8n execution log
   await fetch(webhookUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      event,
-      data,
-      secret: process.env.WEBHOOK_SECRET,
-    }),
+    headers: {
+      'Content-Type': 'application/json',
+      'x-webhook-secret': process.env.WEBHOOK_SECRET ?? '',
+    },
+    body: JSON.stringify({ event, data }),
   })
 }

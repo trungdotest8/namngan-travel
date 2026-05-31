@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { checkAdminSecret } from '@/lib/admin-auth'
 
 const DRIVE_REGEX = /^https:\/\/(drive|docs)\.google\.com\//
 
@@ -16,6 +17,9 @@ const PatchSchema = z.object({
 
 // GET /api/customer-profile?search=&status=&source=&limit=50
 export async function GET(request: Request) {
+  const authError = checkAdminSecret(request)
+  if (authError) return authError
+
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') ?? ''
@@ -23,7 +27,7 @@ export async function GET(request: Request) {
     const source = searchParams.get('source') ?? ''
     const limit = Math.min(Number(searchParams.get('limit') ?? '50'), 200)
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     let query = supabase
       .from('leads')
       .select('*')
@@ -48,6 +52,9 @@ export async function GET(request: Request) {
 
 // PATCH /api/customer-profile — cập nhật google_drive_url hoặc image_attachments
 export async function PATCH(request: Request) {
+  const authError = checkAdminSecret(request)
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const parsed = PatchSchema.safeParse(body)
@@ -56,12 +63,21 @@ export async function PATCH(request: Request) {
     }
 
     const { lead_id, ...updates } = parsed.data
-    // Lọc bỏ key undefined để tránh ghi đè null vào Supabase
-    const patch = Object.fromEntries(
-      Object.entries(updates).filter(([, v]) => v !== undefined),
-    )
 
-    const supabase = await createClient()
+    // '' → null để đảm bảo IS NULL query hoạt động đúng
+    const patch: Record<string, unknown> = {}
+    if (updates.google_drive_url !== undefined) {
+      patch.google_drive_url = updates.google_drive_url === '' ? null : updates.google_drive_url
+    }
+    if (updates.image_attachments !== undefined) {
+      patch.image_attachments = updates.image_attachments
+    }
+
+    if (Object.keys(patch).length === 0) {
+      return NextResponse.json({ error: 'Không có trường nào để cập nhật' }, { status: 400 })
+    }
+
+    const supabase = createAdminClient()
     const { data, error } = await supabase
       .from('leads')
       .update(patch)

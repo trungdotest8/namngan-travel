@@ -1,7 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
-import type { Tour } from '@/types'
+import type { TourSearchResult } from '@/types'
 
 // v2.0.0 — field names khớp với DB schema (breaking change từ v1.0.0)
 export interface SearchCriteria {
@@ -16,13 +16,13 @@ export interface SearchCriteria {
 
 interface SearchState {
   criteria:    SearchCriteria
-  results:     Tour[]
+  results:     TourSearchResult[]
   isSearching: boolean
   hasSearched: boolean
   error:       string | null
 
   setCriteria:  (patch: Partial<SearchCriteria>) => void
-  setResults:   (tours: Tour[]) => void
+  setResults:   (tours: TourSearchResult[]) => void
   setSearching: (v: boolean) => void
   setError:     (msg: string | null) => void
   reset:        () => void

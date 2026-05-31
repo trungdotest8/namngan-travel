@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import {
   X, CloudUpload, Trash2, ExternalLink, Save, Mail,
   Phone, AlertCircle, CheckCircle2, Loader2, FolderOpen,
@@ -10,14 +10,18 @@ import { CustomerProfileSchema } from '@/lib/validations/customer-profile.schema
 import { createClient } from '@/lib/supabase/client'
 import type { Lead, LeadStatus } from '@/types/lead.types'
 
-// ── Status display ─────────────────────────────────────────────────────────
+// ── Status display — 6 giá trị gốc + 4 giá trị CRM (migration 20250530000003) ──
 const STATUS_MAP: Record<LeadStatus, { label: string; cls: string }> = {
   new:        { label: 'Mới nhập',     cls: 'bg-[#F0F7FF] text-[#005BAA]' },
   contacted:  { label: 'Đang tư vấn', cls: 'bg-amber-50 text-amber-700' },
-  consulting: { label: 'Đang tư vấn', cls: 'bg-amber-50 text-amber-700' },
+  contact:    { label: 'Đang liên hệ', cls: 'bg-amber-50 text-amber-600' },
+  consulting: { label: 'Tư vấn',      cls: 'bg-amber-50 text-amber-700' },
   deposited:  { label: 'Đã đặt cọc',  cls: 'bg-green-50 text-green-700' },
+  booked:     { label: 'Đã đặt chỗ', cls: 'bg-green-50 text-green-600' },
   converted:  { label: 'Đã chốt',     cls: 'bg-purple-50 text-purple-700' },
+  done:       { label: 'Hoàn thành',  cls: 'bg-purple-50 text-purple-600' },
   lost:       { label: 'Hủy',         cls: 'bg-red-50 text-red-700' },
+  cancel:     { label: 'Đã hủy',      cls: 'bg-red-50 text-red-600' },
 }
 
 function getInitials(name: string): string {
@@ -42,13 +46,15 @@ export function CustomerProfileDrawer() {
   const [driveSaving, setDriveSaving] = useState(false)
   const [driveSaved, setDriveSaved]   = useState(false)
 
-  // Sync driveUrl khi customer thay đổi
-  const currentDrive = customer?.google_drive_url ?? ''
-  if (driveUrl !== currentDrive && !driveSaving) {
-    setDriveUrl(currentDrive)
-    setDriveError(null)
-    setDriveSaved(false)
-  }
+  // Reset driveUrl khi mở customer khác — chạy trong useEffect, không trong render body
+  useEffect(() => {
+    if (!driveSaving) {
+      setDriveUrl(customer?.google_drive_url ?? '')
+      setDriveError(null)
+      setDriveSaved(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customer?.id])
 
   // ── Upload handler ───────────────────────────────────────────────────────
   const uploadFiles = useCallback(
@@ -88,7 +94,10 @@ export function CustomerProfileDrawer() {
       // Lưu vào Supabase qua API (Principle #5: validate trước khi ghi)
       const res = await fetch('/api/customer-profile', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': process.env.NEXT_PUBLIC_ADMIN_SECRET ?? '',
+        },
         body: JSON.stringify({ lead_id: customer.id, image_attachments: newAttachments }),
       })
       if (!res.ok) {
@@ -126,11 +135,17 @@ export function CustomerProfileDrawer() {
       if (!customer) return
       const next = (customer.image_attachments ?? []).filter((_, i) => i !== idx)
       updateCustomer(customer.id, { image_attachments: next })
-      await fetch('/api/customer-profile', {
+      const removeRes = await fetch('/api/customer-profile', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-secret': process.env.NEXT_PUBLIC_ADMIN_SECRET ?? '',
+        },
         body: JSON.stringify({ lead_id: customer.id, image_attachments: next }),
       })
+      if (!removeRes.ok) {
+        updateCustomer(customer.id, { image_attachments: customer.image_attachments })
+      }
     },
     [customer, updateCustomer],
   )
@@ -149,7 +164,10 @@ export function CustomerProfileDrawer() {
     setDriveSaving(true)
     const res = await fetch('/api/customer-profile', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-secret': process.env.NEXT_PUBLIC_ADMIN_SECRET ?? '',
+      },
       body: JSON.stringify({ lead_id: customer.id, google_drive_url: driveUrl }),
     })
     setDriveSaving(false)
@@ -365,7 +383,7 @@ function DrawerBody({
         {images.length > 0 && (
           <div className="grid grid-cols-4 gap-2 mt-2.5">
             {images.map((url, idx) => (
-              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-100 group">
+              <div key={url} className="relative aspect-square rounded-lg overflow-hidden border border-gray-100 group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={url}

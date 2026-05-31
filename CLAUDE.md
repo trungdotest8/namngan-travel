@@ -302,14 +302,16 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 
 | Child | Module | Trạng thái | Files chính |
 |-------|--------|-----------|-------------|
-| A | Search UI | ✅ v2.0.0 | `src/components/search/TourSearchBar.tsx` |
-| B | Lịch khởi hành | ⏳ Chờ code | `src/components/calendar/` (rỗng) |
+| A | Search UI | ✅ v2.0.0 | `src/components/search/TourSearchBar.tsx` + `SearchResults.tsx` |
+| B | Lịch khởi hành (SeaStar) | ✅ v1.0.0 | `src/lib/integrations/seastar.ts` + `src/app/api/departures/route.ts` + `src/store/calendar.store.ts` |
 | C | Itinerary Docs | ✅ Ghép xong | `src/components/itinerary/TourDetail.tsx` |
-| D | Hồ sơ khách | ✅ v1.0.0 | `src/components/customer-profile/CustomerProfileDrawer.tsx` + `CustomerTable.tsx` |
+| D | Hồ sơ khách | ✅ v1.1.0 | `src/components/customer-profile/CustomerProfileDrawer.tsx` + `CustomerTable.tsx` |
 | E | Chat & Lead | ✅ v2.0.0 | `src/components/chat/ChatWidget.tsx` + `AutoPopup.tsx` |
 | F | CMS / RSS | ✅ v1.2.0 | `src/components/cms/ArticleFeed.tsx` |
-| G | DB Schema | ✅ 2 migrations local | `supabase/migrations/` — **chưa push cloud** |
-| CRM | Admin CRM Platform | ✅ v1.0.0 | `src/app/(admin)/crm/page.tsx` — 3 tab |
+| G | DB Schema | ✅ cloud — 4 migrations applied + migration #5 local | `supabase/migrations/` — **Supabase: indjoegnsvcteaozmgrg** |
+| CRM | Admin CRM Platform | ✅ v1.2.0 | `src/app/(admin)/crm/page.tsx` + `public/crm-standalone.html` — có nút Đồng bộ SeaStar |
+| HOME | Trang chủ | ✅ v1.0.0 | `src/app/page.tsx` — hero + SearchResults + 8 tours x2 + news + CTA |
+| EDGE | Supabase Edge Functions | ✅ deployed | `supabase/functions/fb-webhook/` + `supabase/functions/google-drive/` |
 
 ### Trạng thái API Routes
 
@@ -317,50 +319,60 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 |-------|--------|-----------|---------|
 | `/api/leads` | POST | ✅ | Zod + Supabase + luồng kép Email+Realtime |
 | `/api/cms` | GET/POST | ✅ | filter source_type, status, limit |
-| `/api/customer-profile` | GET/PATCH | ✅ | GET list leads; PATCH Drive URL + image_attachments |
-| `/api/search` | POST | ❌ | Child A UI xong, **backend chưa tạo** |
-| `/api/departures` | GET | ❌ | Child B chưa ghép |
-| `/api/itinerary/[tourId]` | GET | ❌ | Child C chưa ghép |
-| `/api/notifications` | POST | ❌ | lib/notifications sẵn, route chưa tạo |
-| `/api/webhooks/n8n` | POST | ❌ | lib/integrations/n8n.ts sẵn, route chưa tạo |
-| `/api/webhooks/moda` | POST | ❌ | lib/integrations/moda.ts sẵn, route chưa tạo |
+| `/api/customer-profile` | GET/PATCH | ✅ | Auth: x-admin-secret; createAdminClient |
+| `/api/search` | POST | ✅ | createClient (RLS); TourSearchResult từ @/types |
+| `/api/notifications` | POST | ✅ | Auth: x-webhook-secret; triggerNotification() |
+| `/api/webhooks/n8n` | POST | ✅ | Auth: x-webhook-secret; new_lead_notify |
+| `/api/webhooks/moda` | POST | ✅ | Auth: x-webhook-secret; luồng kép nếu confirmed |
+| `/api/departures` | GET | ✅ | Public RLS; filter dest/month/status/tour_id; join tours |
+| `/api/departures` | POST | ✅ | Auth: x-webhook-secret; trigger syncSeaStarSchedules() |
+| `/api/itinerary/[tourId]` | GET | ❌ | Child C chưa ghép API |
+| Edge: `fb-webhook` | POST/GET | ✅ deployed | Web Crypto API |
+| Edge: `google-drive` | POST | ✅ deployed | base64url JWT fix |
 
 ### Zustand Stores
 
 ```
 useUIStore              (store/ui.store.ts)               ✅ toast, modal, loading
 useNotificationStore    (store/notification.store.ts)      ✅ admin realtime
-useSearchStore          (store/search.store.ts)            ✅ Child A
+useSearchStore          (store/search.store.ts)            ✅ results: TourSearchResult[]
+useCalendarStore        (store/calendar.store.ts)          ✅ Child B — fetchSchedules(), schedules[]
 useChatStore            (store/chat.store.ts)              ✅ Child E
 useCmsStore             (store/cms.store.ts)               ✅ Child F
 useCustomerProfileStore (store/customer-profile.store.ts)  ✅ Child D + CRM admin
-
-❌ Chưa có:
-  store/calendar.store.ts  ← cần khi nhận Child B
 ```
 
-### Data Contract — Delta so với CLAUDE.md gốc
+### Data Contract — Delta so với phiên trước
 
 ```typescript
-// ── Child D — Storage (MỚI) ─────────────────────────────────────
-// Supabase Storage bucket : 'customer-profiles'
-// Upload path             : leads/{lead_id}/{timestamp}-{random}.{ext}
-// image_attachments       : string[]  ← URLs thuần, KHÔNG phải {url,label}
+// ── SeaStar integration types (MỚI — seastar.ts) ─────────────────
+export interface SeaStarScheduleItem {
+  ma_tour: string         // "SS-{dest_id}"
+  ten_tour: string
+  ngay_khoi_hanh: string  // "YYYY-MM-DD"
+  gia: number             // adl_price VND
+  so_cho_trong: number    // total_free_seats
+}
+export interface SyncResult {
+  items: SeaStarScheduleItem[]
+  synced: number; skipped: number; errors: string[]
+}
 
-// ── CRM Score (computed, không lưu DB) ──────────────────────────
-// Base: converted=92, deposited=82, consulting=62,
-//       contacted=55, new=42, lost=22
-// Variance: (charCode sum of id) % 14 − 7   → range −7…+6
+// ── SeaStar API response (THỰC TẾ — khác với phân tích ban đầu) ──
+// json.data.destinations[]  (không phải json.destinations[])
+// SeaStarDestination.market = { id, name }  (không phải market_id flat)
 
-// ── LeadStatus → CRM display ────────────────────────────────────
-// new → "Mới nhập"   | contacted/consulting → "Đang tư vấn"
-// deposited → "Đã đặt cọc" | converted → "Đã chốt" | lost → "Hủy"
+// ── tours.sheets_row_id (SeaStar) ────────────────────────────────
+// pattern: "seastartravel:{dest_id}:{slugify(name)}"
+// tour.code: "SS-{dest_id}"
 
-// ── CRM store filter type ────────────────────────────────────────
-// 'all' | 'fb_ads' | 'web_ads' | 'deposited' | 'new'
+// ── tour_schedules.sheets_row_id (SeaStar) ───────────────────────
+// pattern: "SS-{dest_id}-{YYYYMMDD}-{nameHash6}"
+// upsert: manual SELECT→UPDATE/INSERT (không cần unique index)
 
-// ── Admin route ──────────────────────────────────────────────────
-// URL: /crm  →  src/app/(admin)/crm/page.tsx  (client component)
+// ── NEXT_PUBLIC_ADMIN_SECRET ─────────────────────────────────────
+// Đã thêm vào .env.local = WEBHOOK_SECRET
+// CRM button dùng header: x-webhook-secret (không phải x-admin-secret)
 ```
 
 ### Nguyên tắc — Kiểm tra
@@ -368,46 +380,63 @@ useCustomerProfileStore (store/customer-profile.store.ts)  ✅ Child D + CRM adm
 ```
 [x] #1 Không xóa file/module
 [x] #2 Không dùng UI library nặng (chỉ lucide-react + Tailwind)
-[x] #3 Không merge nếu chưa kiểm type contract (tsc CLEAN)
-[!] #4 ErrorBoundary — ErrorBoundary.tsx tồn tại nhưng chưa wrap CRM page và các child component mới
-[x] #5 Zod validation — api/leads, api/customer-profile, validations/
-[x] #6 try/catch + UI fallback — CRM page có fetchError state + retry button
-[x] #7 Luồng kép — api/leads ✅; api/customer-profile chỉ PATCH (không cần luồng kép)
-[x] #8 Upload/Drive Error UI — CustomerProfileDrawer có đầy đủ error states
+[x] #3 tsc CLEAN (0 lỗi) — verified phiên này
+[x] #4 ErrorBoundary — CRM ✅; SearchResults ✅; (calendar UI chưa có nhưng store ✅)
+[x] #5 Zod — api/departures GET+POST ✅; tất cả routes cũ ✅
+[x] #6 try/catch + UI fallback — seastar.ts Promise.allSettled ✅; route try/catch ✅
+[x] #7 Luồng kép — api/leads ✅; api/webhooks/moda ✅ (không áp dụng cho Child B)
+[x] #8 Upload/Drive Error UI — CustomerProfileDrawer ✅
+```
+
+### Hạ tầng & Tích hợp bên ngoài
+
+```
+GitHub  : https://github.com/trungdotest8/namngan-travel  (branch: main)
+Vercel  : ✅ https://dulichtrungquoc.vercel.app
+          ⚠️ Cần add NEXT_PUBLIC_ADMIN_SECRET + 8 biến cũ → Redeploy
+          ⚠️ Cần kết nối domain namngantravel.site
+Supabase: ✅ indjoegnsvcteaozmgrg — 5 migrations local (4 applied cloud)
+          ⚠️ Migration #5 (seastar_index) chưa push: supabase db push
+Edge Fn : ✅ fb-webhook + google-drive deployed
+          ⚠️ Secrets chưa set: FB_APP_SECRET, ZALO_OA_SECRET,
+             GOOGLE_SERVICE_ACCOUNT_JSON, DRIVE_PARENT_FOLDER_ID, FB_VERIFY_TOKEN
+Resend  : ✅ re_cAaqcsGD... — onboarding@resend.dev (tạm)
+          ⚠️ Verify domain namngantravel.site → đổi RESEND_FROM_EMAIL
+MCP     : ✅ Gmail MCP cài vào ~/.claude/settings.json
+          ✅ gcp-oauth.keys.json đặt tại ~/.gmail-mcp/
+          ⚠️ Cần restart Claude Code → xác thực OAuth lần đầu
+SeaStar : ✅ syncSeaStarSchedules() tested — 313 synced, 0 errors (43 destinations × 3 tháng)
+SĐT     : 0932 611 933 (main) · 0774 623 514 (Zalo)
 ```
 
 ### Files ưu tiên cao chưa tồn tại
 
 ```
-# KHẨN — app không render nếu thiếu
-src/app/page.tsx
-
-# KHẨN — Child A không hoạt động end-to-end
-src/app/api/search/route.ts
-
-# CẦN LÀM SAU
-src/components/notifications/NotificationPanel.tsx
-src/app/api/notifications/route.ts
-src/app/api/webhooks/n8n/route.ts
-src/app/api/webhooks/moda/route.ts
+# CẦN LÀM SAU (ưu tiên giảm dần)
+src/components/notifications/NotificationPanel.tsx   ← wire Realtime → addNotification store
 src/components/ui/Button.tsx
 src/components/ui/Card.tsx
+src/components/calendar/DepartureCalendar.tsx        ← UI hiển thị lịch từ useCalendarStore
 
-# CHỜ CHILD B
-src/store/calendar.store.ts
-src/components/calendar/  (rỗng)
+# CHỜ API
+src/app/api/itinerary/[tourId]/route.ts              ← Child C API chưa có
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Tạo `src/app/page.tsx`** — nhúng Header + TourSearchBar + FeaturedTours + ArticleFeed + Footer + ChatWidget + AutoPopup; tất cả component đã tồn tại, chỉ cần ghép
-2. **Tạo `src/app/api/search/route.ts`** — nhận `SearchCriteriaInput` v2.0 (meetingPoint, departureDate, tourName), query Supabase `tours` + `tour_schedules`, trả `Tour[]`
-3. **Wrap `<ErrorBoundary>`** quanh CRM page và CustomerProfileDrawer — Nguyên tắc #4 chưa hoàn toàn đủ
+1. **`supabase db push`** — apply migration #5 (`seastar_index.sql`) lên cloud → unique index cho upsert performance
+2. **Vercel redeploy** — thêm `NEXT_PUBLIC_ADMIN_SECRET=namngan-secret-2025` + 8 biến cũ → Redeploy → kết nối domain `namngantravel.site`
+3. **Tạo `NotificationPanel.tsx`** — `src/components/notifications/NotificationPanel.tsx` subscribe channel `admin-notifications` → gọi `addNotification()` từ `notification.store.ts`
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-05-31 | Handover #8 — Child B SeaStar Crawler | syncSeaStarSchedules() ✅ 313 records; api/departures GET+POST; calendar.store; CRM sync button; fix json.data.destinations; manual upsert |
+| 2026-05-30 | Handover #7 — Code Review + Security Fixes | 10 findings fixed: auth guards, RLS migration #4, LeadStatus CRM, HTML escape, depart_date email, search store type, n8n secret header; MCP Gmail cài xong |
+| 2026-05-30 | Handover #6 — Search + Deploy | api/search ✅; SearchResults component; Edge Fn deployed+fixed; Vercel live; migrations synced |
+| 2026-05-30 | Handover #5 — CRM + Edge Functions | Migration #3 CRM extensions; fb-webhook + google-drive Edge Functions; CRM standalone v3.0; tsconfig exclude Deno; tsc CLEAN |
+| 2026-05-30 | Handover #4 — Deploy Session | page.tsx trang chủ ✅; SĐT cập nhật; GitHub push ✅; Supabase cloud ✅; Resend verified ✅; Vercel ⏳ |
 | 2026-05-30 | Handover #3 | Manifest tự động — xác nhận tsc CLEAN, cập nhật delta Child D + CRM |
 | 2026-05-30 | Session 2 — Child D + CRM | Child D xong: Drawer upload + Drive, CustomerTable, store, api/customer-profile. Admin CRM /crm 3 tab. tsc CLEAN |
 | 2026-05-30 | Session 1 | Xác nhận repo: Child A,C,E,F ghép xong; luồng kép api/leads ✅; page.tsx + api/search chưa có |

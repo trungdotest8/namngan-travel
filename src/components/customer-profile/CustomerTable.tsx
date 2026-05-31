@@ -23,10 +23,14 @@ function computeScore(lead: Lead): number {
 const STATUS_MAP: Record<LeadStatus, { label: string; cls: string }> = {
   new:        { label: 'Mới nhập',     cls: 'bg-[#F0F7FF] text-[#005BAA]' },
   contacted:  { label: 'Đang tư vấn', cls: 'bg-amber-50 text-amber-700' },
-  consulting: { label: 'Đang tư vấn', cls: 'bg-amber-50 text-amber-700' },
+  contact:    { label: 'Đang liên hệ', cls: 'bg-amber-50 text-amber-600' },
+  consulting: { label: 'Tư vấn',      cls: 'bg-amber-50 text-amber-700' },
   deposited:  { label: 'Đã đặt cọc',  cls: 'bg-green-50 text-green-700' },
+  booked:     { label: 'Đã đặt chỗ', cls: 'bg-green-50 text-green-600' },
   converted:  { label: 'Đã chốt',     cls: 'bg-purple-50 text-purple-700' },
+  done:       { label: 'Hoàn thành',  cls: 'bg-purple-50 text-purple-600' },
   lost:       { label: 'Hủy',         cls: 'bg-red-50 text-red-700' },
+  cancel:     { label: 'Đã hủy',      cls: 'bg-red-50 text-red-600' },
 }
 
 const AVATAR_COLORS = [

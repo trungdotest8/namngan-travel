@@ -1,5 +1,9 @@
 export type LeadSource = 'popup' | 'chat' | 'fb_ads' | 'web_ads' | 'organic' | 'other'
-export type LeadStatus = 'new' | 'contacted' | 'consulting' | 'deposited' | 'converted' | 'lost'
+
+// 6 giá trị gốc + 4 giá trị CRM (migration 20250530000003)
+export type LeadStatus =
+  | 'new' | 'contacted' | 'consulting' | 'deposited' | 'converted' | 'lost'
+  | 'contact' | 'booked' | 'done' | 'cancel'
 
 export interface Lead {
   id:                string
@@ -18,6 +22,18 @@ export interface Lead {
   status:            LeadStatus
   assigned_to:       string | null    // users.id
   note:              string | null
+  // CRM extension columns (migration 20250530000003)
+  name:              string | null
+  source:            string | null
+  score:             number | null
+  campaign:          string | null
+  tour:              string | null
+  city:              string | null
+  budget:            number | null
+  pax:               number | null
+  fb_lead_id:        string | null
+  fb_page_id:        string | null
+  fb_form_id:        string | null
   created_at:        string
   updated_at:        string
 }

@@ -19,7 +19,10 @@ export async function triggerNotification(
 
 async function sendEmailNotification(payload: NotificationTriggerPayload) {
   const adminEmail = process.env.ADMIN_NOTIFY_EMAIL
-  if (!adminEmail) return
+  if (!adminEmail) {
+    console.warn('[Notify] ADMIN_NOTIFY_EMAIL chưa cấu hình — bỏ qua gửi email admin')
+    return
+  }
 
   const templates = {
     new_lead:          'lead-received',
@@ -34,6 +37,7 @@ async function sendEmailNotification(payload: NotificationTriggerPayload) {
     data: {
       customer_name: payload.customer_name ?? 'Khách hàng',
       tour_title:    payload.tour_title,
+      depart_date:   payload.depart_date ?? 'Chưa xác định',
       source:        payload.event,
     },
   })
@@ -47,6 +51,7 @@ async function sendEmailNotification(payload: NotificationTriggerPayload) {
       data: {
         customer_name: payload.customer_name ?? 'Quý khách',
         tour_title:    payload.tour_title,
+        depart_date:   payload.depart_date ?? 'Chưa xác định',
       },
     })
   }

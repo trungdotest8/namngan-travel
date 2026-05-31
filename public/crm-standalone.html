@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nam Ngân Travel — CRM Platform v3.0</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#0F4C81;--brand-light:#1B6DB5;--brand-pale:#E8F2FD;
+  --accent:#F47B20;--accent-pale:#FEF0E3;
+  --success:#0B7A4E;--success-pale:#E6F5F0;
+  --warn:#B45309;--warn-pale:#FEF3C7;
+  --danger:#B91C1C;--danger-pale:#FEE2E2;
+  --purple:#6b21a8;--purple-pale:#F3E8FF;
+  --sidebar-w:220px;
+  --font-display:'Syne',sans-serif;--font-body:'Be Vietnam Pro',sans-serif;
+  --bg-primary:#fff;--bg-secondary:#f4f6f9;--bg-tertiary:#eef1f5;
+  --text-primary:#1a1d23;--text-secondary:#64748b;
+  --border:rgba(0,0,0,.09);--border-md:rgba(0,0,0,.15);
+  --shadow:0 2px 8px rgba(0,0,0,.07);--shadow-lg:0 8px 32px rgba(0,0,0,.13);
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg-primary:#1a1d23;--bg-secondary:#22262f;--bg-tertiary:#13151a;
+    --text-primary:#e8eaf0;--text-secondary:#8a93a6;
+    --border:rgba(255,255,255,.08);--border-md:rgba(255,255,255,.15);
+    --brand-pale:rgba(15,76,129,.2);--accent-pale:rgba(244,123,32,.15);
+    --success-pale:rgba(11,122,78,.15);--warn-pale:rgba(180,83,9,.15);
+    --danger-pale:rgba(185,28,28,.15);--purple-pale:rgba(107,33,168,.15);
+  }
+}
+html,body{height:100%}
+body{font-family:var(--font-body);background:var(--bg-tertiary);color:var(--text-primary);font-size:13px;line-height:1.5}
+.shell{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:var(--sidebar-w);background:var(--brand);display:flex;flex-direction:column;flex-shrink:0}
+.logo-area{padding:18px 16px 12px;border-bottom:1px solid rgba(255,255,255,.12)}
+.logo-icon{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-name{font-family:var(--font-display);font-size:15px;font-weight:800;color:#fff;letter-spacing:.5px;line-height:1.2}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+.nav{padding:12px 0;flex:1}
+.nav-section{padding:6px 16px 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,.35);letter-spacing:1.2px;text-transform:uppercase;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-left:3px solid transparent;transition:all .15s;color:rgba(255,255,255,.7);font-size:12.5px;font-weight:500}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.14);color:#fff;border-left-color:var(--accent)}
+.nav-item i{font-size:16px;flex-shrink:0}
+.sidebar-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.1)}
+.avatar-sm{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0}
+.avatar-lg{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--bg-primary);border-bottom:.5px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.topbar-title{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text-primary);flex:1}
+.topbar-title span{color:var(--text-secondary);font-size:12px;font-weight:400;margin-left:6px;font-family:var(--font-body)}
+.content{flex:1;overflow-y:auto;padding:20px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:.5px solid var(--border-md);background:var(--bg-primary);color:var(--text-primary);transition:all .15s;font-family:var(--font-body);text-decoration:none}
+.btn:hover{background:var(--bg-secondary)}
+.btn-primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+.btn-primary:hover{background:var(--brand-light)}
+.btn-accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-success{background:var(--success);color:#fff;border-color:var(--success)}
+.btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn-sm{padding:4px 9px;font-size:11.5px}
+.btn-icon{width:28px;height:28px;padding:0;justify-content:center;border-radius:6px}
+.notif-btn{position:relative;width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:.5px solid var(--border);background:var(--bg-secondary)}
+.notif-badge{position:absolute;top:-3px;right:-3px;width:14px;height:14px;background:var(--accent);border-radius:50%;font-size:9px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--bg-primary)}
+.card{background:var(--bg-primary);border:.5px solid var(--border);border-radius:10px;padding:16px}
+.card-title{font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px}
+.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric{background:var(--bg-secondary);border-radius:8px;padding:12px 14px}
+.metric-label{font-size:11px;color:var(--text-secondary);font-weight:500;margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:600;color:var(--text-primary);font-family:var(--font-display);line-height:1}
+.metric-sub{font-size:10.5px;margin-top:3px}
+.metric-up{color:var(--success)}.metric-down{color:var(--danger)}
+.source-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600}
+.badge-fb{background:#EAF0FF;color:#1a56db}
+.badge-web{background:var(--accent-pale);color:#c2410c}
+.badge-zalo{background:#E0F2FE;color:#0369a1}
+.status-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.status-badge:hover{opacity:.8}
+.s-new{background:var(--brand-pale);color:var(--brand)}
+.s-contact{background:var(--warn-pale);color:var(--warn)}
+.s-booked{background:var(--success-pale);color:var(--success)}
+.s-cancel{background:var(--danger-pale);color:var(--danger)}
+.s-done{background:var(--purple-pale);color:var(--purple)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;padding:8px 10px;font-size:11px;font-weight:600;color:var(--text-secondary);letter-spacing:.5px;text-transform:uppercase;border-bottom:.5px solid var(--border);white-space:nowrap}
+td{padding:9px 10px;border-bottom:.5px solid var(--border);vertical-align:middle}
+tr:hover td{background:var(--bg-secondary)}
+tr:last-child td{border-bottom:none}
+.name-cell{display:flex;align-items:center;gap:8px}
+.chart-area{position:relative;height:160px;margin-top:8px}
+canvas{width:100%!important}
+.notif-list{display:flex;flex-direction:column}
+.notif-item{display:flex;gap:10px;padding:10px 0;border-bottom:.5px solid var(--border);align-items:flex-start}
+.notif-item:last-child{border-bottom:none}
+.notif-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.notif-text{font-size:12px;line-height:1.5;color:var(--text-primary)}
+.notif-time{font-size:10.5px;color:var(--text-secondary);white-space:nowrap}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:none;align-items:flex-start;justify-content:flex-end}
+.overlay.open{display:flex}
+.drawer{width:540px;height:100vh;background:var(--bg-primary);overflow-y:auto;border-left:.5px solid var(--border);display:flex;flex-direction:column}
+.drawer-head{padding:16px 20px;border-bottom:.5px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--bg-primary);position:sticky;top:0;z-index:1}
+.drawer-body{padding:20px;display:flex;flex-direction:column;gap:16px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.info-row{background:var(--bg-secondary);border-radius:7px;padding:10px 12px}
+.info-lbl{font-size:10.5px;color:var(--text-secondary);font-weight:500;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px}
+.info-val{font-size:13px;font-weight:500;color:var(--text-primary)}
+.upload-zone{border:1.5px dashed var(--border-md);border-radius:8px;padding:18px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg-secondary)}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--brand);background:var(--brand-pale)}
+.upload-zone i{font-size:28px;color:var(--text-secondary);display:block;margin-bottom:6px}
+.thumb-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.thumb{position:relative;aspect-ratio:1;border-radius:7px;overflow:hidden;border:.5px solid var(--border);background:var(--bg-secondary);cursor:pointer}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:9px;font-weight:600;padding:3px 5px;text-align:center;letter-spacing:.3px;text-transform:uppercase}
+.thumb-del{position:absolute;top:3px;right:3px;width:17px;height:17px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;opacity:0;transition:opacity .15s}
+.thumb:hover .thumb-del{opacity:1}
+.drive-row{display:flex;align-items:center;gap:8px;background:var(--bg-secondary);border-radius:8px;padding:10px 12px;border:.5px solid var(--border)}
+.drive-input{flex:1;border:none;background:transparent;font-size:12px;color:var(--brand);font-family:var(--font-body);outline:none}
+.drive-input::placeholder{color:var(--text-secondary)}
+.config-section{display:flex;flex-direction:column;gap:14px}
+.config-card{border:.5px solid var(--border);border-radius:9px;padding:14px 16px;background:var(--bg-primary)}
+.config-card-title{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.input-field{width:100%;border:.5px solid var(--border-md);border-radius:6px;padding:8px 10px;font-size:12.5px;font-family:var(--font-body);color:var(--text-primary);background:var(--bg-secondary);outline:none;transition:border-color .15s}
+.input-field:focus{border-color:var(--brand)}
+textarea.input-field{resize:vertical;min-height:80px;line-height:1.5}
+.label-sm{font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;letter-spacing:.4px}
+.form-row{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.token-box{font-family:monospace;font-size:11.5px;background:var(--bg-secondary);border:.5px solid var(--border);border-radius:5px;padding:6px 10px;color:var(--text-secondary);word-break:break-all;letter-spacing:.3px}
+.tabs{display:flex;border-bottom:.5px solid var(--border);margin-bottom:16px}
+.tab{padding:8px 14px;font-size:12.5px;font-weight:500;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+.tab:hover:not(.active){color:var(--text-primary)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes slideIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;animation:pulse 1.6s ease-in-out infinite}
+.search-bar{display:flex;align-items:center;gap:8px;background:var(--bg-secondary);border:.5px solid var(--border);border-radius:7px;padding:0 10px;margin-bottom:14px}
+.search-bar i{font-size:14px;color:var(--text-secondary)}
+.search-bar input{border:none;background:transparent;padding:8px 4px;flex:1;font-size:12.5px;font-family:var(--font-body);color:var(--text-primary);outline:none}
+.filter-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.filter-chip{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:.5px solid var(--border-md);background:var(--bg-secondary);color:var(--text-secondary);transition:all .15s}
+.filter-chip:hover,.filter-chip.on{background:var(--brand-pale);border-color:var(--brand);color:var(--brand)}
+.section-title{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--text-primary);margin-bottom:4px}
+.section-sub{font-size:12px;color:var(--text-secondary);margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.score-bar{height:5px;border-radius:3px;background:var(--bg-secondary);overflow:hidden}
+.score-fill{height:100%;border-radius:3px;transition:width .4s}
+.flex-row{display:flex;align-items:center;gap:8px}
+.mt-12{margin-top:12px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex;animation:fadeIn .2s ease}
+.modal-box{background:var(--bg-primary);border-radius:14px;width:100%;max-width:480px;box-shadow:var(--shadow-lg);overflow:hidden}
+.modal-head{padding:16px 20px;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{font-family:var(--font-display);font-size:15px;font-weight:700}
+.modal-body{padding:20px;display:flex;flex-direction:column;gap:12px;max-height:70vh;overflow-y:auto}
+.modal-foot{padding:14px 20px;border-top:.5px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-group{display:flex;flex-direction:column;gap:4px}
+.field-group label{font-size:11.5px;font-weight:600;color:var(--text-secondary)}
+.field-group select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:10px;padding:10px 0;position:relative}
+.tl-item:not(:last-child)::before{content:'';position:absolute;left:10px;top:28px;bottom:-2px;width:1.5px;background:var(--border)}
+.tl-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;z-index:1}
+.tl-content{flex:1}
+.tl-title{font-size:12.5px;font-weight:500;color:var(--text-primary)}
+.tl-meta{font-size:11px;color:var(--text-secondary);margin-top:1px}
+.tl-note{font-size:12px;color:var(--text-secondary);background:var(--bg-secondary);border-radius:6px;padding:6px 8px;margin-top:4px}
+.call-form{background:var(--bg-secondary);border-radius:8px;padding:12px;border:.5px solid var(--border);display:none;flex-direction:column;gap:8px}
+.call-form.open{display:flex;animation:fadeIn .15s ease}
+.call-form textarea{resize:none;height:64px}
+.toast-container{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:8px;background:var(--text-primary);color:var(--bg-primary);padding:10px 16px;border-radius:8px;font-size:12.5px;font-weight:500;box-shadow:var(--shadow-lg);animation:slideIn .2s ease;pointer-events:auto;min-width:220px}
+.toast i{font-size:15px}
+.toast.success{background:var(--success);color:#fff}
+.toast.error{background:var(--danger);color:#fff}
+.toast.warn{background:var(--warn);color:#fff}
+.status-select{border:.5px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;font-family:var(--font-body);background:var(--bg-secondary);color:var(--text-primary);cursor:pointer;outline:none}
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.toolbar-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.record-count{font-size:12px;color:var(--text-secondary)}
+.empty-state{text-align:center;padding:48px 20px;color:var(--text-secondary)}
+.empty-state i{font-size:40px;display:block;margin-bottom:12px;opacity:.4}
+.empty-state p{font-size:13px}
+.confirm-modal{max-width:360px}
+</style>
+</head>
+<body>
+<div class="toast-container" id="toast-container"></div>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo-area">
+      <div class="flex-row">
+        <div class="logo-icon"><i class="ti ti-plane" style="font-size:15px;color:#fff"></i></div>
+        <div><div class="logo-name">Nam Ngân Travel</div><div class="logo-sub">CRM Platform</div></div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Tổng quan</div>
+      <div class="nav-item active" data-tab="overview" onclick="showTab('overview')"><i class="ti ti-layout-dashboard"></i> Chiến dịch &amp; Thông báo</div>
+      <div class="nav-section">Quản lý</div>
+      <div class="nav-item" data-tab="customers" onclick="showTab('customers')"><i class="ti ti-users"></i> Danh sách Khách hàng</div>
+      <div class="nav-item" data-tab="reports" onclick="showTab('reports')"><i class="ti ti-chart-bar"></i> Báo cáo &amp; Thống kê</div>
+      <div class="nav-section">Hệ thống</div>
+      <div class="nav-item" data-tab="config" onclick="showTab('config')"><i class="ti ti-settings"></i> Webhook &amp; Email</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="flex-row">
+        <div class="avatar-sm">AN</div>
+        <div>
+          <div style="font-size:12px;color:rgba(255,255,255,.8);font-weight:500">Admin Ngọc</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.45)">Super Admin</div>
+          <div id="sync-badge" style="font-size:9px;color:rgba(255,255,255,.4);margin-top:3px;font-weight:500">● Mock Data</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title" id="topbar-title">Tổng quan Chiến dịch <span id="topbar-sub">· Đang tải...</span></div>
+      <div class="live-dot" style="margin-right:4px"></div>
+      <span style="font-size:11px;color:var(--success);font-weight:500;margin-right:8px">Live</span>
+      <div class="notif-btn" onclick="toggleNotif()" title="Thông báo"><i class="ti ti-bell" style="font-size:16px"></i><div class="notif-badge" id="notif-count">4</div></div>
+      <button class="btn btn-primary" style="margin-left:6px" onclick="openAddModal()"><i class="ti ti-plus"></i> Thêm KH</button>
+    </header>
+    <div class="content" id="content-area">
+
+      <!-- TAB OVERVIEW -->
+      <div id="tab-overview">
+        <div class="section-title">Chiến dịch &amp; Thống kê</div>
+        <div class="section-sub">Tổng hợp hiệu quả Ads từ tất cả kênh — cập nhật theo thời gian thực</div>
+        <div class="metric-grid">
+          <div class="metric"><div class="metric-label">Tổng Lead tháng này</div><div class="metric-value" id="m-total">—</div><div class="metric-sub metric-up"><i class="ti ti-trending-up" style="font-size:11px"></i> +18% so tháng trước</div></div>
+          <div class="metric"><div class="metric-label">Tỷ lệ chuyển đổi</div><div class="metric-value" id="m-cvr">—</div><div class="metric-sub metric-up"><i class="ti ti-trending-up" style="font-size:11px"></i> +5.2% cải thiện</div></div>
+          <div class="metric"><div class="metric-label">Doanh thu ước tính</div><div class="metric-value">₫892M</div><div class="metric-sub metric-up"><i class="ti ti-trending-up" style="font-size:11px"></i> +22% vs tháng 4</div></div>
+          <div class="metric"><div class="metric-label">Chi phí mỗi Lead (CPL)</div><div class="metric-value">₫48K</div><div class="metric-sub metric-down"><i class="ti ti-trending-down" style="font-size:11px"></i> Giảm 8% — tốt</div></div>
+        </div>
+        <div class="grid3">
+          <div class="card"><div class="card-title">Biểu đồ Lead theo ngày (T5/2026)</div><div class="chart-area"><canvas id="leadChart"></canvas></div></div>
+          <div class="card">
+            <div class="card-title">Phân bổ nguồn Lead</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px" id="source-dist"></div>
+            <div style="margin-top:16px">
+              <div class="card-title" style="margin-bottom:8px">Thông báo Real-time</div>
+              <div class="notif-list">
+                <div class="notif-item"><div class="notif-dot" style="background:#22c55e"></div><div style="flex:1"><div class="notif-text"><b>Trần Thị Bích</b> vừa đặt tour Đà Nẵng 5N4Đ</div></div><div class="notif-time">2p trước</div></div>
+                <div class="notif-item"><div class="notif-dot" style="background:var(--accent)"></div><div style="flex:1"><div class="notif-text">3 lead mới từ <b>Facebook</b> chiến dịch Hè 2026</div></div><div class="notif-time">15p trước</div></div>
+                <div class="notif-item"><div class="notif-dot" style="background:var(--brand)"></div><div style="flex:1"><div class="notif-text"><b>Nguyễn Văn Hùng</b> yêu cầu đổi lịch tour Phú Quốc</div></div><div class="notif-time">1h trước</div></div>
+                <div class="notif-item"><div class="notif-dot" style="background:var(--danger)"></div><div style="flex:1"><div class="notif-text">Cảnh báo: Webhook FB gặp lỗi timeout</div></div><div class="notif-time">2h trước</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="grid2 mt-12">
+          <div class="card">
+            <div class="card-title">Hiệu suất chiến dịch đang chạy</div>
+            <table><thead><tr><th>Tên chiến dịch</th><th>Nguồn</th><th>Lead</th><th>CVR</th></tr></thead>
+            <tbody>
+              <tr><td>Hè 2026 — Đà Nẵng</td><td><span class="source-badge badge-fb">FB</span></td><td>82</td><td><span style="color:var(--success);font-weight:600">41%</span></td></tr>
+              <tr><td>Phú Quốc Siêu rẻ</td><td><span class="source-badge badge-fb">FB</span></td><td>66</td><td><span style="color:var(--success);font-weight:600">36%</span></td></tr>
+              <tr><td>Landing Page Tết 2026</td><td><span class="source-badge badge-web">Web</span></td><td>44</td><td><span style="color:var(--warn);font-weight:600">28%</span></td></tr>
+              <tr><td>Google Ads Korea Tour</td><td><span class="source-badge badge-web">Web</span></td><td>28</td><td><span style="color:var(--warn);font-weight:600">25%</span></td></tr>
+            </tbody></table>
+          </div>
+          <div class="card"><div class="card-title">Trạng thái Pipeline</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:4px" id="pipeline-list"></div></div>
+        </div>
+      </div>
+
+      <!-- TAB CUSTOMERS -->
+      <div id="tab-customers" style="display:none">
+        <div class="section-title">Danh sách Khách hàng</div>
+        <div class="section-sub">Quản lý toàn bộ hồ sơ — click tên để xem chi tiết · Inline sửa trạng thái trực tiếp trên bảng</div>
+        <div class="toolbar">
+          <div class="search-bar" style="margin:0;flex:1;max-width:320px"><i class="ti ti-search"></i><input type="text" placeholder="Tìm theo tên, SĐT, email, tour..." oninput="filterCustomers(this.value)" id="search-input"></div>
+          <div class="filter-row" style="margin:0">
+            <div class="filter-chip on" onclick="setFilter(this,'all')">Tất cả</div>
+            <div class="filter-chip" onclick="setFilter(this,'fb')"><i class="ti ti-brand-facebook" style="font-size:10px"></i> Facebook</div>
+            <div class="filter-chip" onclick="setFilter(this,'web')"><i class="ti ti-world" style="font-size:10px"></i> Web/UTM</div>
+            <div class="filter-chip" onclick="setFilter(this,'booked')">Đã đặt cọc</div>
+            <div class="filter-chip" onclick="setFilter(this,'new')">Mới nhập</div>
+            <div class="filter-chip" onclick="setFilter(this,'contact')">Đang tư vấn</div>
+          </div>
+          <div class="toolbar-right">
+            <span class="record-count" id="record-count"></span>
+            <button class="btn btn-sm" onclick="exportCSV()"><i class="ti ti-download"></i> Xuất CSV</button>
+            <button class="btn btn-primary btn-sm" onclick="openAddModal()"><i class="ti ti-plus"></i> Thêm KH</button>
+          </div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="table-wrap">
+            <table id="customer-table">
+              <thead>
+                <tr>
+                  <th style="padding-left:16px;cursor:pointer" onclick="sortBy('name')">Khách hàng <i class="ti ti-selector" style="font-size:10px"></i></th>
+                  <th>SĐT</th><th>Nguồn</th><th>Tour quan tâm</th>
+                  <th>Trạng thái</th>
+                  <th style="cursor:pointer" onclick="sortBy('score')">Lead Score <i class="ti ti-selector" style="font-size:10px"></i></th>
+                  <th>Hồ sơ</th><th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="customer-tbody"></tbody>
+            </table>
+          </div>
+          <div id="empty-state" class="empty-state" style="display:none"><i class="ti ti-users-group"></i><p>Không tìm thấy khách hàng phù hợp</p></div>
+        </div>
+      </div>
+
+      <!-- TAB REPORTS -->
+      <div id="tab-reports" style="display:none">
+        <div class="section-title">Báo cáo &amp; Thống kê</div>
+        <div class="section-sub">Phân tích hiệu quả kênh, tỷ lệ chuyển đổi và lead scoring</div>
+        <div class="metric-grid">
+          <div class="metric"><div class="metric-label">Tổng khách hàng</div><div class="metric-value" id="rp-total">0</div><div class="metric-sub" style="color:var(--text-secondary)">Trong hệ thống</div></div>
+          <div class="metric"><div class="metric-label">Đã đặt cọc</div><div class="metric-value" id="rp-booked">0</div><div class="metric-sub metric-up" id="rp-booked-pct"></div></div>
+          <div class="metric"><div class="metric-label">Avg. Lead Score</div><div class="metric-value" id="rp-avg-score">0</div><div class="metric-sub" style="color:var(--text-secondary)">Trên 100 điểm</div></div>
+          <div class="metric"><div class="metric-label">Hồ sơ hoàn chỉnh</div><div class="metric-value" id="rp-complete">0</div><div class="metric-sub" style="color:var(--text-secondary)">Có ảnh + Drive</div></div>
+        </div>
+        <div class="grid2 mt-12">
+          <div class="card"><div class="card-title">Phân bổ theo trạng thái</div><div style="position:relative;height:200px"><canvas id="statusChart"></canvas></div></div>
+          <div class="card"><div class="card-title">Phân bổ theo nguồn</div><div style="position:relative;height:200px"><canvas id="sourceChart"></canvas></div></div>
+        </div>
+        <div class="card mt-12"><div class="card-title">Top Lead Score</div><div id="top-leads-list"></div></div>
+      </div>
+
+      <!-- TAB CONFIG -->
+      <div id="tab-config" style="display:none">
+        <div class="section-title">Cấu hình Webhook &amp; Email</div>
+        <div class="section-sub">Thiết lập nguồn nhận lead tự động và mẫu email xác nhận</div>
+        <div class="tabs">
+          <div class="tab active" onclick="switchConfigTab(this,'webhook')">Webhook nguồn Lead</div>
+          <div class="tab" onclick="switchConfigTab(this,'email')">Mẫu Email tự động</div>
+        </div>
+        <div id="cfg-webhook" class="config-section">
+          <div class="config-card">
+            <div class="config-card-title"><i class="ti ti-brand-facebook" style="color:#1a56db"></i> Facebook Lead Ads</div>
+            <div class="form-row"><div class="label-sm">Webhook Endpoint URL</div><div class="token-box">https://&lt;project&gt;.supabase.co/functions/v1/fb-webhook</div></div>
+            <div class="form-row"><div class="label-sm">Verify Token</div><input class="input-field" id="cfg-fb-token" value="nnt_fb_verify"></div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button class="btn btn-primary" onclick="toast('Đã lưu cấu hình Facebook','success')"><i class="ti ti-check"></i> Lưu</button>
+              <button class="btn" onclick="toast('Kết nối thành công!','success')"><i class="ti ti-refresh"></i> Test kết nối</button>
+            </div>
+          </div>
+          <div class="config-card">
+            <div class="config-card-title"><i class="ti ti-world" style="color:var(--accent)"></i> Web Form &amp; UTM Tracking</div>
+            <div class="form-row"><div class="label-sm">Webhook URL</div><div class="token-box">https://&lt;project&gt;.supabase.co/functions/v1/fb-webhook?src=web</div></div>
+            <div class="form-row"><div class="label-sm">Tham số UTM</div><input class="input-field" value="utm_source, utm_medium, utm_campaign, utm_content, utm_term"></div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button class="btn btn-primary" onclick="toast('Đã lưu cấu hình Web/UTM','success')"><i class="ti ti-check"></i> Lưu</button>
+            </div>
+          </div>
+          <div class="config-card">
+            <div class="config-card-title"><i class="ti ti-message" style="color:#0369a1"></i> Zalo OA Integration</div>
+            <div class="form-row"><div class="label-sm">Webhook URL</div><div class="token-box">https://&lt;project&gt;.supabase.co/functions/v1/fb-webhook?src=zalo</div></div>
+            <div class="form-row"><div class="label-sm">Zalo OA ID</div><input class="input-field" value=""></div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button class="btn btn-primary" onclick="toast('Đã lưu cấu hình Zalo OA','success')"><i class="ti ti-check"></i> Lưu</button>
+            </div>
+          </div>
+        </div>
+        <div id="cfg-email" class="config-section" style="display:none">
+          <div class="config-card">
+            <div class="config-card-title"><i class="ti ti-mail" style="color:var(--brand)"></i> Xác nhận đặt cọc thành công</div>
+            <div class="form-row"><div class="label-sm">Tiêu đề</div><input class="input-field" value="[Nam Ngân Travel] Xác nhận đặt cọc tour {{tour_name}} — {{booking_code}}"></div>
+            <div class="form-row"><div class="label-sm">Nội dung</div><textarea class="input-field" style="min-height:120px">Kính gửi {{customer_name}},
+
+Chúng tôi xác nhận đã nhận được khoản đặt cọc {{deposit_amount}} cho tour {{tour_name}} ({{tour_dates}}).
+Mã đặt chỗ: {{booking_code}} | Số khách: {{num_pax}} | Hướng dẫn viên: {{guide_name}}
+
+Vui lòng liên hệ {{hotline}} nếu có thay đổi.
+Trân trọng, Nam Ngân Travel Team</textarea></div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button class="btn btn-primary" onclick="toast('Đã lưu mẫu email','success')"><i class="ti ti-check"></i> Lưu mẫu</button>
+              <button class="btn" onclick="toast('Email thử đã gửi','success')"><i class="ti ti-send"></i> Gửi thử</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div class="overlay" id="customer-overlay" onclick="closeDrawer(event)">
+  <div class="drawer" id="customer-drawer">
+    <div class="drawer-head">
+      <div class="avatar-lg" id="drawer-avatar" style="background:var(--brand)">TT</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:14px;font-family:var(--font-display)" id="drawer-name">—</div>
+        <div style="font-size:11.5px;color:var(--text-secondary);margin-top:1px" id="drawer-meta">—</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="openEditModal()"><i class="ti ti-edit"></i> Sửa</button>
+        <button class="btn btn-sm btn-danger" onclick="confirmDelete()"><i class="ti ti-trash"></i></button>
+        <button class="btn btn-sm" onclick="document.getElementById('customer-overlay').classList.remove('open')"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+  </div>
+</div>
+
+<!-- MODAL ADD/EDIT -->
+<div class="modal-overlay" id="customer-modal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-title">Thêm khách hàng mới</h3>
+      <button class="btn btn-sm btn-icon" onclick="document.getElementById('customer-modal').classList.remove('open')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="field-grid">
+        <div class="field-group" style="grid-column:1/-1"><label>Họ và tên *</label><input class="input-field" id="f-name" placeholder="Nguyễn Văn A"></div>
+        <div class="field-group"><label>Số điện thoại *</label><input class="input-field" id="f-phone" type="tel" placeholder="0901 234 567"></div>
+        <div class="field-group"><label>Email</label><input class="input-field" id="f-email" type="email" placeholder="email@example.com"></div>
+        <div class="field-group"><label>Thành phố</label><input class="input-field" id="f-city" placeholder="TP.HCM"></div>
+        <div class="field-group"><label>Nguồn Lead</label><select class="input-field" id="f-source"><option value="fb">Facebook Ads</option><option value="web">Web/UTM</option><option value="zalo">Zalo OA</option></select></div>
+        <div class="field-group" style="grid-column:1/-1"><label>Tour quan tâm</label><input class="input-field" id="f-tour" placeholder="Tour Đà Nẵng 5N4Đ"></div>
+        <div class="field-group"><label>Chiến dịch</label><input class="input-field" id="f-campaign" placeholder="Hè 2026 — Đà Nẵng"></div>
+        <div class="field-group"><label>Trạng thái</label><select class="input-field" id="f-status"><option value="new">Mới nhập</option><option value="contact">Đang tư vấn</option><option value="booked">Đã đặt cọc</option><option value="done">Hoàn thành</option><option value="cancel">Hủy</option></select></div>
+        <div class="field-group"><label>Ngân sách</label><input class="input-field" id="f-budget" placeholder="10-15tr"></div>
+        <div class="field-group"><label>Số khách</label><input class="input-field" id="f-pax" type="number" min="1" placeholder="2"></div>
+        <div class="field-group" style="grid-column:1/-1"><label>Ghi chú tư vấn</label><textarea class="input-field" id="f-note" style="min-height:64px" placeholder="Ghi chú..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="document.getElementById('customer-modal').classList.remove('open')">Hủy</button>
+      <button class="btn btn-primary" id="modal-save-btn" onclick="saveCustomer()"><i class="ti ti-check"></i> Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="modal-overlay" id="confirm-modal" onclick="this.classList.remove('open')">
+  <div class="modal-box confirm-modal">
+    <div class="modal-head"><h3 style="color:var(--danger)"><i class="ti ti-alert-triangle" style="margin-right:6px"></i>Xác nhận xóa</h3><button class="btn btn-sm btn-icon" onclick="document.getElementById('confirm-modal').classList.remove('open')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body"><p style="font-size:13px;color:var(--text-secondary)">Bạn có chắc muốn xóa khách hàng <b id="confirm-name"></b>? Thao tác này không thể hoàn tác.</p></div>
+    <div class="modal-foot">
+      <button class="btn" onclick="document.getElementById('confirm-modal').classList.remove('open')">Hủy</button>
+      <button class="btn btn-danger" onclick="deleteCustomer()"><i class="ti ti-trash"></i> Xóa</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════
+   SUPABASE CONFIG — đọc từ localStorage để không hardcode credentials
+   Lần đầu mở: nhập URL + anon key vào dialog cấu hình
+   localStorage keys: crm_sb_url, crm_sb_key
+════════════════════════════════════════ */
+const SUPABASE_CONFIG = {
+  url:     localStorage.getItem('crm_sb_url')     || '',
+  anonKey: localStorage.getItem('crm_sb_key')     || '',
+};
+
+let _sb = null;
+function getSB() {
+  if (_sb) return _sb;
+  if (!SUPABASE_CONFIG.anonKey || SUPABASE_CONFIG.anonKey.includes('YOUR_ANON_KEY')) return null;
+  try {
+    _sb = window.supabase?.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    return _sb;
+  } catch { return null; }
+}
+const IS_LIVE = () => !!getSB();
+
+/* ── API wrappers ── */
+const API = {
+  async fetchLeads() {
+    const sb = getSB(); if (!sb) return null;
+    /* JOIN: call_logs + lead_attachments (riêng với image_attachments TEXT[]) */
+    const { data, error } = await sb
+      .from('leads')
+      .select(`*, call_logs(id,type,note,created_at), lead_attachments(id,label,drive_url,thumbnail_url)`)
+      .order('created_at', { ascending: false });
+    if (error) { console.error('[Supabase] fetchLeads:', error.message); return null; }
+    return data;
+  },
+
+  async upsertLead(lead) {
+    const sb = getSB(); if (!sb) return null;
+    /* Loại bỏ joined data + client-only fields trước khi upsert */
+    const { id, callLog, lead_attachments, call_logs, image_attachments, ...fields } = lead;
+    /* Đảm bảo full_name luôn được ghi (trigger sẽ sync → name) */
+    if (fields.name && !fields.full_name) fields.full_name = fields.name;
+    const { data, error } = id
+      ? await sb.from('leads').update(fields).eq('id', id).select().single()
+      : await sb.from('leads').insert(fields).select().single();
+    if (error) { console.error('[Supabase] upsertLead:', error.message); return null; }
+    return data;
+  },
+
+  async deleteLead(id) {
+    const sb = getSB(); if (!sb) return false;
+    const { error } = await sb.from('leads').delete().eq('id', id);
+    if (error) { console.error('[Supabase] deleteLead:', error.message); return false; }
+    return true;
+  },
+
+  async addCallLog(leadId, type, note) {
+    const sb = getSB(); if (!sb) return null;
+    const { data, error } = await sb
+      .from('call_logs')
+      .insert({ lead_id: leadId, type, note })
+      .select().single();
+    if (error) { console.error('[Supabase] addCallLog:', error.message); return null; }
+    return data;
+  },
+
+  async updateDriveUrl(leadId, url) {
+    const sb = getSB(); if (!sb) return false;
+    const { error } = await sb.from('leads').update({ google_drive_url: url }).eq('id', leadId);
+    return !error;
+  },
+
+  async createDriveFolder(customerId, customerName) {
+    const sb = getSB(); if (!sb) return null;
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${SUPABASE_CONFIG.url}/functions/v1/google-drive/create-folder`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token || SUPABASE_CONFIG.anonKey}`,
+      },
+      body: JSON.stringify({ customer_id: String(customerId), customer_name: customerName }),
+    });
+    return res.ok ? await res.json() : null;
+  },
+
+  async uploadFileToDrive(folderId, fileName, base64, mimeType, label, leadId) {
+    const sb = getSB(); if (!sb) return null;
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${SUPABASE_CONFIG.url}/functions/v1/google-drive/upload-file`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token || SUPABASE_CONFIG.anonKey}`,
+      },
+      body: JSON.stringify({ folder_id: folderId, file_name: fileName, file_base64: base64, mime_type: mimeType, label, lead_id: leadId }),
+    });
+    return res.ok ? await res.json() : null;
+  },
+
+  subscribeLeads(callback) {
+    const sb = getSB(); if (!sb) return null;
+    return sb
+      .channel('leads-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, callback)
+      .subscribe();
+  },
+};
+
+/* ── Sync từ Supabase ── */
+async function syncFromSupabase() {
+  if (!IS_LIVE()) {
+    console.info('[CRM] Chạy chế độ mock (chưa cấu hình Supabase anon key)');
+    showSyncBadge('mock');
+    return;
+  }
+  showSyncBadge('loading');
+  const rows = await API.fetchLeads();
+  if (!rows) { showSyncBadge('error'); return; }
+
+  /* Map Supabase rows → CRM data model
+     leads.name     = CRM display name (CRM Extensions v1.0)
+     leads.source   = CRM granular source ('fb'|'web'|'zalo')
+     leads.status   = CRM status ('new'|'contact'|'booked'|'done'|'cancel')
+                      OR Next.js status ('contacted'|'consulting'|'deposited'|'converted'|'lost')
+  */
+  MOCK_CUSTOMERS = rows.map(r => ({
+    id:               r.id,
+    name:             r.name || r.full_name || 'Không rõ',
+    phone:            r.phone,
+    email:            r.email ?? '',
+    source:           r.source ?? (r.lead_source === 'fb_ads' ? 'fb' : r.lead_source === 'web_ads' ? 'web' : 'web'),
+    campaign:         r.campaign ?? '',
+    tour:             r.tour ?? '',
+    status:           normalizeStatus(r.status),
+    score:            r.score ?? 50,
+    city:             r.city ?? '',
+    budget:           r.budget ?? '',
+    pax:              r.pax ?? 1,
+    note:             r.note ?? '',
+    utm:              r.utm ?? null,
+    google_drive_url: r.google_drive_url ?? '',
+    /* lead_attachments = related table join (rich attachment data) */
+    image_attachments: (r.lead_attachments ?? []).map(a => ({
+      url:           a.thumbnail_url || a.drive_url || 'https://i.pravatar.cc/120',
+      label:         a.label ?? 'Tài liệu',
+      drive_url:     a.drive_url,
+      thumbnail_url: a.thumbnail_url,
+      db_id:         a.id,
+    })),
+    callLog: (r.call_logs ?? [])
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .map(l => ({ ts: new Date(l.created_at).toLocaleString('vi-VN'), type: l.type, note: l.note, db_id: l.id })),
+  }));
+
+  showSyncBadge('live');
+  renderCustomers();
+  renderOverviewStats();
+  console.info(`[CRM] Synced ${MOCK_CUSTOMERS.length} leads từ Supabase`);
+
+  API.subscribeLeads(() => {
+    syncFromSupabase();
+    toast('Dữ liệu vừa cập nhật realtime', 'success');
+  });
+}
+
+/* Map Next.js status values → CRM status values for display */
+function normalizeStatus(s) {
+  const map = { contacted: 'contact', consulting: 'contact', deposited: 'booked', converted: 'done', lost: 'cancel' };
+  return map[s] || s || 'new';
+}
+
+function showSyncBadge(state) {
+  const badge = document.getElementById('sync-badge');
+  if (!badge) return;
+  const cfg = {
+    live:    { text: '✓ Supabase Live',  color: 'var(--success)' },
+    mock:    { text: '● Mock Data',      color: 'var(--warn)' },
+    loading: { text: '⏳ Đang kết nối…', color: 'var(--text-secondary)' },
+    error:   { text: '✗ Lỗi kết nối',   color: 'var(--danger)' },
+  };
+  const c = cfg[state] || cfg.mock;
+  badge.textContent = c.text;
+  badge.style.color = c.color;
+}
+
+/* ── DATA ── */
+let MOCK_CUSTOMERS = [
+  {id:'mock-1',name:'Nguyễn Thị Lan',phone:'0912 345 678',email:'lan.nguyen@gmail.com',source:'fb',campaign:'Hè 2026 — Đà Nẵng',tour:'Tour Đà Nẵng 5N4Đ',status:'booked',score:88,city:'TP.HCM',budget:'12-15tr',pax:4,note:'Gia đình 4 người, muốn phòng view biển. Đã cọc 3tr.',utm:null,google_drive_url:'https://drive.google.com/drive/folders/1Abc123xyz',image_attachments:[{url:'https://i.pravatar.cc/120?img=1',label:'Hộ chiếu'},{url:'https://i.pravatar.cc/120?img=2',label:'CCCD'}],callLog:[]},
+  {id:'mock-2',name:'Trần Văn Minh',phone:'0987 654 321',email:'minh.tran@yahoo.com',source:'web',campaign:'Landing Page Tết 2026',tour:'Tour Nhật Bản 8N7Đ',status:'contact',score:72,city:'Hà Nội',budget:'30-40tr',pax:2,note:'Cặp đôi, đang so sánh giá. Cần follow-up sau 3 ngày.',utm:'utm_source=google&utm_medium=cpc',google_drive_url:'',image_attachments:[{url:'https://i.pravatar.cc/120?img=4',label:'Hộ chiếu'}],callLog:[{ts:'2026-05-28 10:30',type:'call',note:'Khách đang cân nhắc, hẹn gọi lại thứ 2.'}]},
+  {id:'mock-3',name:'Lê Thị Hương',phone:'0978 111 222',email:'huong.le@hotmail.com',source:'fb',campaign:'Phú Quốc Siêu rẻ',tour:'Tour Phú Quốc 4N3Đ',status:'new',score:55,city:'Cần Thơ',budget:'8-10tr',pax:2,note:'Lead mới từ FB, chưa liên hệ.',utm:null,google_drive_url:'',image_attachments:[],callLog:[]},
+  {id:'mock-4',name:'Phạm Đức Thành',phone:'0901 777 888',email:'thanh.pham@gmail.com',source:'web',campaign:'Google Ads Korea Tour',tour:'Tour Hàn Quốc 7N6Đ',status:'booked',score:95,city:'Đà Nẵng',budget:'25-30tr',pax:3,note:'Nhóm 3 bạn trẻ, đã cọc 5tr, hồ sơ đầy đủ.',utm:'utm_source=google_ads&utm_medium=cpc',google_drive_url:'https://drive.google.com/drive/folders/3Ghi789rst',image_attachments:[{url:'https://i.pravatar.cc/120?img=6',label:'Hộ chiếu'},{url:'https://i.pravatar.cc/120?img=7',label:'CCCD'},{url:'https://i.pravatar.cc/120?img=8',label:'Ảnh cá nhân'},{url:'https://i.pravatar.cc/120?img=9',label:'Visa Hàn Quốc'}],callLog:[{ts:'2026-05-29 09:15',type:'call',note:'Kiểm tra hộ chiếu — còn hạn đến 2028.'}]},
+];
+let nextId = 5;
+
+const AVATAR_COLORS=['#0F4C81','#c2410c','#0369a1','#065f46','#6b21a8','#b45309','#be123c'];
+const STATUS_MAP={new:['s-new','Mới nhập'],contact:['s-contact','Đang tư vấn'],booked:['s-booked','Đã đặt cọc'],done:['s-done','Hoàn thành'],cancel:['s-cancel','Hủy']};
+const SOURCE_MAP={fb:`<span class="source-badge badge-fb"><i class="ti ti-brand-facebook"></i> Facebook</span>`,web:`<span class="source-badge badge-web"><i class="ti ti-world"></i> Web/UTM</span>`,zalo:`<span class="source-badge badge-zalo"><i class="ti ti-message"></i> Zalo</span>`};
+
+let currentFilter='all',currentSearch='',currentCustId=null,drawerImages=[],sortKey=null,sortDir=1,modalMode='add';
+let statusChartInst=null,sourceChartInst=null;
+
+const $=id=>document.getElementById(id);
+function getInitials(n){const p=(n||'').trim().split(' ');return((p[0]||'')[0]+(p[p.length-1]||'')[0]).toUpperCase()}
+function avatarColor(id){const code=typeof id==='string'?id.split('').reduce((a,c)=>a+c.charCodeAt(0),0):id;return AVATAR_COLORS[code%AVATAR_COLORS.length]}
+function scoreColor(s){return s>80?'var(--success)':s>50?'var(--warn)':'var(--danger)'}
+
+function toast(msg,type=''){
+  const icons={success:'ti-circle-check',error:'ti-alert-circle',warn:'ti-alert-triangle'};
+  const el=document.createElement('div');
+  el.className='toast '+type;
+  el.innerHTML=`<i class="ti ${icons[type]||'ti-info-circle'}"></i><span>${msg}</span>`;
+  $('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+
+function showTab(tab){
+  ['overview','customers','reports','config'].forEach(t=>$('tab-'+t).style.display=t===tab?'block':'none');
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.tab===tab));
+  const time=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
+  const titles={overview:['Tổng quan Chiến dịch','· Cập nhật lúc '+time],customers:['Danh sách Khách hàng','· '+MOCK_CUSTOMERS.length+' khách hàng'],reports:['Báo cáo & Thống kê','· Dữ liệu T5/2026'],config:['Cấu hình Webhook & Email','· 3 nguồn đang kết nối']};
+  const[t,s]=titles[tab]||[tab,''];
+  $('topbar-title').childNodes[0].textContent=t+' ';$('topbar-sub').textContent=s;
+  if(tab==='customers')renderCustomers();
+  if(tab==='reports')renderReports();
+  if(tab==='overview')renderOverviewStats();
+}
+
+function renderOverviewStats(){
+  const total=MOCK_CUSTOMERS.length;
+  const booked=MOCK_CUSTOMERS.filter(c=>c.status==='booked').length;
+  $('m-total').textContent=total;
+  $('m-cvr').textContent=total?Math.round(booked/total*100)+'%':'0%';
+  const fb=MOCK_CUSTOMERS.filter(c=>c.source==='fb').length;
+  const web=MOCK_CUSTOMERS.filter(c=>c.source==='web').length;
+  const zalo=MOCK_CUSTOMERS.filter(c=>c.source==='zalo').length;
+  $('source-dist').innerHTML=[['badge-fb','#1a56db','ti-brand-facebook','Facebook Ads',fb],['badge-web','var(--accent)','ti-world','Web/UTM',web],['badge-zalo','#0369a1','ti-message','Zalo OA',zalo]].map(([bc,col,ic,lbl,cnt])=>`<div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span class="source-badge ${bc}"><i class="ti ${ic}"></i> ${lbl}</span><span style="font-size:12px;font-weight:600">${cnt} lead</span></div><div class="score-bar"><div class="score-fill" style="width:${total?Math.round(cnt/total*100):0}%;background:${col}"></div></div></div>`).join('');
+  const pipe=[['s-new','Mới nhập','new'],['s-contact','Đang tư vấn','contact'],['s-booked','Đã đặt cọc','booked'],['s-done','Hoàn thành','done'],['s-cancel','Hủy','cancel']];
+  $('pipeline-list').innerHTML=pipe.map(([cls,lbl,st])=>`<div style="display:flex;align-items:center;justify-content:space-between"><span class="status-badge ${cls}" onclick="showTab('customers');setFilterByStatus('${st}')">${lbl}</span><span style="font-size:13px;font-weight:600">${MOCK_CUSTOMERS.filter(c=>c.status===st).length} KH</span></div>`).join('');
+}
+
+function setFilterByStatus(st){currentFilter=st;document.querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('on'));renderCustomers()}
+
+function renderCustomers(){
+  let list=MOCK_CUSTOMERS.filter(c=>{
+    const mf=currentFilter==='all'||(currentFilter==='fb'&&c.source==='fb')||(currentFilter==='web'&&c.source==='web')||(currentFilter==='booked'&&c.status==='booked')||(currentFilter==='new'&&c.status==='new')||(currentFilter==='contact'&&c.status==='contact');
+    const q=currentSearch;
+    const ms=!q||[c.name,c.phone,c.email,c.tour].some(v=>v&&v.toLowerCase().includes(q));
+    return mf&&ms;
+  });
+  if(sortKey)list=[...list].sort((a,b)=>{const va=typeof a[sortKey]==='string'?a[sortKey].toLowerCase():a[sortKey];const vb=typeof b[sortKey]==='string'?b[sortKey].toLowerCase():b[sortKey];return va<vb?-sortDir:va>vb?sortDir:0});
+  $('record-count').textContent=list.length+' / '+MOCK_CUSTOMERS.length+' KH';
+  $('empty-state').style.display=list.length?'none':'block';
+  $('customer-tbody').innerHTML=list.map(c=>{
+    const[scls,]=STATUS_MAP[c.status]||['s-new'];
+    const sc=scoreColor(c.score);
+    return`<tr>
+      <td style="padding-left:16px"><div class="name-cell"><div class="avatar-lg" style="background:${avatarColor(c.id)}">${getInitials(c.name)}</div><div><div style="font-weight:600;font-size:13px;cursor:pointer;color:var(--brand)" onclick="openCustomer('${c.id}')">${c.name}</div><div style="font-size:11px;color:var(--text-secondary)">${c.email}</div></div></div></td>
+      <td style="color:var(--text-secondary)">${c.phone}</td>
+      <td>${SOURCE_MAP[c.source]||c.source}</td>
+      <td><span style="font-size:12px">${c.tour}</span></td>
+      <td><select class="status-select" onchange="quickStatusChange('${c.id}',this.value)">${Object.entries(STATUS_MAP).map(([k,[,l]])=>`<option value="${k}"${c.status===k?' selected':''}>${l}</option>`).join('')}</select></td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div class="score-bar" style="width:60px"><div class="score-fill" style="width:${c.score}%;background:${sc}"></div></div><span style="font-size:11.5px;font-weight:600;color:${sc}">${c.score}</span></div></td>
+      <td><div style="display:flex;align-items:center;gap:5px"><span style="font-size:11px;color:var(--text-secondary)">${c.image_attachments.length} ảnh</span>${c.google_drive_url?`<i class="ti ti-brand-google-drive" style="color:#1B72E8" title="Có Drive"></i>`:`<i class="ti ti-folder-x" style="color:var(--text-secondary)" title="Chưa có Drive"></i>`}</div></td>
+      <td><div style="display:flex;gap:4px"><button class="btn btn-sm" onclick="openCustomer('${c.id}')" title="Xem"><i class="ti ti-eye"></i></button><button class="btn btn-sm" onclick="openEditFromTable('${c.id}')" title="Sửa"><i class="ti ti-edit"></i></button><button class="btn btn-sm" style="color:var(--danger)" onclick="confirmDeleteById('${c.id}')" title="Xóa"><i class="ti ti-trash"></i></button></div></td>
+    </tr>`;
+  }).join('');
+}
+
+function quickStatusChange(id,newStatus){const c=MOCK_CUSTOMERS.find(x=>x.id==id);if(c){c.status=newStatus;renderCustomers();renderOverviewStats();if(IS_LIVE())API.upsertLead({id,status:newStatus}).catch(()=>{});toast('Cập nhật: '+STATUS_MAP[newStatus][1],'success')}}
+function filterCustomers(val){currentSearch=val.toLowerCase();renderCustomers()}
+function setFilter(el,f){currentFilter=f;document.querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');renderCustomers()}
+function sortBy(key){if(sortKey===key)sortDir*=-1;else{sortKey=key;sortDir=1}renderCustomers()}
+
+function exportCSV(){
+  const cols=['ID','Tên','SĐT','Email','Nguồn','Tour','Trạng thái','Score','Thành phố','Ngân sách','Số KH','Ghi chú'];
+  const rows=MOCK_CUSTOMERS.map(c=>[c.id,c.name,c.phone,c.email,c.source,c.tour,STATUS_MAP[c.status]?.[1]||c.status,c.score,c.city,c.budget,c.pax,c.note].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv='﻿'+[cols.join(','),...rows].join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='NamNganTravel_Leads_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  toast('Đã xuất '+MOCK_CUSTOMERS.length+' KH ra CSV','success');
+}
+
+function openAddModal(){
+  modalMode='add';currentCustId=null;
+  $('modal-title').textContent='Thêm khách hàng mới';
+  $('modal-save-btn').innerHTML='<i class="ti ti-plus"></i> Thêm';
+  ['f-name','f-phone','f-email','f-city','f-tour','f-campaign','f-budget','f-note'].forEach(id=>$(id).value='');
+  $('f-pax').value='2';$('f-source').value='fb';$('f-status').value='new';
+  $('customer-modal').classList.add('open');
+}
+function openEditModal(){const c=MOCK_CUSTOMERS.find(x=>x.id==currentCustId);if(!c)return;fillModalForm(c);$('customer-modal').classList.add('open')}
+function openEditFromTable(id){currentCustId=id;const c=MOCK_CUSTOMERS.find(x=>x.id==id);if(!c)return;fillModalForm(c);$('customer-modal').classList.add('open')}
+function fillModalForm(c){
+  modalMode='edit';$('modal-title').textContent='Sửa: '+c.name;$('modal-save-btn').innerHTML='<i class="ti ti-check"></i> Cập nhật';
+  $('f-name').value=c.name;$('f-phone').value=c.phone;$('f-email').value=c.email;$('f-city').value=c.city;
+  $('f-source').value=c.source;$('f-tour').value=c.tour;$('f-campaign').value=c.campaign;
+  $('f-status').value=c.status;$('f-budget').value=c.budget;$('f-pax').value=c.pax;$('f-note').value=c.note;
+}
+async function saveCustomer(){
+  const name=$('f-name').value.trim(),phone=$('f-phone').value.trim();
+  if(!name||!phone){toast('Vui lòng nhập Họ tên và SĐT','error');return}
+  if(modalMode==='add'){
+    const newId='local-'+nextId++;
+    const newC={id:newId,name,full_name:name,phone,email:$('f-email').value.trim(),source:$('f-source').value,campaign:$('f-campaign').value.trim(),tour:$('f-tour').value.trim(),status:$('f-status').value,score:Math.floor(Math.random()*30)+50,city:$('f-city').value.trim(),budget:$('f-budget').value.trim(),pax:parseInt($('f-pax').value)||1,note:$('f-note').value.trim(),utm:null,google_drive_url:'',image_attachments:[],callLog:[]};
+    MOCK_CUSTOMERS.unshift(newC);
+    if(IS_LIVE()){const row=await API.upsertLead(newC);if(row){newC.id=row.id;newC.full_name=row.full_name;}}
+    toast('Đã thêm '+name,'success');
+  } else {
+    const c=MOCK_CUSTOMERS.find(x=>x.id==currentCustId);
+    if(c){Object.assign(c,{name,full_name:name,phone,email:$('f-email').value.trim(),source:$('f-source').value,campaign:$('f-campaign').value.trim(),tour:$('f-tour').value.trim(),status:$('f-status').value,city:$('f-city').value.trim(),budget:$('f-budget').value.trim(),pax:parseInt($('f-pax').value)||1,note:$('f-note').value.trim()});if(IS_LIVE())await API.upsertLead(c);}
+    toast('Đã cập nhật '+name,'success');
+    if($('customer-overlay').classList.contains('open'))openCustomer(currentCustId);
+  }
+  $('customer-modal').classList.remove('open');renderCustomers();renderOverviewStats();
+}
+function closeModal(e){if(e.target===$('customer-modal'))$('customer-modal').classList.remove('open')}
+
+function confirmDelete(){const c=MOCK_CUSTOMERS.find(x=>x.id==currentCustId);if(!c)return;$('confirm-name').textContent=c.name;$('confirm-modal').classList.add('open')}
+function confirmDeleteById(id){currentCustId=id;confirmDelete()}
+async function deleteCustomer(){
+  if(IS_LIVE())await API.deleteLead(currentCustId);
+  MOCK_CUSTOMERS=MOCK_CUSTOMERS.filter(x=>x.id!=currentCustId);
+  $('confirm-modal').classList.remove('open');$('customer-overlay').classList.remove('open');
+  renderCustomers();renderOverviewStats();toast('Đã xóa khách hàng','warn');
+}
+
+function openCustomer(id){
+  const c=MOCK_CUSTOMERS.find(x=>x.id==id);if(!c)return;
+  currentCustId=id;drawerImages=[...c.image_attachments];
+  const av=$('drawer-avatar');av.textContent=getInitials(c.name);av.style.background=avatarColor(c.id);
+  $('drawer-name').textContent=c.name;
+  $('drawer-meta').textContent=c.phone+' · '+c.email+' · '+c.city;
+  const[,slbl]=STATUS_MAP[c.status]||['','N/A'];
+  const utmRow=c.utm?`<div class="info-row" style="grid-column:1/-1"><div class="info-lbl">UTM Parameters</div><div class="info-val" style="font-size:11px;font-family:monospace;word-break:break-all">${c.utm}</div></div>`:'';
+  const logs=(c.callLog||[]);
+  const callLogHtml=logs.length?logs.map(l=>`<div class="tl-item"><div class="tl-icon" style="background:${l.type==='call'?'var(--brand-pale)':'var(--success-pale)'}"><i class="ti ${l.type==='call'?'ti-phone':'ti-mail'}" style="font-size:11px;color:${l.type==='call'?'var(--brand)':'var(--success)'}"></i></div><div class="tl-content"><div class="tl-title">${l.type==='call'?'Gọi Điện':'Gửi email'}</div><div class="tl-meta">${l.ts}</div><div class="tl-note">${l.note}</div></div></div>`).join(''):`<div style="font-size:12px;color:var(--text-secondary);padding:8px 0">Chưa có lịch sử tương tác.</div>`;
+  $('drawer-body').innerHTML=`
+    <div class="info-grid">
+      <div class="info-row"><div class="info-lbl">Nguồn Lead</div><div class="info-val">${SOURCE_MAP[c.source]||c.source}</div></div>
+      <div class="info-row"><div class="info-lbl">Chiến dịch</div><div class="info-val" style="font-size:12px">${c.campaign}</div></div>
+      <div class="info-row"><div class="info-lbl">Tour quan tâm</div><div class="info-val">${c.tour}</div></div>
+      <div class="info-row"><div class="info-lbl">Trạng thái</div><div class="info-val">${slbl}</div></div>
+      <div class="info-row"><div class="info-lbl">Ngân sách</div><div class="info-val">${c.budget}</div></div>
+      <div class="info-row"><div class="info-lbl">Số khách</div><div class="info-val">${c.pax} người</div></div>
+      ${utmRow}
+      <div class="info-row" style="grid-column:1/-1"><div class="info-lbl">Ghi chú tư vấn</div><div class="info-val" style="font-size:12px;font-weight:400">${c.note}</div></div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:12.5px;font-weight:600"><i class="ti ti-photo" style="font-size:14px;margin-right:4px;color:var(--brand)"></i>Hình ảnh hồ sơ đính kèm</div>
+        <span style="font-size:11px;color:var(--text-secondary)" id="img-count-${id}">${drawerImages.length} tài liệu</span>
+      </div>
+      <div class="upload-zone" id="upload-zone-${id}" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event,'${id}')" onclick="document.getElementById('file-input-${id}').click()">
+        <i class="ti ti-cloud-upload"></i>
+        <div style="font-size:12.5px;font-weight:500;color:var(--text-secondary)">Kéo thả hoặc click để tải lên</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:2px">Hộ chiếu, CCCD, Visa · JPG, PNG, PDF</div>
+        <input type="file" id="file-input-${id}" multiple accept="image/*,.pdf" style="display:none" onchange="handleFileInput(event,'${id}')">
+      </div>
+      <div class="thumb-grid" id="thumb-grid-${id}">${buildThumbs(drawerImages,id)}</div>
+    </div>
+    <div>
+      <div style="font-size:12.5px;font-weight:600;margin-bottom:8px"><i class="ti ti-brand-google-drive" style="font-size:14px;margin-right:4px;color:#1B72E8"></i>Thư mục Google Drive</div>
+      <div class="drive-row">
+        <i class="ti ti-link" style="font-size:14px;color:var(--text-secondary)"></i>
+        <input class="drive-input" id="drive-input-${id}" value="${c.google_drive_url||''}" placeholder="Dán link thư mục Google Drive...">
+        <button class="btn btn-sm" onclick="saveDriveLink('${id}')"><i class="ti ti-device-floppy"></i> Lưu</button>
+        ${c.google_drive_url
+          ?`<a href="${c.google_drive_url}" target="_blank" rel="noopener" class="btn btn-primary btn-sm"><i class="ti ti-external-link"></i> Mở Drive</a>`
+          :`<button class="btn btn-success btn-sm" onclick="autoCreateDriveFolder('${id}')"><i class="ti ti-brand-google-drive"></i> Tạo Drive</button>`
+        }
+      </div>
+    </div>
+    <div>
+      <div style="font-size:12.5px;font-weight:600;margin-bottom:8px"><i class="ti ti-clock-record" style="font-size:14px;margin-right:4px;color:var(--accent)"></i>Lịch sử tương tác</div>
+      <div class="timeline" id="call-log-${id}">${callLogHtml}</div>
+      <div id="call-form-${id}" class="call-form">
+        <textarea class="input-field" id="call-note-${id}" style="resize:none;height:64px" placeholder="Nội dung cuộc gọi / ghi chú..."></textarea>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-primary btn-sm" style="flex:1" onclick="addLog('${id}','call')"><i class="ti ti-phone"></i> Ghi cuộc gọi</button>
+          <button class="btn btn-sm" style="flex:1" onclick="addLog('${id}','email')"><i class="ti ti-mail"></i> Ghi email</button>
+          <button class="btn btn-sm" onclick="toggleCallForm('${id}')"><i class="ti ti-x"></i></button>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;padding-top:4px;border-top:.5px solid var(--border)">
+      <button class="btn btn-primary" style="flex:1" onclick="sendEmail('${id}')"><i class="ti ti-mail"></i> Gửi email xác nhận</button>
+      <button class="btn" style="flex:1" onclick="toggleCallForm('${id}')"><i class="ti ti-phone"></i> Ghi chú cuộc gọi</button>
+    </div>`;
+  $('customer-overlay').classList.add('open');
+}
+
+function buildThumbs(images,custId){return images.map((img,i)=>`<div class="thumb" title="${img.label}"><img src="${img.url}" alt="${img.label}" loading="lazy"><div class="thumb-label">${img.label}</div><div class="thumb-del" onclick="removeImage(${i},'${custId}')"><i class="ti ti-x" style="font-size:9px"></i></div></div>`).join('')}
+function removeImage(idx,custId){drawerImages.splice(idx,1);const c=MOCK_CUSTOMERS.find(x=>x.id==custId);if(c)c.image_attachments=[...drawerImages];refreshThumbs(custId);toast('Đã xóa ảnh','warn')}
+function handleFileInput(event,id){Array.from(event.target.files).forEach(f=>{const reader=new FileReader();reader.onload=e=>{drawerImages.push({url:e.target.result,label:f.name.replace(/\.[^.]+$/,'').substring(0,20)});const c=MOCK_CUSTOMERS.find(x=>x.id==id);if(c)c.image_attachments=[...drawerImages];refreshThumbs(id);if(IS_LIVE()){handleDriveUpload(id,f,e.target.result)}};reader.readAsDataURL(f)});toast('Đã tải '+event.target.files.length+' tài liệu','success')}
+function handleDrop(event,id){event.preventDefault();$('upload-zone-'+id).classList.remove('drag-over');Array.from(event.dataTransfer.files).filter(f=>f.type.startsWith('image/')||f.type==='application/pdf').forEach(f=>{const reader=new FileReader();reader.onload=e=>{drawerImages.push({url:e.target.result,label:f.name.substring(0,15)});const c=MOCK_CUSTOMERS.find(x=>x.id==id);if(c)c.image_attachments=[...drawerImages];refreshThumbs(id);if(IS_LIVE())handleDriveUpload(id,f,e.target.result)};reader.readAsDataURL(f)})}
+function refreshThumbs(id){const grid=$('thumb-grid-'+id),counter=$('img-count-'+id);if(grid)grid.innerHTML=buildThumbs(drawerImages,id);if(counter)counter.textContent=drawerImages.length+' tài liệu'}
+async function saveDriveLink(id){
+  const val=$('drive-input-'+id)?.value||'';
+  const c=MOCK_CUSTOMERS.find(x=>x.id==id);
+  if(c)c.google_drive_url=val;
+  if(IS_LIVE())await API.updateDriveUrl(id,val);
+  toast('Đã lưu link Drive','success');renderCustomers();
+}
+function closeDrawer(e){if(e.target===$('customer-overlay'))$('customer-overlay').classList.remove('open')}
+
+function toggleCallForm(id){const form=$('call-form-'+id);if(form){form.classList.toggle('open');if(form.classList.contains('open'))$('call-note-'+id)?.focus()}}
+async function addLog(id,type){
+  const noteEl=$('call-note-'+id);const note=noteEl?.value.trim();
+  if(!note){toast('Vui lòng nhập nội dung','error');return}
+  const c=MOCK_CUSTOMERS.find(x=>x.id==id);if(!c)return;
+  if(!c.callLog)c.callLog=[];
+  const now=new Date().toLocaleString('vi-VN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  c.callLog.unshift({ts:now,type,note});
+  if(IS_LIVE())await API.addCallLog(id,type,note);
+  noteEl.value='';toggleCallForm(id);openCustomer(id);
+  toast('Đã ghi '+(type==='call'?'cuộc gọi':'email'),'success');
+}
+function sendEmail(id){
+  const c=MOCK_CUSTOMERS.find(x=>x.id==id);if(!c)return;
+  if(!c.callLog)c.callLog=[];
+  const now=new Date().toLocaleString('vi-VN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  c.callLog.unshift({ts:now,type:'email',note:'Gửi email xác nhận đặt cọc tự động.'});
+  openCustomer(id);toast('Email xác nhận đã gửi tới '+c.email,'success');
+}
+
+function switchConfigTab(el,t){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');$('cfg-webhook').style.display=t==='webhook'?'flex':'none';$('cfg-email').style.display=t==='email'?'flex':'none'}
+function toggleNotif(){const b=$('notif-count');b.style.display=b.style.display==='none'?'flex':'none'}
+
+function renderReports(){
+  const total=MOCK_CUSTOMERS.length;if(!total)return;
+  const booked=MOCK_CUSTOMERS.filter(c=>c.status==='booked').length;
+  const avg=Math.round(MOCK_CUSTOMERS.reduce((a,c)=>a+c.score,0)/total);
+  const comp=MOCK_CUSTOMERS.filter(c=>c.image_attachments.length>0&&c.google_drive_url).length;
+  $('rp-total').textContent=total;$('rp-booked').textContent=booked;
+  $('rp-booked-pct').innerHTML=`<i class="ti ti-trending-up" style="font-size:11px"></i> ${Math.round(booked/total*100)}% tỷ lệ đặt cọc`;
+  $('rp-avg-score').textContent=avg;$('rp-complete').textContent=comp;
+  if(statusChartInst)statusChartInst.destroy();
+  statusChartInst=new Chart($('statusChart'),{type:'doughnut',data:{labels:['Mới nhập','Tư vấn','Đặt cọc','Hoàn thành','Hủy'],datasets:[{data:['new','contact','booked','done','cancel'].map(s=>MOCK_CUSTOMERS.filter(c=>c.status===s).length),backgroundColor:['#1B6DB5','#B45309','#0B7A4E','#6b21a8','#B91C1C'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}}}});
+  if(sourceChartInst)sourceChartInst.destroy();
+  sourceChartInst=new Chart($('sourceChart'),{type:'doughnut',data:{labels:['Facebook','Web/UTM','Zalo OA'],datasets:[{data:['fb','web','zalo'].map(s=>MOCK_CUSTOMERS.filter(c=>c.source===s).length),backgroundColor:['#1a56db','#F47B20','#0369a1'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}}}});
+  const top=[...MOCK_CUSTOMERS].sort((a,b)=>b.score-a.score).slice(0,5);
+  $('top-leads-list').innerHTML=`<table><thead><tr><th style="padding-left:12px">Khách hàng</th><th>Tour</th><th>Nguồn</th><th>Score</th><th>Trạng thái</th></tr></thead><tbody>${top.map(c=>{const[scls,slbl]=STATUS_MAP[c.status]||['s-new','Mới'];const sc=scoreColor(c.score);return`<tr><td style="padding-left:12px"><div class="name-cell"><div class="avatar-lg" style="background:${avatarColor(c.id)}">${getInitials(c.name)}</div><span style="font-weight:600">${c.name}</span></div></td><td style="font-size:12px">${c.tour}</td><td>${SOURCE_MAP[c.source]||c.source}</td><td><span style="font-weight:700;color:${sc}">${c.score}</span></td><td><span class="status-badge ${scls}">${slbl}</span></td></tr>`}).join('')}</tbody></table>`;
+}
+
+async function autoCreateDriveFolder(id) {
+  const c = MOCK_CUSTOMERS.find(x => x.id == id);
+  if (!c) return;
+  const btn = document.querySelector(`button[onclick="autoCreateDriveFolder('${id}')"]`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> Đang tạo…'; }
+  const result = await API.createDriveFolder(id, c.name);
+  if (result?.folder_url) {
+    c.google_drive_url = result.folder_url;
+    const input = $('drive-input-'+id);
+    if (input) input.value = result.folder_url;
+    toast('Đã tạo thư mục Drive: ' + c.name, 'success');
+    openCustomer(id);
+  } else {
+    toast('Chưa cấu hình Google Drive API hoặc Supabase chưa live', 'warn');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-brand-google-drive"></i> Tạo Drive'; }
+  }
+}
+
+async function handleDriveUpload(id, file, base64) {
+  const c = MOCK_CUSTOMERS.find(x => x.id == id);
+  if (!c?.google_drive_url || !IS_LIVE()) return;
+  const folderId = c.google_drive_url.split('/').pop();
+  const result = await API.uploadFileToDrive(folderId, file.name, base64, file.type, file.name.replace(/\.[^.]+$/, '').substring(0, 20), id);
+  if (result?.drive_url) {
+    toast('Đã upload lên Drive: ' + file.name, 'success');
+    const lastImg = c.image_attachments[c.image_attachments.length - 1];
+    if (lastImg && result.thumbnail_url) lastImg.url = result.thumbnail_url;
+  }
+}
+
+window.addEventListener('load', () => {
+  // Hiển thị dialog cấu hình nếu chưa có credentials
+  if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) {
+    const dialog = document.createElement('div');
+    dialog.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+    dialog.innerHTML = `
+      <div style="background:#fff;border-radius:12px;padding:28px;width:400px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+        <h2 style="margin:0 0 4px;font-size:16px;color:#1A1A2E">⚙️ Cấu hình Supabase</h2>
+        <p style="margin:0 0 16px;font-size:12px;color:#666">Nhập thông tin từ Supabase Dashboard → Settings → API</p>
+        <label style="display:block;font-size:11px;font-weight:600;color:#444;margin-bottom:4px">Project URL</label>
+        <input id="cfg-url" placeholder="https://xxx.supabase.co" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:6px;padding:8px 10px;font-size:12px;margin-bottom:10px;outline:none">
+        <label style="display:block;font-size:11px;font-weight:600;color:#444;margin-bottom:4px">Anon Key</label>
+        <input id="cfg-key" placeholder="eyJhbGci..." style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:6px;padding:8px 10px;font-size:12px;margin-bottom:16px;outline:none">
+        <button onclick="
+          const u=document.getElementById('cfg-url').value.trim();
+          const k=document.getElementById('cfg-key').value.trim();
+          if(!u||!k){alert('Vui lòng nhập đủ thông tin');return;}
+          localStorage.setItem('crm_sb_url',u);
+          localStorage.setItem('crm_sb_key',k);
+          location.reload();
+        " style="width:100%;background:#005BAA;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer">
+          Lưu & Kết nối
+        </button>
+        <p style="margin:12px 0 0;font-size:10px;color:#aaa;text-align:center">Thông tin được lưu trong localStorage trình duyệt này, không chia sẻ</p>
+      </div>`;
+    document.body.appendChild(dialog);
+    return;
+  }
+
+  const ctx = $('leadChart'); if (!ctx) return;
+  new Chart(ctx, {type:'line',data:{labels:['1/5','5/5','8/5','10/5','13/5','15/5','17/5','20/5','22/5','25/5','27/5','30/5'],datasets:[{label:'Facebook Ads',data:[8,12,9,15,11,18,14,22,19,25,20,28],borderColor:'#1a56db',backgroundColor:'rgba(26,86,219,.08)',tension:.4,fill:true,borderWidth:2,pointRadius:3},{label:'Web/UTM',data:[3,5,4,7,5,8,6,10,8,12,9,14],borderColor:'#F47B20',backgroundColor:'rgba(244,123,32,.08)',tension:.4,fill:true,borderWidth:2,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10,padding:12}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10},maxTicksLimit:5},beginAtZero:true}}}});
+  renderOverviewStats();
+  syncFromSupabase();
+});
+</script>
+</body>
+</html>

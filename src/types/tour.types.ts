@@ -48,3 +48,8 @@ export interface TourSchedule {
 }
 
 export type TourScheduleStatus = 'open' | 'full' | 'cancelled' | 'completed'
+
+export type TourSearchResult = Tour & {
+  min_price: number
+  schedules: TourSchedule[]
+}

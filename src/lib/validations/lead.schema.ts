@@ -4,8 +4,10 @@ export const LeadSourceEnum = z.enum([
   'popup', 'chat', 'fb_ads', 'web_ads', 'organic', 'other',
 ])
 
+// 6 giá trị gốc + 4 giá trị từ CRM standalone (migration 20250530000003)
 export const LeadStatusEnum = z.enum([
   'new', 'contacted', 'consulting', 'deposited', 'converted', 'lost',
+  'contact', 'booked', 'done', 'cancel',
 ])
 
 export const LeadFormSchema = z.object({

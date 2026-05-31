@@ -4,6 +4,7 @@ import { Clock, MapPin, Star, Shield, Users, Award, HeadphonesIcon, ChevronRight
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import TourSearchBar from '@/components/search/TourSearchBar'
+import SearchResults from '@/components/search/SearchResults'
 import ChatWidget from '@/components/chat/ChatWidget'
 import AutoPopup from '@/components/chat/AutoPopup'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
@@ -334,6 +335,9 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* ── SEARCH RESULTS (client, hiện khi user tìm kiếm) ── */}
+        <SearchResults />
 
         {/* ── STATS BAR ────────────────────────────────────── */}
         <section className="bg-brand-blue text-white py-3 sm:py-4 mt-0 sm:mt-8">
