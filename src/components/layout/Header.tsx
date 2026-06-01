@@ -5,12 +5,13 @@ import Link from 'next/link'
 import { Menu, X, Phone, MapPin } from 'lucide-react'
 
 const NAV_LINKS = [
-  { label: 'Trang chủ',    href: '/' },
-  { label: 'Tour trong nước', href: '/tours?category=domestic' },
-  { label: 'Tour quốc tế',    href: '/tours?category=international' },
+  { label: 'Trang chủ',       href: '/' },
+  { label: 'Tất cả tour',     href: '/tours' },
+  { label: 'Tour trong nước', href: '/tour-trong-nuoc' },
+  { label: 'Tour quốc tế',    href: '/tour-nuoc-ngoai' },
   { label: 'Lịch khởi hành', href: '/lich-khoi-hanh' },
-  { label: 'Tin tức',        href: '/tin-tuc' },
-  { label: 'Liên hệ',        href: '/lien-he' },
+  { label: 'Tin tức',         href: '/tin-tuc' },
+  { label: 'Liên hệ',         href: '/lien-he' },
 ]
 
 export default function Header() {

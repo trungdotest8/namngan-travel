@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { slugify } from '@/lib/utils'
+import { deriveCountry } from '@/lib/tour-country'
 import type { TourScheduleStatus } from '@/types'
 
 // ── Internal types ────────────────────────────────────────────────────────────
@@ -225,7 +226,15 @@ export async function syncSeaStarSchedules(): Promise<SyncResult> {
         .eq('sheets_row_id', r.tourExternalId)
         .maybeSingle()
 
+      const derivedCountry = deriveCountry(r.destName)
+      const countryValue = derivedCountry !== 'Khác' ? derivedCountry : null
+
       if (existing) {
+        await supabase
+          .from('tours')
+          .update({ synced_at: new Date().toISOString(), country: countryValue })
+          .eq('id', existing.id)
+          .is('country', null)   // chỉ cập nhật nếu chưa có country
         await supabase
           .from('tours')
           .update({ synced_at: new Date().toISOString() })
@@ -243,7 +252,7 @@ export async function syncSeaStarSchedules(): Promise<SyncResult> {
       if (byName) {
         await supabase
           .from('tours')
-          .update({ sheets_row_id: r.tourExternalId, synced_at: new Date().toISOString() })
+          .update({ sheets_row_id: r.tourExternalId, synced_at: new Date().toISOString(), country: countryValue })
           .eq('id', byName.id)
         continue
       }
@@ -255,6 +264,7 @@ export async function syncSeaStarSchedules(): Promise<SyncResult> {
         slug: `${r.tourSlug}-ss-${r.destId}`,
         destination: r.destName,
         category: 'nước ngoài',
+        country: countryValue,
         is_active: true,
         sheets_row_id: r.tourExternalId,
         synced_at: new Date().toISOString(),

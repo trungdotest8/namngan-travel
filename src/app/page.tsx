@@ -398,7 +398,7 @@ export default function HomePage() {
             <SectionHeader
               tag="Du lịch quốc tế"
               title="Tour Nước Ngoài"
-              href="/tours?category=international"
+              href="/tour-nuoc-ngoai"
             />
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
               {INTL_TOURS.map((tour) => (
@@ -407,7 +407,7 @@ export default function HomePage() {
             </div>
             <div className="mt-6 text-center sm:hidden">
               <Link
-                href="/tours?category=international"
+                href="/tour-nuoc-ngoai"
                 className="inline-flex items-center gap-1 text-sm font-semibold text-brand-blue hover:underline"
               >
                 Xem tất cả tour quốc tế <ChevronRight size={15} />
@@ -455,7 +455,7 @@ export default function HomePage() {
             <SectionHeader
               tag="Du lịch trong nước"
               title="Tour Việt Nam"
-              href="/tours?category=domestic"
+              href="/tour-trong-nuoc"
             />
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
               {DOMESTIC_TOURS.map((tour) => (
@@ -464,7 +464,7 @@ export default function HomePage() {
             </div>
             <div className="mt-6 text-center sm:hidden">
               <Link
-                href="/tours?category=domestic"
+                href="/tour-trong-nuoc"
                 className="inline-flex items-center gap-1 text-sm font-semibold text-brand-blue hover:underline"
               >
                 Xem tất cả tour trong nước <ChevronRight size={15} />

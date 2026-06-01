@@ -36,11 +36,11 @@ export default function Footer() {
           <h3 className="text-white font-semibold mb-4">Tour nổi bật</h3>
           <ul className="space-y-2 text-sm">
             {[
-              ['Nhật Bản — Tokyo · Osaka', '/tours/du-lich-nhat-ban-tokyo-osaka'],
-              ['Hàn Quốc — Seoul · Jeju', '/tours/du-lich-han-quoc-seoul'],
-              ['Thái Lan — Bangkok · Pattaya', '/tours/du-lich-thai-lan-bangkok-pattaya'],
-              ['Đà Nẵng — Hội An', '/tours/du-lich-da-nang-hoi-an'],
-              ['Phú Quốc — Đảo ngọc', '/tours/du-lich-phu-quoc'],
+              ['Nhật Bản — Tokyo · Osaka', '/tour-nuoc-ngoai?country=NH%E1%BA%ACT+B%E1%BA%A2N'],
+              ['Hàn Quốc — Seoul · Jeju', '/tour-nuoc-ngoai?country=H%C3%80N+QU%E1%BB%90C'],
+              ['Thái Lan — Bangkok · Pattaya', '/tour-nuoc-ngoai?country=TH%C3%81I+LAN'],
+              ['Đà Nẵng — Hội An', '/tour-trong-nuoc'],
+              ['Phú Quốc — Đảo ngọc', '/tour-trong-nuoc'],
             ].map(([label, href]) => (
               <li key={href}>
                 <Link href={href} className="hover:text-white hover:underline transition-colors">

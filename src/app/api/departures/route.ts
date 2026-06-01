@@ -11,6 +11,8 @@ const GetQuerySchema = z.object({
   status:      z.enum(['open', 'full', 'cancelled', 'completed']).optional(),
   limit:       z.coerce.number().int().min(1).max(200).default(50),
   tour_id:     z.string().uuid().optional(),
+  category:    z.string().optional(),
+  country:     z.string().optional(),
 })
 
 const SyncTriggerSchema = z.object({
@@ -27,17 +29,25 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { destination, month, status, limit, tour_id } = parsed.data
+    const { destination, month, status, limit, tour_id, category, country } = parsed.data
     const supabase = await createClient()
+
+    // Khi có category/country filter dùng !inner join để lọc ở DB level
+    const useInner = !!(category || country)
+    const joinType  = useInner ? 'tours!inner' : 'tours'
 
     let query = supabase
       .from('tour_schedules')
-      .select('*, tour:tours(id, code, name, slug, destination, category)')
+      .select(`*, tour:${joinType}(id, code, name, slug, destination, category, country)`)
       .order('departure_date', { ascending: true })
       .limit(limit)
 
     if (status)   query = query.eq('status', status)
     if (tour_id)  query = query.eq('tour_id', tour_id)
+
+    // Filter DB-level via embedded table (chỉ hoạt động với !inner join)
+    if (category) query = (query as any).eq('tours.category', category)
+    if (country)  query = (query as any).eq('tours.country', country)
 
     // Filter theo tháng: departure_date trong khoảng YYYY-MM-01 .. YYYY-MM-31
     if (month) {
@@ -49,13 +59,15 @@ export async function GET(request: Request) {
     const { data, error } = await query
     if (error) throw error
 
-    // Filter theo destination sau khi join (Supabase chưa hỗ trợ filter trên joined column dễ)
-    const schedules = destination
-      ? (data ?? []).filter(
-          (s: { tour: { destination?: string | null } | null }) =>
-            s.tour?.destination?.toLowerCase().includes(destination.toLowerCase())
-        )
-      : (data ?? [])
+    // destination filter post-fetch (cần substring match)
+    type ScheduleRow = { tour: { destination?: string | null; category?: string | null; country?: string | null } | null }
+    let schedules: ScheduleRow[] = data ?? []
+
+    if (destination) {
+      schedules = schedules.filter(s =>
+        s.tour?.destination?.toLowerCase().includes(destination.toLowerCase())
+      )
+    }
 
     return NextResponse.json({ schedules, total: schedules.length })
   } catch (err) {

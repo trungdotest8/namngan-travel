@@ -17,3 +17,9 @@ export type {
   FileUploadResult,
   UploadStatus,
 } from './customer-profile.types'
+export type {
+  TourPdfIndex,
+  PdfSearchResult,
+  ItineraryResponse,
+} from './pdf-index.types'
+export type { DriveFolderRegistry, DriveFolderType } from './drive-registry.types'

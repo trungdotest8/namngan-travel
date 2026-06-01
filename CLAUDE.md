@@ -55,7 +55,7 @@ Text Muted:    #666666
 | Child | Module | Folder chính | API Route | Store |
 |-------|--------|-------------|-----------|-------|
 | A | Search Engine UI | `src/components/search/` | `/api/search` | `search.store.ts` |
-| B | Lịch khởi hành (Google Sheets) | `src/components/calendar/` | `/api/departures` | `calendar.store.ts` |
+| B | Lịch khởi hành (SeaStar) + PDF Indexer | `src/components/calendar/` | `/api/departures` + `/api/pdf-index` | `calendar.store.ts` |
 | C | Lịch trình chi tiết (Google Docs) | `src/components/itinerary/` | `/api/itinerary/[tourId]` | local state |
 | **D** | **Hồ sơ khách hàng** (ảnh upload + Google Drive link) | `src/components/customer-profile/` | `/api/customer-profile` | `customer-profile.store.ts` |
 | E | Chat Widget & Lead | `src/components/chat/` | `/api/leads` | `chat.store.ts` |
@@ -125,6 +125,25 @@ SearchCriteria.passengers  → { adults: number; children: number; infants: numb
 CustomerProfile.image_attachments → string[] (Supabase Storage URLs)
 CustomerProfile.google_drive_url  → string | null
 CustomerProfile.drive_synced      → boolean
+
+// ── Child B — TourPdfIndex (bảng tour_pdf_index) ─────────────
+// Crawler: crawlAndIndexTourPDF.js (Node.js Cron job, KHÔNG phải Next.js API)
+// Fault Isolation: crawler chạy hoàn toàn tách biệt, lỗi crawler ≠ lỗi frontend
+TourPdfIndex.tour_code         → string | null (liên kết mềm với tours.code)
+TourPdfIndex.original_url      → string UNIQUE (check trùng lặp)
+TourPdfIndex.google_drive_link → string | null (iframe src cho Child C embed)
+TourPdfIndex.google_drive_id   → string | null (build URL thay thế)
+TourPdfIndex.extracted_text    → string | null (GIN FTS index — Child A search)
+TourPdfIndex.summary           → string | null (300 ký tự đầu — preview)
+
+// ── Child C — ItineraryResponse (từ /api/itinerary/[tourId]) ──
+ItineraryResponse.structured → TourItineraryDay[] | null  (từ tours.itinerary JSONB)
+ItineraryResponse.pdf        → { drive_link, drive_id, title, summary } | null
+// Ưu tiên: structured nếu có → PDF embed nếu không có JSON → 404 nếu cả hai null
+
+// ── Child A — PdfSearchResult (từ /api/pdf-index?q=...) ───────
+PdfSearchResult.rank         → number (ts_rank PostgreSQL FTS)
+// Kết hợp search tours + search tour_pdf_index.extracted_text song song
 ```
 
 ### Bảng → TypeScript type mapping
@@ -139,6 +158,7 @@ CustomerProfile.drive_synced      → boolean
 | `bookings`       | `Booking`        | `src/types/booking.types.ts`  |
 | `articles`       | `Article`        | `src/types/news.types.ts`     |
 | `leads`          | `Lead`           | `src/types/lead.types.ts`     |
+| `tour_pdf_index` | `TourPdfIndex`   | `src/types/pdf-index.types.ts` |
 
 ---
 
@@ -233,6 +253,8 @@ RESEND_FROM_EMAIL           ← VD: noreply@namngantravel.com
 ADMIN_NOTIFY_EMAIL          ← Email nhận thông báo nội bộ
 MODA_API_KEY                (khi tích hợp Moda)
 N8N_WEBHOOK_URL             (khi tích hợp n8n)
+GOOGLE_DRIVE_FOLDER_ID      ← ID thư mục Drive chứa PDF lịch trình (crawlAndIndexTourPDF)
+GOOGLE_SA_JSON              ← Service Account JSON (stringify) — crawler dùng để upload Drive
 ```
 
 ---
@@ -246,8 +268,9 @@ src/
 │   ├── (admin)/           ← CMS internal
 │   └── api/
 │       ├── search/        ← Child A
-│       ├── departures/    ← Child B
-│       ├── itinerary/     ← Child C
+│       ├── departures/    ← Child B (SeaStar sync)
+│       ├── pdf-index/     ← Child B (PDF FTS search)  ← MỚI
+│       ├── itinerary/     ← Child C (✅ dùng tour_pdf_index)  ← MỚI
 │       ├── customer-profile/ ← Child D  ← MỚI
 │       ├── leads/         ← Child E
 │       ├── cms/           ← Child F
@@ -269,7 +292,8 @@ src/
 │   ├── supabase/          ← client + server + admin
 │   ├── google/            ← sheets + docs
 │   ├── email/             ← Resend client + templates  ← MỚI
-│   ├── integrations/      ← n8n, moda, slot mở
+│   ├── integrations/      ← n8n, moda, seastar, slot mở
+│   ├── crawlers/          ← crawlAndIndexTourPDF.js (Node.js, chạy ngoài Next.js)  ← MỚI
 │   └── validations/       ← Zod schemas
 ├── store/
 │   ├── ui.store.ts        ← toast, modal, loading
@@ -303,112 +327,130 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | Child | Module | Trạng thái | Files chính |
 |-------|--------|-----------|-------------|
 | A | Search UI | ✅ v2.0.0 | `src/components/search/TourSearchBar.tsx` + `SearchResults.tsx` |
-| B | Lịch khởi hành (SeaStar) | ✅ v1.1.0 | `src/lib/integrations/seastar.ts` + `src/app/api/departures/route.ts` + `src/store/calendar.store.ts` |
-| C | Itinerary Docs | ✅ Ghép xong | `src/components/itinerary/TourDetail.tsx` |
+| B | Lịch khởi hành (SeaStar) + PDF Indexer | ✅ v1.2.0 | `src/lib/integrations/seastar.ts` + migrations #6+#7+#8 |
+| C | Itinerary + PDF Embed | ✅ v2.0.0 | `TourDetail.tsx` + `PdfViewer.tsx` + `/api/itinerary/[tourId]` + `/tour/[tourId]/page.tsx` |
 | D | Hồ sơ khách | ✅ v1.1.0 | `src/components/customer-profile/CustomerProfileDrawer.tsx` + `CustomerTable.tsx` |
 | E | Chat & Lead | ✅ v2.0.0 | `src/components/chat/ChatWidget.tsx` + `AutoPopup.tsx` |
 | F | CMS / RSS | ✅ v1.2.0 | `src/components/cms/ArticleFeed.tsx` |
-| G | DB Schema | ✅ cloud 4 applied + migration #5 local | `supabase/migrations/` — **Supabase: indjoegnsvcteaozmgrg** |
-| CRM | Admin CRM Platform | ✅ v1.2.0 | `src/app/(admin)/crm/page.tsx` + `public/crm-standalone.html` |
+| G | DB Schema | ✅ **8/8 cloud** | `supabase/migrations/` — Supabase: indjoegnsvcteaozmgrg |
+| CRM | Admin CRM | ✅ v1.2.0 | `src/app/(admin)/crm/page.tsx` |
 | HOME | Trang chủ | ✅ v1.0.0 | `src/app/page.tsx` |
-| LICH | Trang Lịch Khởi Hành | ✅ v1.0.0 | `src/app/lich-khoi-hanh/page.tsx` — 3-bước filter + Realtime auto-refresh |
-| EDGE | Supabase Edge Functions | ✅ deployed | `supabase/functions/fb-webhook/` + `google-drive/` |
+| LICH | Lịch Khởi Hành | ✅ v1.1.0 | `src/app/lich-khoi-hanh/page.tsx` |
+| TOUR | Tour Detail Page | ✅ v1.0.0 | `src/app/tour/[tourId]/page.tsx` |
+| SLUG | /tours/[slug] redirect | ✅ v1.0.0 | `src/app/tours/[slug]/page.tsx` — lookup slug → redirect /tour/{uuid} |
+| TRONG | Tour Trong Nước | ✅ v1.1.0 | `src/app/tour-trong-nuoc/page.tsx` — **8 tours seeded, có dữ liệu** |
+| NGOAI | Tour Nước Ngoài | ✅ v1.0.0 | `src/app/tour-nuoc-ngoai/page.tsx` + `InternationalToursClient.tsx` |
+| EDGE | Edge Functions | ✅ deployed | `supabase/functions/fb-webhook/` + `google-drive/` |
+| PDF | PDF Crawler & Indexer | ✅ v1.3.0 | `/api/pdf-index` + migration #6+#7 |
+| CRON | Vercel Cron | ✅ v1.0.0 | `/api/cron/crawl-pdf` + `vercel.json` |
+| UI | Atom Components | ✅ | `Button.tsx` + `Card.tsx` + `NotificationPanel.tsx` + `DepartureCalendar.tsx` + `TourListingCard.tsx` |
 
 ### Trạng thái API Routes
 
 | Route | Method | Trạng thái | Ghi chú |
 |-------|--------|-----------|---------|
-| `/api/leads` | POST | ✅ | Zod + Supabase + luồng kép Email+Realtime |
+| `/api/leads` | POST | ✅ | Zod + luồng kép Email+Realtime |
 | `/api/cms` | GET/POST | ✅ | filter source_type, status, limit |
-| `/api/customer-profile` | GET/PATCH | ✅ | Auth: x-admin-secret; createAdminClient |
-| `/api/search` | POST | ✅ | createClient (RLS); TourSearchResult từ @/types |
-| `/api/notifications` | POST | ✅ | Auth: x-webhook-secret; triggerNotification() |
-| `/api/webhooks/n8n` | POST | ✅ | Auth: x-webhook-secret; new_lead_notify |
-| `/api/webhooks/moda` | POST | ✅ | Auth: x-webhook-secret; luồng kép nếu confirmed |
-| `/api/departures` | GET | ✅ | Public RLS; filter dest/month/status/tour_id; join tours |
-| `/api/departures` | POST | ✅ | Auth: x-webhook-secret; sync + broadcast 'schedule-sync' channel |
-| `/api/itinerary/[tourId]` | GET | ❌ | Child C API chưa có |
-| Edge: `fb-webhook` | POST/GET | ✅ deployed | Web Crypto API |
-| Edge: `google-drive` | POST | ✅ deployed | base64url JWT fix |
+| `/api/customer-profile` | GET/PATCH | ✅ | Auth: x-admin-secret |
+| `/api/search` | POST | ✅ | category filter ✅ |
+| `/api/notifications` | POST | ✅ | Auth: x-webhook-secret |
+| `/api/webhooks/n8n` | POST | ✅ | Auth: x-webhook-secret |
+| `/api/webhooks/moda` | POST | ✅ | luồng kép nếu confirmed |
+| `/api/departures` | GET | ✅ | **v1.1**: category/country dùng `!inner` join DB-level (fix post-fetch bug) |
+| `/api/departures` | POST | ✅ | SeaStar sync + broadcast |
+| `/api/itinerary/[tourId]` | GET | ✅ | Cache 5min; 404 nếu tour chưa có lịch trình |
+| `/api/pdf-index` | GET | ✅ | FTS RPC search_pdf_index() |
+| `/api/cron/crawl-pdf` | GET | ✅ | Auth kép CRON_SECRET / x-webhook-secret |
+| `/api/admin/setup-drive-folders` | POST | ✅ | Auth: x-admin-secret |
+| Edge: `fb-webhook` | POST/GET | ✅ deployed | |
+| Edge: `google-drive` | POST | ✅ deployed | ⚠️ Secrets chưa set → cần set thủ công |
 
 ### Zustand Stores
 
 ```
-useUIStore              (store/ui.store.ts)               ✅ toast, modal, loading
+useUIStore              (store/ui.store.ts)               ✅
 useNotificationStore    (store/notification.store.ts)      ✅ admin realtime
-useSearchStore          (store/search.store.ts)            ✅ results: TourSearchResult[]
-useCalendarStore        (store/calendar.store.ts)          ✅ Child B — fetchSchedules(), schedules[]
-useChatStore            (store/chat.store.ts)              ✅ Child E
-useCmsStore             (store/cms.store.ts)               ✅ Child F
-useCustomerProfileStore (store/customer-profile.store.ts)  ✅ Child D + CRM admin
+useSearchStore          (store/search.store.ts)            ✅
+useCalendarStore        (store/calendar.store.ts)          ✅ fetchSchedules()
+useChatStore            (store/chat.store.ts)              ✅
+useCmsStore             (store/cms.store.ts)               ✅
+useCustomerProfileStore (store/customer-profile.store.ts)  ✅
 ```
 
-### Data Contract — Delta phiên này
+### Data Contract — Delta phiên #14
 
 ```typescript
-// ── Realtime channel MỚI ──────────────────────────────────────────
-// channel: 'schedule-sync'  event: 'updated'
-// payload: { synced: number, at: string }
-// Sender:  POST /api/departures (sau syncSeaStarSchedules)
-// Listener: src/app/lich-khoi-hanh/page.tsx → fetchSchedules() + toast
+// ── Domestic tours seeded (8 tours + 24 schedules) ───────────────────────────
+// codes: NN-TN-001 → NN-TN-008, category='trong nước', country='VIỆT NAM'
+// Schedules: 2026-06-20 / 2026-07-05 / 2026-07-19 (3 lịch/tour)
+// Scripts: scripts/seed-domestic-tours.mjs (idempotent, chạy lại được)
 
-// ── /lich-khoi-hanh page ─────────────────────────────────────────
-// COUNTRY_MAP: 17 quốc gia/vùng → keyword matching từ tour.destination
-// 3-bước filter: country → destination → month (client-side)
-// seatsLeft = seats_total - seats_booked; isFull khi ≤ 0 || status='full'
+// ── /api/departures GET — BUGFIX ─────────────────────────────────────────────
+// category/country filter trước đây dùng post-fetch (bị giới hạn bởi limit=50)
+// Nay dùng !inner join + .eq('tours.category', category) → filter ở DB level
+// (query as any).eq(...) để bypass TypeScript vì supabase-js chưa type embedded filter
+
+// ── /tours/[slug]/page.tsx — MỚI ─────────────────────────────────────────────
+// Server Component; lookup tours by slug → redirect('/tour/{id}')
+// notFound() nếu slug không tồn tại hoặc is_active=false
+
+// ── Footer.tsx — FIX ─────────────────────────────────────────────────────────
+// 5 links "Tour nổi bật" trước dùng /tours/du-lich-* (không tồn tại)
+// Nay: Nhật Bản/Hàn Quốc/Thái Lan → /tour-nuoc-ngoai?country=...
+//      Đà Nẵng/Phú Quốc → /tour-trong-nuoc
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
-GitHub  : https://github.com/trungdotest8/namngan-travel  (branch: main)
-          ✅ commit 91e0956 — auto-refresh /lich-khoi-hanh
-Vercel  : 2 projects tồn tại:
-          • dulichtrungquoc (prj_Rk46Y9...) — project cũ, cần xóa
-          • namngan-travel  (prj_so9Cap...) — ĐÃ LINK folder local ← DÙNG CÁI NÀY
-          ⚠️ namngan-travel chưa có env vars → cần chạy script push env
-          ⚠️ Cần kết nối domain namngantravel.site
-Supabase: ✅ indjoegnsvcteaozmgrg — 5 migrations local (4 applied cloud)
-          ⚠️ Migration #5 (seastar_index) chưa push: supabase db push
-.env.local: ✅ Đã restore đầy đủ (Supabase ✅, Resend ✅, Google APIs ✅)
-            WEBHOOK_SECRET = NEXT_PUBLIC_ADMIN_SECRET = namngan-secret-2025
-Edge Fn : ✅ fb-webhook + google-drive deployed
-          ⚠️ Secrets chưa set: FB_APP_SECRET, ZALO_OA_SECRET,
-             GOOGLE_SERVICE_ACCOUNT_JSON, DRIVE_PARENT_FOLDER_ID, FB_VERIFY_TOKEN
-Resend  : re_gZSD1XRc_... — onboarding@resend.dev (tạm)
-          ⚠️ Verify domain → đổi RESEND_FROM_EMAIL
-SeaStar : ✅ 313 synced — Realtime broadcast sau mỗi sync
-SĐT     : 0932 611 933 (main) · 0774 623 514 (Zalo)
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main)
+Vercel  : namngan-travel — ✅ 15/15 env vars đã set (confirmed phiên này)
+Supabase: indjoegnsvcteaozmgrg — ✅ 8/8 migrations cloud
+Edge Fn : ✅ deployed — ⚠️ Secrets GOOGLE_SERVICE_ACCOUNT_JSON + DRIVE_PARENT_FOLDER_ID
+          CHƯA SET trên Edge Fn (supabase CLI cần SUPABASE_ACCESS_TOKEN)
+          → Set thủ công: Supabase Dashboard > Project Settings > Edge Functions > Secrets
+          → Sau khi set: POST /api/admin/setup-drive-folders (header x-admin-secret)
+Vercel Cron: "0 2 * * *" /api/cron/crawl-pdf — ✅ CRON_SECRET đã có trên Vercel
+.env.local : ✅ đầy đủ; N8N_WEBHOOK_URL vẫn trống
+Resend  : onboarding@resend.dev (tạm) — ⚠️ cần verify domain namngantravel.com
+SeaStar : ✅ 41 tours nước ngoài + 8 tours trong nước = 49 tours tổng
 ```
 
 ### Files ưu tiên cao chưa tồn tại
 
 ```
-# CẦN LÀM SAU (ưu tiên giảm dần)
-src/components/notifications/NotificationPanel.tsx   ← wire Realtime → addNotification store
-src/components/ui/Button.tsx + Card.tsx              ← atom components
-src/components/calendar/DepartureCalendar.tsx        ← UI widget lịch cho trang chủ
+# CẦN BUILD (feature mới user yêu cầu):
+src/app/tours/page.tsx            ← /tours?category=international|domestic
+                                    User yêu cầu: namngan-travel.vercel.app/tours?category=international
+                                    Link từ homepage, load đầy đủ dữ liệu, filter by category
 
-# CHỜ API
-src/app/api/itinerary/[tourId]/route.ts              ← Child C API chưa có
+# CẦN CHẠY (thủ công 1 lần):
+Supabase Dashboard > Edge Fn Secrets  ← set GOOGLE_SERVICE_ACCOUNT_JSON + DRIVE_PARENT_FOLDER_ID
+POST /api/admin/setup-drive-folders   ← sau khi set secrets
+
+# CÓ THỂ TIẾP:
+thumbnail_url cho 8 tour trong nước  ← hiện null → hiển thị placeholder
+/api/departures?country= debug       ← country filter qua !inner trả 0 (cần verify PostgREST syntax)
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Push env vars lên Vercel `namngan-travel`** — chạy script loop trong Terminal (`while IFS='=' read...`) → sau đó `vercel --prod` để redeploy → test `https://namngan-travel.vercel.app/lich-khoi-hanh`
-2. **`supabase db push`** — apply migration #5 (`seastar_index.sql`) lên cloud → performance upsert
-3. **Tạo `NotificationPanel.tsx`** — subscribe `admin-notifications` channel → `addNotification()` từ `notification.store.ts`
+1. **Tạo `/tours` page** — `src/app/tours/page.tsx` — Server Component + Client filter tabs (`?category=international|domestic`) — user đã yêu cầu rõ, link từ Header/homepage
+2. **Debug `/api/departures?country=`** — country filter qua `!inner` join trả 0; kiểm tra PostgREST syntax `.eq('tours.country', ...)` có hoạt động không
+3. **Set Edge Fn secrets thủ công** — Supabase Dashboard > Project Settings > Edge Functions > Secrets → GOOGLE_SERVICE_ACCOUNT_JSON + DRIVE_PARENT_FOLDER_ID → sau đó POST /api/admin/setup-drive-folders
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
-| 2026-06-01 | Handover #9 — Lịch Khởi Hành + Realtime | /lich-khoi-hanh page ✅; Realtime auto-refresh; 2 Vercel projects phát hiện; .env.local restored |
-| 2026-05-31 | Handover #8 — Child B SeaStar Crawler | syncSeaStarSchedules() ✅ 313 records; api/departures GET+POST; calendar.store; CRM sync button |
-| 2026-05-30 | Handover #7 — Code Review + Security Fixes | 10 findings fixed: auth guards, RLS migration #4, LeadStatus CRM, HTML escape |
-| 2026-05-30 | Handover #6 — Search + Deploy | api/search ✅; SearchResults component; Edge Fn deployed+fixed; Vercel live |
-| 2026-05-30 | Handover #5 — CRM + Edge Functions | Migration #3 CRM extensions; fb-webhook + google-drive; CRM standalone v3.0 |
-| 2026-05-30 | Handover #4 — Deploy Session | page.tsx trang chủ ✅; GitHub ✅; Supabase cloud ✅; Resend ✅ |
-| 2026-05-30 | Handover #3 | tsc CLEAN, cập nhật delta Child D + CRM |
-| 2026-05-30 | Session 2 — Child D + CRM | Child D xong: Drawer upload + Drive, CustomerTable, store, api/customer-profile |
-| 2026-05-30 | Session 1 | Xác nhận repo: Child A,C,E,F ghép xong; luồng kép api/leads ✅ |
+| 2026-06-02 | Handover #14 — Bug Fixes + Domestic Data | /tours/[slug] redirect ✅; 8 tour trong nước seeded ✅; departures !inner fix ✅; Footer links fix ✅ |
+| 2026-06-01 | Handover #13 — Tour Categories + 2 Listing Pages | Tour.country backfill 41/41 ✅; /tour-trong-nuoc ✅; /tour-nuoc-ngoai + country tabs ✅; TourListingCard ✅; Drive folder registry ✅; migration #8 cloud ✅ |
+| 2026-06-01 | Handover #12 — Secrets + Migration Fix | .env.local SA JSON fix 1 dòng ✅; migration #7 search_pdf_index RPC ✅; setup-secrets.mjs ✅ |
+| 2026-06-01 | Handover #11 — Tour Detail + PdfViewer + Cron | /tour/[tourId] ✅; PdfViewer.tsx ✅; /api/cron/crawl-pdf ✅; vercel.json crons ✅; migration #6 cloud ✅ |
+| 2026-06-01 | Handover #10 — PDF Crawler Integration | migration #6 tour_pdf_index ✅; /api/itinerary/[tourId] ✅; /api/pdf-index FTS ✅; TourPdfIndex type ✅ |
+| 2026-06-01 | Handover #9 — Lịch Khởi Hành + Realtime | /lich-khoi-hanh ✅; Realtime auto-refresh; NotificationPanel + Button + Card + DepartureCalendar ✅ |
+| 2026-05-31 | Handover #8 — Child B SeaStar Crawler | syncSeaStarSchedules() 313 records; api/departures; calendar.store |
+| 2026-05-30 | Handover #7 — Code Review + Security | 10 findings fixed |
+| 2026-05-30 | Handover #6 — Search + Deploy | api/search; Edge Fn; Vercel live |
+| 2026-05-30 | Session 1–5 | Child A–G ghép xong; CRM; leads luồng kép ✅ |
+

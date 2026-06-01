@@ -13,6 +13,7 @@ export interface Tour {
   thumbnail_url: string | null
   gallery_urls:  string[] | null
   category:      string | null    // "trong nước" | "nước ngoài"
+  country:       string | null    // e.g. "NHẬT BẢN", "HÀN QUỐC", "VIỆT NAM"
   is_active:     boolean
   sheets_row_id: string | null
   synced_at:     string | null    // ISO 8601

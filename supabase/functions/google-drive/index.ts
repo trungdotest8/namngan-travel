@@ -55,10 +55,11 @@ serve(async (req: Request) => {
 
   const body = await req.json().catch(() => ({})) as Record<string, string>;
 
-  if (action === "create-folder") return await handleCreateFolder(body);
-  if (action === "upload-file")   return await handleUploadFile(body);
+  if (action === "create-folder")          return await handleCreateFolder(body);
+  if (action === "upload-file")            return await handleUploadFile(body);
+  if (action === "create-tour-pdf-folder") return await handleCreateTourPdfFolder(body);
 
-  return json({ error: "Unknown action. Use /create-folder or /upload-file" }, 404);
+  return json({ error: "Unknown action. Use /create-folder, /upload-file, or /create-tour-pdf-folder" }, 404);
 });
 
 /* ────────────────────────────────────────
@@ -282,6 +283,68 @@ function json(data: unknown, status = 200): Response {
     status,
     headers: { ...CORS, "Content-Type": "application/json" },
   });
+}
+
+/* ────────────────────────────────────────
+   ACTION 3: Tạo thư mục tour PDF (có idempotency qua drive_folder_registry)
+   Input:  { folder_name, parent_folder_id, path_key, folder_type }
+   Output: { drive_id, drive_url, path_key, already_existed }
+──────────────────────────────────────── */
+async function handleCreateTourPdfFolder(body: Record<string, string>) {
+  const { folder_name, parent_folder_id, path_key, folder_type } = body;
+  if (!folder_name || !path_key || !folder_type) {
+    return json({ error: "folder_name, path_key và folder_type là bắt buộc" }, 400);
+  }
+
+  // Idempotency: kiểm tra đã có trong registry chưa
+  const { data: existing } = await supabase
+    .from("drive_folder_registry")
+    .select("drive_id, drive_url")
+    .eq("path_key", path_key)
+    .maybeSingle();
+
+  if (existing) {
+    return json({ drive_id: existing.drive_id, drive_url: existing.drive_url, path_key, already_existed: true });
+  }
+
+  const token      = await getAccessToken();
+  const parentId   = parent_folder_id || PARENT_FOLDER_ID;
+
+  const res = await fetch("https://www.googleapis.com/drive/v3/files", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name:     folder_name,
+      mimeType: "application/vnd.google-apps.folder",
+      parents:  parentId ? [parentId] : [],
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error("[Drive create-tour-pdf-folder error]", err);
+    return json({ error: "Drive API error", detail: err }, 502);
+  }
+
+  const folder = await res.json() as DriveFile;
+  await setPublicReadPermission(folder.id, token);
+
+  const drive_url = `https://drive.google.com/drive/folders/${folder.id}`;
+
+  // Ghi vào registry
+  const { error: dbErr } = await supabase.from("drive_folder_registry").insert({
+    path_key,
+    folder_type,
+    drive_id:    folder.id,
+    drive_url,
+    parent_path: body.parent_path ?? null,
+  });
+
+  if (dbErr) {
+    console.warn("[Supabase insert drive_folder_registry error]", dbErr.message);
+  }
+
+  return json({ drive_id: folder.id, drive_url, path_key, already_existed: false });
 }
 
 interface ServiceAccount { client_email: string; private_key: string }

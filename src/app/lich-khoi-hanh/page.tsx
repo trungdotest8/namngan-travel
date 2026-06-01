@@ -6,38 +6,8 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { createClient } from '@/lib/supabase/client'
 import { useCalendarStore } from '@/store/calendar.store'
+import { COUNTRY_MAP, deriveCountry } from '@/lib/tour-country'
 import type { TourSchedule } from '@/types'
-
-// ── Country keyword map ───────────────────────────────────────────────────────
-
-const COUNTRY_MAP: Record<string, string[]> = {
-  'TRUNG QUỐC':  ['BẮC KINH','THƯỢNG HẢI','HẢI NAM','QUẾ LÂM','TRÙNG KHÁNH','ĐẠI LÝ','ĐẠI LÍ','THÂM QUYẾN','VŨ HÁN','TÂN CƯƠNG','AN THI','QUẢNG CHÂU','NAM KINH','TRƯƠNG GIA GIỚI','TÔ CHÂU'],
-  'THÁI LAN':    ['BANGKOK','PATTAYA','CHIANG','NONG NOOCH'],
-  'SINGAPORE':   ['SINGAPORE'],
-  'HÀN QUỐC':   ['HÀN QUỐC','SEOUL','BUSAN','JEJU'],
-  'NHẬT BẢN':   ['NHẬT BẢN','TOKYO','OSAKA','KYOTO','HOKKAIDO'],
-  'HỒNG KÔNG':  ['HỒNG KÔNG','HONG KONG'],
-  'ĐÀI LOAN':   ['ĐÀI LOAN','TAIPEI'],
-  'MỸ':         ['MỸ','LOS ANGELES','NEW YORK','LAS VEGAS'],
-  'CANADA':      ['CANADA'],
-  'CHÂU ÂU':    ['CHÂU ÂU','PARIS','ROME','AMSTERDAM'],
-  'ẤN ĐỘ':     ['ẤN ĐỘ'],
-  'INDONESIA':   ['INDONESIA','BALI'],
-  'CAMBODIA':    ['CAMBODIA','CAMPUCHIA','ANGKOR'],
-  'LÀO':        ['LÀO','VIENTIANE'],
-  'PHI LÝ':    ['PHILIPPINE','MANILA','CEBU'],
-  'UAE':         ['UAE','DUBAI'],
-  'VIỆT NAM':   ['ĐÀ NẴNG','HỘI AN','NHA TRANG','PHÚ QUỐC','HÀ NỘI','HỒ CHÍ MINH','SÀI GÒN','HUẾ','ĐÀ LẠT','SA PA','HẠ LONG'],
-}
-
-function deriveCountry(destination: string | null): string {
-  if (!destination) return 'Khác'
-  const upper = destination.toUpperCase()
-  for (const [country, keywords] of Object.entries(COUNTRY_MAP)) {
-    if (keywords.some((kw) => upper.includes(kw))) return country
-  }
-  return 'Khác'
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -377,7 +347,7 @@ export default function LichKhoiHanhPage() {
                           {/* Lịch trình */}
                           <td className="px-4 py-3 text-center">
                             <a
-                              href={`/tours/${s.tour?.slug ?? s.tour_id}`}
+                              href={`/tour/${s.tour_id}?schedule=${s.id}`}
                               className="inline-flex items-center gap-1 text-xs text-brand-blue hover:underline font-medium"
                             >
                               Chi tiết <ChevronRight size={12} />
