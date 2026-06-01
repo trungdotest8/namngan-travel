@@ -338,9 +338,12 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | LICH | Lịch Khởi Hành | ✅ v1.1.0 | `src/app/lich-khoi-hanh/page.tsx` |
 | TOUR | Tour Detail Page | ✅ v1.0.0 | `src/app/tour/[tourId]/page.tsx` |
 | SLUG | /tours/[slug] redirect | ✅ v1.0.0 | `src/app/tours/[slug]/page.tsx` — lookup slug → redirect /tour/{uuid} |
-| TRONG | Tour Trong Nước | ✅ v1.1.0 | `src/app/tour-trong-nuoc/page.tsx` — **8 tours seeded, có dữ liệu** |
-| NGOAI | Tour Nước Ngoài | ✅ v1.0.0 | `src/app/tour-nuoc-ngoai/page.tsx` + `InternationalToursClient.tsx` |
-| EDGE | Edge Functions | ✅ deployed | `supabase/functions/fb-webhook/` + `google-drive/` |
+| TOURS | /tours unified | ✅ v1.0.0 | `src/app/tours/page.tsx` + `ToursClient.tsx` — tabs Tất cả/Quốc tế/Trong nước |
+| TRONG | Tour Trong Nước | ✅ v1.1.0 | `src/app/tour-trong-nuoc/page.tsx` — 8 tours seeded |
+| NGOAI | Tour Nước Ngoài | ✅ v2.0.0 | `src/app/tour-nuoc-ngoai/page.tsx` + `InternationalToursClient.tsx` — redesign mobile, sort, no-scroll |
+| TIN-TUC | Blog Tin Tức | ✅ v1.0.0 | `src/app/tin-tuc/page.tsx` + `[slug]/page.tsx` — Directus-powered |
+| DIRECTUS | CMS Integration | ✅ v1.0.0 | `src/lib/directus.ts` — `@directus/sdk` v21, fetchArticles/BySlug/ById |
+| EDGE | Edge Functions | ✅ deployed | `supabase/functions/google-drive/` |
 | PDF | PDF Crawler & Indexer | ✅ v1.3.0 | `/api/pdf-index` + migration #6+#7 |
 | CRON | Vercel Cron | ✅ v1.0.0 | `/api/cron/crawl-pdf` + `vercel.json` |
 | UI | Atom Components | ✅ | `Button.tsx` + `Card.tsx` + `NotificationPanel.tsx` + `DepartureCalendar.tsx` + `TourListingCard.tsx` |
@@ -356,13 +359,12 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | `/api/notifications` | POST | ✅ | Auth: x-webhook-secret |
 | `/api/webhooks/n8n` | POST | ✅ | Auth: x-webhook-secret |
 | `/api/webhooks/moda` | POST | ✅ | luồng kép nếu confirmed |
-| `/api/departures` | GET | ✅ | **v1.1**: category/country dùng `!inner` join DB-level (fix post-fetch bug) |
+| `/api/departures` | GET | ✅ | **v1.1**: category/country dùng `!inner` join DB-level |
 | `/api/departures` | POST | ✅ | SeaStar sync + broadcast |
 | `/api/itinerary/[tourId]` | GET | ✅ | Cache 5min; 404 nếu tour chưa có lịch trình |
 | `/api/pdf-index` | GET | ✅ | FTS RPC search_pdf_index() |
 | `/api/cron/crawl-pdf` | GET | ✅ | Auth kép CRON_SECRET / x-webhook-secret |
 | `/api/admin/setup-drive-folders` | POST | ✅ | Auth: x-admin-secret |
-| Edge: `fb-webhook` | POST/GET | ✅ deployed | |
 | Edge: `google-drive` | POST | ✅ deployed | ⚠️ Secrets chưa set → cần set thủ công |
 
 ### Zustand Stores
@@ -377,80 +379,87 @@ useCmsStore             (store/cms.store.ts)               ✅
 useCustomerProfileStore (store/customer-profile.store.ts)  ✅
 ```
 
-### Data Contract — Delta phiên #14
+### Data Contract — Delta phiên #15
 
 ```typescript
-// ── Domestic tours seeded (8 tours + 24 schedules) ───────────────────────────
-// codes: NN-TN-001 → NN-TN-008, category='trong nước', country='VIỆT NAM'
-// Schedules: 2026-06-20 / 2026-07-05 / 2026-07-19 (3 lịch/tour)
-// Scripts: scripts/seed-domestic-tours.mjs (idempotent, chạy lại được)
+// ── Directus CMS (NEW) ────────────────────────────────────────────────────────
+// src/lib/directus.ts — @directus/sdk v21
+// ArticleListItem: id, title, slug, summary, thumbnail_url, category, tags, published_at
+// ArticleDetail:   + content (HTML WYSIWYG), source_type, author_id
+// fetchArticles(options?)      → ArticleListItem[]  (trả [] khi lỗi/chưa set)
+// fetchArticleBySlug(slug)     → ArticleDetail | null
+// fetchArticleById(id)         → ArticleDetail | null
+// ENV: DIRECTUS_URL + DIRECTUS_STATIC_TOKEN (chưa set trên Vercel — cần set)
+// Directus setup: DB_CLIENT=pg, DB_CONNECTION_STRING=postgresql://...supabase.co:5432/postgres
 
-// ── /api/departures GET — BUGFIX ─────────────────────────────────────────────
-// category/country filter trước đây dùng post-fetch (bị giới hạn bởi limit=50)
-// Nay dùng !inner join + .eq('tours.category', category) → filter ở DB level
-// (query as any).eq(...) để bypass TypeScript vì supabase-js chưa type embedded filter
+// ── /tours unified (NEW) ──────────────────────────────────────────────────────
+// src/app/tours/page.tsx — Server Component, fetch ALL tours (cả 2 category)
+// src/app/tours/ToursClient.tsx — tabs: ?category=international|domestic
+// Header nav có link "Tất cả tour" → /tours
 
-// ── /tours/[slug]/page.tsx — MỚI ─────────────────────────────────────────────
-// Server Component; lookup tours by slug → redirect('/tour/{id}')
-// notFound() nếu slug không tồn tại hoặc is_active=false
+// ── /tour-nuoc-ngoai redesign (v2.0.0) ───────────────────────────────────────
+// InternationalToursClient.tsx: flex-wrap filter (no scroll), sort dropdown,
+// collapsible filter panel, "X Xóa lọc" button, hero stats bar
 
-// ── Footer.tsx — FIX ─────────────────────────────────────────────────────────
-// 5 links "Tour nổi bật" trước dùng /tours/du-lich-* (không tồn tại)
-// Nay: Nhật Bản/Hàn Quốc/Thái Lan → /tour-nuoc-ngoai?country=...
-//      Đà Nẵng/Phú Quốc → /tour-trong-nuoc
+// ── /tin-tuc (NEW) ────────────────────────────────────────────────────────────
+// src/app/tin-tuc/page.tsx      — listing, ?category= Server-side filter
+// src/app/tin-tuc/[slug]/page.tsx — detail, dangerouslySetInnerHTML WYSIWYG
+// generateMetadata() động — title + og:image từ Directus
+// Trang render empty state đẹp khi Directus chưa có data
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
 GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main)
-Vercel  : namngan-travel — ✅ 15/15 env vars đã set (confirmed phiên này)
+Vercel  : namngan-travel — ✅ env vars đã set; ⚠️ CẦN THÊM DIRECTUS_URL + DIRECTUS_STATIC_TOKEN
 Supabase: indjoegnsvcteaozmgrg — ✅ 8/8 migrations cloud
-Edge Fn : ✅ deployed — ⚠️ Secrets GOOGLE_SERVICE_ACCOUNT_JSON + DRIVE_PARENT_FOLDER_ID
-          CHƯA SET trên Edge Fn (supabase CLI cần SUPABASE_ACCESS_TOKEN)
+Edge Fn : ✅ deployed — ⚠️ Secrets GOOGLE_SERVICE_ACCOUNT_JSON + DRIVE_PARENT_FOLDER_ID chưa set
           → Set thủ công: Supabase Dashboard > Project Settings > Edge Functions > Secrets
           → Sau khi set: POST /api/admin/setup-drive-folders (header x-admin-secret)
-Vercel Cron: "0 2 * * *" /api/cron/crawl-pdf — ✅ CRON_SECRET đã có trên Vercel
-.env.local : ✅ đầy đủ; N8N_WEBHOOK_URL vẫn trống
+Directus: ⚠️ CHƯA setup instance — trang /tin-tuc hiện trống (empty state)
+          → Self-host tại cms.namngantravel.com hoặc Directus Cloud
+          → Connect: DB_CLIENT=pg + DB_CONNECTION_STRING Supabase
+          → Tạo Static Token → set DIRECTUS_URL + DIRECTUS_STATIC_TOKEN trên Vercel
+Vercel Cron: "0 2 * * *" /api/cron/crawl-pdf — ✅ CRON_SECRET đã có
+.env.local: ✅ đầy đủ; DIRECTUS_URL + DIRECTUS_STATIC_TOKEN trống; N8N_WEBHOOK_URL trống
 Resend  : onboarding@resend.dev (tạm) — ⚠️ cần verify domain namngantravel.com
 SeaStar : ✅ 41 tours nước ngoài + 8 tours trong nước = 49 tours tổng
 ```
 
-### Files ưu tiên cao chưa tồn tại
+### Files ưu tiên cao chưa tồn tại / chưa hoàn chỉnh
 
 ```
-# CẦN BUILD (feature mới user yêu cầu):
-src/app/tours/page.tsx            ← /tours?category=international|domestic
-                                    User yêu cầu: namngan-travel.vercel.app/tours?category=international
-                                    Link từ homepage, load đầy đủ dữ liệu, filter by category
+# CẦN CHẠY (thủ công, unblock tính năng):
+Vercel Dashboard > Env Vars: DIRECTUS_URL + DIRECTUS_STATIC_TOKEN
+  → Sau đó /tin-tuc sẽ hiển thị bài viết từ Directus
+Supabase Dashboard > Edge Fn > Secrets: GOOGLE_SERVICE_ACCOUNT_JSON + DRIVE_PARENT_FOLDER_ID
+  → POST /api/admin/setup-drive-folders
 
-# CẦN CHẠY (thủ công 1 lần):
-Supabase Dashboard > Edge Fn Secrets  ← set GOOGLE_SERVICE_ACCOUNT_JSON + DRIVE_PARENT_FOLDER_ID
-POST /api/admin/setup-drive-folders   ← sau khi set secrets
-
-# CÓ THỂ TIẾP:
+# CÓ THỂ TIẾP (feature thêm):
 thumbnail_url cho 8 tour trong nước  ← hiện null → hiển thị placeholder
-/api/departures?country= debug       ← country filter qua !inner trả 0 (cần verify PostgREST syntax)
+/tin-tuc: thêm pagination hoặc infinite scroll khi có nhiều bài
+/tours: thêm search box filter theo tên tour
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Tạo `/tours` page** — `src/app/tours/page.tsx` — Server Component + Client filter tabs (`?category=international|domestic`) — user đã yêu cầu rõ, link từ Header/homepage
-2. **Debug `/api/departures?country=`** — country filter qua `!inner` join trả 0; kiểm tra PostgREST syntax `.eq('tours.country', ...)` có hoạt động không
-3. **Set Edge Fn secrets thủ công** — Supabase Dashboard > Project Settings > Edge Functions > Secrets → GOOGLE_SERVICE_ACCOUNT_JSON + DRIVE_PARENT_FOLDER_ID → sau đó POST /api/admin/setup-drive-folders
+1. **Set Directus env vars trên Vercel** — `DIRECTUS_URL` + `DIRECTUS_STATIC_TOKEN` → unblock trang `/tin-tuc` hiển thị bài viết thật
+2. **Set Edge Fn secrets** — Supabase Dashboard → Project Settings → Edge Functions → Secrets: `GOOGLE_SERVICE_ACCOUNT_JSON` + `DRIVE_PARENT_FOLDER_ID` → sau đó POST `/api/admin/setup-drive-folders`
+3. **Thêm thumbnail cho 8 tour trong nước** — cập nhật `thumbnail_url` cho NN-TN-001..008 trong Supabase (hiện đang hiển thị placeholder xám)
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-02 | Handover #15 — Directus CMS + /tours + Blog | /tours unified ✅; /tour-nuoc-ngoai redesign v2 ✅; src/lib/directus.ts ✅; /tin-tuc + /tin-tuc/[slug] ✅ |
 | 2026-06-02 | Handover #14 — Bug Fixes + Domestic Data | /tours/[slug] redirect ✅; 8 tour trong nước seeded ✅; departures !inner fix ✅; Footer links fix ✅ |
-| 2026-06-01 | Handover #13 — Tour Categories + 2 Listing Pages | Tour.country backfill 41/41 ✅; /tour-trong-nuoc ✅; /tour-nuoc-ngoai + country tabs ✅; TourListingCard ✅; Drive folder registry ✅; migration #8 cloud ✅ |
+| 2026-06-01 | Handover #13 — Tour Categories + 2 Listing Pages | Tour.country backfill 41/41 ✅; /tour-trong-nuoc ✅; /tour-nuoc-ngoai + country tabs ✅; TourListingCard ✅; migration #8 cloud ✅ |
 | 2026-06-01 | Handover #12 — Secrets + Migration Fix | .env.local SA JSON fix 1 dòng ✅; migration #7 search_pdf_index RPC ✅; setup-secrets.mjs ✅ |
 | 2026-06-01 | Handover #11 — Tour Detail + PdfViewer + Cron | /tour/[tourId] ✅; PdfViewer.tsx ✅; /api/cron/crawl-pdf ✅; vercel.json crons ✅; migration #6 cloud ✅ |
 | 2026-06-01 | Handover #10 — PDF Crawler Integration | migration #6 tour_pdf_index ✅; /api/itinerary/[tourId] ✅; /api/pdf-index FTS ✅; TourPdfIndex type ✅ |
 | 2026-06-01 | Handover #9 — Lịch Khởi Hành + Realtime | /lich-khoi-hanh ✅; Realtime auto-refresh; NotificationPanel + Button + Card + DepartureCalendar ✅ |
 | 2026-05-31 | Handover #8 — Child B SeaStar Crawler | syncSeaStarSchedules() 313 records; api/departures; calendar.store |
 | 2026-05-30 | Handover #7 — Code Review + Security | 10 findings fixed |
-| 2026-05-30 | Handover #6 — Search + Deploy | api/search; Edge Fn; Vercel live |
 | 2026-05-30 | Session 1–5 | Child A–G ghép xong; CRM; leads luồng kép ✅ |
 
