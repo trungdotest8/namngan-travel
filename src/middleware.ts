@@ -4,20 +4,18 @@ import { ADMIN_COOKIE } from '@/lib/admin-auth-constants'
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Protect all /admin routes except /admin/login itself
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
-    const session = req.cookies.get(ADMIN_COOKIE)
-    if (!session?.value) {
-      const loginUrl = req.nextUrl.clone()
-      loginUrl.pathname = '/admin/login'
-      loginUrl.searchParams.set('from', pathname)
-      return NextResponse.redirect(loginUrl)
-    }
+  // Protect /crm (route group (admin) does NOT add to URL)
+  const session = req.cookies.get(ADMIN_COOKIE)
+  if (!session?.value) {
+    const loginUrl = req.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    loginUrl.searchParams.set('from', pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/crm', '/crm/:path*'],
 }

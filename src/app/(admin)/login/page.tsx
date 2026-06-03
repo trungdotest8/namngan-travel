@@ -29,7 +29,7 @@ function LoginForm() {
       })
 
       if (res.ok) {
-        const from = searchParams.get('from') ?? '/admin/crm'
+        const from = searchParams.get('from') ?? '/crm'
         router.replace(from)
       } else {
         const data = await res.json() as { error?: string }

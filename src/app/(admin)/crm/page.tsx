@@ -542,7 +542,7 @@ function CRMPage() {
           <button
             onClick={async () => {
               await fetch('/api/admin/auth', { method: 'DELETE' })
-              window.location.href = '/admin/login'
+              window.location.href = '/login'
             }}
             title="Đăng xuất"
             className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 hover:bg-red-50 hover:border-red-200 text-gray-500 hover:text-red-500 transition-colors"
