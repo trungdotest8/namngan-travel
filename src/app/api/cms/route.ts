@@ -6,8 +6,8 @@ import { createClient } from '@/lib/supabase/server'
 
 const GetQuerySchema = z.object({
   source_type: z.enum(['manual', 'rss', 'tiktok', 'facebook']).optional(),
-  status:      z.enum(['draft', 'published', 'archived']).default('published'),
-  limit:       z.coerce.number().int().min(1).max(100).default(50),
+  status:      z.enum(['draft', 'published', 'archived', 'all']).default('published'),
+  limit:       z.coerce.number().int().min(1).max(200).default(50),
 })
 
 const ArticleCreateSchema = z.object({
@@ -40,11 +40,11 @@ export async function GET(request: Request) {
     let query = supabase
       .from('articles')
       .select('*')
-      .eq('status', status)
       .order('published_at', { ascending: false })
       .limit(limit)
 
-    if (source_type) query = query.eq('source_type', source_type)
+    if (status !== 'all') query = query.eq('status', status)
+    if (source_type)      query = query.eq('source_type', source_type)
 
     const { data, error } = await query
     if (error) throw error

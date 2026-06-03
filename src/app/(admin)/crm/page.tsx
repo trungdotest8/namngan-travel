@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import {
-  Plane, LayoutDashboard, Users, Settings,
+  Plane, LayoutDashboard, Users, Settings, Newspaper,
   Bell, Plus, TrendingUp, TrendingDown,
   CheckCircle2, AlertCircle, Loader2,
 } from 'lucide-react'
@@ -10,10 +10,11 @@ import { useCustomerProfileStore } from '@/store/customer-profile.store'
 import { CustomerTable } from '@/components/customer-profile/CustomerTable'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { CustomerProfileDrawer } from '@/components/customer-profile/CustomerProfileDrawer'
+import { ArticlesTab } from './ArticlesTab'
 import type { Lead } from '@/types/lead.types'
 
 // ── Types ─────────────────────────────────────────────────────────────────
-type TabId = 'overview' | 'customers' | 'config'
+type TabId = 'overview' | 'customers' | 'articles' | 'config'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function computeMetrics(leads: Lead[]) {
@@ -379,12 +380,14 @@ function ConfigField({ label, value, mono }: { label: string; value: string; mon
 const NAV = [
   { id: 'overview'  as TabId, label: 'Chiến dịch & Thông báo', icon: LayoutDashboard },
   { id: 'customers' as TabId, label: 'Danh sách Khách hàng',   icon: Users },
+  { id: 'articles'  as TabId, label: 'Bài viết / Tin tức',     icon: Newspaper },
   { id: 'config'    as TabId, label: 'Webhook & Email',         icon: Settings },
 ]
 
 const TAB_TITLES: Record<TabId, string> = {
   overview:  'Tổng quan Chiến dịch',
   customers: 'Danh sách Khách hàng',
+  articles:  'Quản lý Bài viết',
   config:    'Cấu hình Webhook & Email',
 }
 
@@ -557,6 +560,11 @@ function CRMPage() {
                   </div>
                   <CustomerTable />
                 </div>
+              )}
+              {activeTab === 'articles' && (
+                <ErrorBoundary moduleName="ArticlesTab">
+                  <ArticlesTab />
+                </ErrorBoundary>
               )}
               {activeTab === 'config' && (
                 <div>
