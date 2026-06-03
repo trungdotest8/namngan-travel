@@ -328,6 +328,147 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 |-------|--------|-----------|-------------|
 | A | Search UI | ✅ v2.0.0 | `src/components/search/TourSearchBar.tsx` + `SearchResults.tsx` |
 | B | Lịch khởi hành (SeaStar) + PDF Indexer | ✅ v1.2.0 | `src/lib/integrations/seastar.ts` + migrations #6+#7+#8 |
+| C | Itinerary + PDF Embed | ✅ v2.1.0 | `TourDetail.tsx` (gallery lightbox + hashtag chips) + `PdfViewer.tsx` |
+| D | Hồ sơ khách | ✅ v1.1.0 | `src/components/customer-profile/CustomerProfileDrawer.tsx` + `CustomerTable.tsx` |
+| E | Chat & Lead | ✅ v2.0.0 | `src/components/chat/ChatWidget.tsx` + `AutoPopup.tsx` |
+| F | CMS / RSS | ✅ v1.2.0 | `src/components/cms/ArticleFeed.tsx` |
+| G | DB Schema | ✅ **10/10 cloud** | `supabase/migrations/` — Supabase: indjoegnsvcteaozmgrg |
+| CRM | Admin CRM | ✅ **v4.0.0** | `crm/page.tsx` + `ArticlesTab.tsx` + `ToursTab.tsx` + `StaffTab.tsx` — 6 tabs |
+| AUTH | Admin Auth | ✅ **v2.0.0** | `src/app/(admin)/login/page.tsx` + `src/middleware.ts` + `/api/admin/auth` |
+| STAFF | Quản lý nhân viên | ✅ **v1.0.0 MỚI** | `crm/StaffTab.tsx` + `/api/admin/users` + `/api/admin/me` |
+| TOURS-ADMIN | Admin Tour (CRM tab) | ✅ v1.0.0 | `src/app/(admin)/crm/ToursTab.tsx` — gallery + hashtags CRUD |
+| TOURS-LIST | /tours listing | ✅ v1.1.0 | `ToursClient.tsx` — hashtag filter chips |
+| EDGE | Edge Functions | ✅ v1.1.0 fixed | `supabase/functions/google-drive/` — 23 folders created |
+| PDF | PDF Crawler & Indexer | ✅ v1.3.0 | `/api/pdf-index` + migration #6+#7 |
+| CRON | Vercel Cron | ✅ v1.0.0 | `/api/cron/crawl-pdf` + `vercel.json` |
+| HOME | Trang chủ | ✅ v1.0.0 | `src/app/page.tsx` |
+| LICH | Lịch Khởi Hành | ✅ v1.1.0 | `src/app/lich-khoi-hanh/page.tsx` |
+| TIN-TUC | Blog Tin Tức | ✅ v1.1.0 | `src/app/tin-tuc/page.tsx` + `[slug]/page.tsx` |
+| DIRECTUS | CMS Integration | ✅ v1.1.0 | `src/lib/directus.ts` — Supabase fallback hoạt động |
+
+### Trạng thái API Routes
+
+| Route | Method | Trạng thái | Ghi chú |
+|-------|--------|-----------|---------|
+| `/api/leads` | POST | ✅ | Zod + luồng kép Email+Realtime |
+| `/api/cms` | GET/POST | ✅ | status=all cho admin; limit max 200 |
+| `/api/cms/[id]` | PATCH/DELETE | ✅ | Auth: cookie hoặc x-admin-secret |
+| `/api/tours` | GET/POST | ✅ | filter category/country/is_active/search |
+| `/api/tours/[id]` | PATCH/DELETE | ✅ | Auth: cookie hoặc x-admin-secret; ?hard=true |
+| `/api/customer-profile` | GET/PATCH | ✅ | Auth: cookie hoặc x-admin-secret |
+| `/api/admin/auth` | POST/DELETE | ✅ | Login {username,password} → HttpOnly cookie 24h; DELETE = logout |
+| `/api/admin/users` | GET/POST | ✅ **MỚI** | List + tạo admin users; bcrypt hash |
+| `/api/admin/users/[id]` | PATCH/DELETE | ✅ **MỚI** | Update + soft deactivate |
+| `/api/admin/me` | GET | ✅ **MỚI** | Trả AdminUser từ httpOnly cookie |
+| `/api/search` | POST | ✅ | category filter |
+| `/api/notifications` | POST | ✅ | Auth: x-webhook-secret |
+| `/api/webhooks/n8n` | POST | ✅ | Auth: x-webhook-secret |
+| `/api/webhooks/moda` | POST | ✅ | luồng kép nếu confirmed |
+| `/api/departures` | GET/POST | ✅ | POST: cookie OR x-webhook-secret |
+| `/api/itinerary/[tourId]` | GET | ✅ | Cache 5min; trả gallery_urls + hashtags |
+| `/api/pdf-index` | GET | ✅ | FTS RPC |
+| `/api/cron/crawl-pdf` | GET | ✅ | Auth kép |
+| `/api/admin/setup-drive-folders` | POST | ✅ | 23 folders đã tạo |
+| Edge: `google-drive` | POST | ✅ v1.1.0 | private_key fix; 3 actions |
+
+### Zustand Stores
+
+```
+useUIStore              (store/ui.store.ts)               ✅
+useNotificationStore    (store/notification.store.ts)      ✅ admin realtime
+useSearchStore          (store/search.store.ts)            ✅
+useCalendarStore        (store/calendar.store.ts)          ✅ fetchSchedules()
+useChatStore            (store/chat.store.ts)              ✅
+useCmsStore             (store/cms.store.ts)               ✅
+useCustomerProfileStore (store/customer-profile.store.ts)  ✅
+```
+
+### Data Contract — Delta phiên #19
+
+```typescript
+// ── ⚠️ QUAN TRỌNG — URL thực tế của Admin (route group không thêm path) ────
+// src/app/(admin)/login/page.tsx  → URL: /login   (KHÔNG phải /admin/login)
+// src/app/(admin)/crm/page.tsx    → URL: /crm      (KHÔNG phải /admin/crm)
+// middleware.ts matcher: ['/crm', '/crm/:path*']   redirect → /login
+
+// ── Admin Auth v2 (UPDATED) ───────────────────────────────────────────────
+// Bảng: admin_users (migration #10) — bcrypt 12 rounds
+// Login: POST /api/admin/auth {username, password} → cookie admin_session=<username>
+// Tài khoản mặc định: admin / 310191
+// src/lib/admin-auth-constants.ts: ADMIN_COOKIE (tách riêng cho Edge middleware)
+// src/lib/admin-auth.ts: verifyCredentials() + getCurrentAdminUser() — async DB
+// isAdminRequest(): synchronous, checks WEBHOOK_SECRET header OR cookie truthy
+
+// ── AdminUser (NEW — src/types/admin.types.ts) ────────────────────────────
+interface AdminUser {
+  id: string; username: string; display_name: string
+  role: 'admin' | 'staff'; is_active: boolean
+  created_at: string; updated_at: string
+}
+
+// ── admin_users table (migration #10) ────────────────────────────────────
+// RLS: service_role only
+// Seed: admin / 310191 (bcrypt $2b$12$...)
+// KHÔNG xóa — soft deactivate (is_active=false)
+```
+
+### Hạ tầng & Tích hợp bên ngoài
+
+```
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main, commit 9cec529)
+Vercel  : namngan-travel — ✅ deployed; URL: namngan-travel.vercel.app
+          ⚠️ CẦN THÊM: DIRECTUS_URL + DIRECTUS_STATIC_TOKEN
+Supabase: indjoegnsvcteaozmgrg — ✅ 10/10 migrations cloud; 49 tours; 6 articles
+Edge Fn : ✅ deployed v1.1.0 — 23 Drive folders đã tạo
+Directus: ⚠️ CHƯA setup — /tin-tuc dùng Supabase fallback (6 bài mẫu)
+Vercel Cron: "0 2 * * *" /api/cron/crawl-pdf — ✅ CRON_SECRET đã có
+Resend  : onboarding@resend.dev (tạm) — ⚠️ cần verify domain namngantravel.com
+SeaStar : ✅ 49 tours tổng (41 nước ngoài + 8 trong nước)
+Drive   : ✅ 23 folders created — root/domestic/international/[20 countries]
+```
+
+### Files ưu tiên cao chưa tồn tại / chưa hoàn chỉnh
+
+```
+# VIỆC CÒN LẠI ƯU TIÊN CAO:
+Resend: verify domain namngantravel.com → đổi RESEND_FROM_EMAIL = noreply@namngantravel.com
+Vercel env: DIRECTUS_URL + DIRECTUS_STATIC_TOKEN (khi setup Directus instance)
+
+# CÓ THỂ TIẾP (feature):
+CRM ToursTab: upload ảnh trực tiếp (base64 → Drive) thay vì chỉ nhập URL
+CRM ArticlesTab: WYSIWYG editor (Tiptap lite) thay textarea HTML
+/tin-tuc: pagination khi có nhiều bài viết
+/tour-trong-nuoc + /tour-nuoc-ngoai: hashtag filter chips (hiện chỉ có /tours)
+Tour public page (/tour/[tourId]): nút "Đặt tour ngay" mở booking form
+```
+
+### Next Steps (3 việc làm ngay khi mở phiên mới)
+
+1. **Verify production login** — truy cập `namngan-travel.vercel.app/login` → nhập `admin`/`310191` → xác nhận vào được `/crm`; thử tạo tài khoản nhân viên mới trong tab "Nhân Viên"
+2. **Thêm hashtag + gallery cho 49 tours** — `/crm` → tab "Quản lý Tour" → edit từng tour, thêm hashtags SEO + ảnh gallery
+3. **Verify Resend domain** — resend.com/domains → Add Domain → thêm DNS records → đổi `RESEND_FROM_EMAIL=noreply@namngantravel.com` trên Vercel env
+
+### Change Log
+
+| Ngày | Giai đoạn | Thay đổi |
+|------|-----------|---------|
+| 2026-06-03 | Handover #19 — Multi-User Auth + Staff Tab + URL fix | admin_users migration #10 ✅; bcrypt auth ✅; StaffTab ✅; fix /crm /login URLs ✅ |
+| 2026-06-03 | Handover #18 — Admin Auth + Gallery Lightbox + Hashtag Filter | Login page + middleware + HttpOnly cookie ✅; gallery lightbox ✅; hashtag filter /tours ✅ |
+| 2026-06-03 | Handover #17 — ToursTab CRUD + Edge Fn Fix + Migration #9 | ToursTab gallery+hashtags ✅; /api/tours CRUD ✅; migration #9 cloud ✅; Edge Fn fix ✅ |
+| 2026-06-03 | Handover #16 — CMS Admin + Articles + Thumbnails | ArticlesTab CRUD ✅; 6 bài mẫu seeded ✅; Directus fallback ✅ |
+| 2026-06-02 | Handover #15 — Directus CMS + /tours + Blog | /tours unified ✅; /tour-nuoc-ngoai v2 ✅; /tin-tuc ✅ |
+| 2026-06-02 | Handover #14 — Bug Fixes + Domestic Data | /tours/[slug] ✅; 8 tour trong nước seeded ✅ |
+| 2026-06-01 | Handover #13 — Tour Categories + 2 Listing Pages | /tour-trong-nuoc ✅; /tour-nuoc-ngoai ✅; migration #8 ✅ |
+| 2026-06-01 | Handover #9–12 | Lịch khởi hành; PDF Crawler; Tour Detail; Secrets fix |
+| 2026-05-31 | Handover #8 | SeaStar 313 records; api/departures ✅ |
+| 2026-05-30 | Session 1–7 | Child A–G; CRM; leads luồng kép ✅ |
+
+### Trạng thái Child Modules
+
+| Child | Module | Trạng thái | Files chính |
+|-------|--------|-----------|-------------|
+| A | Search UI | ✅ v2.0.0 | `src/components/search/TourSearchBar.tsx` + `SearchResults.tsx` |
+| B | Lịch khởi hành (SeaStar) + PDF Indexer | ✅ v1.2.0 | `src/lib/integrations/seastar.ts` + migrations #6+#7+#8 |
 | C | Itinerary + PDF Embed | ✅ **v2.1.0** | `TourDetail.tsx` (gallery lightbox + hashtag chips) + `PdfViewer.tsx` |
 | D | Hồ sơ khách | ✅ v1.1.0 | `src/components/customer-profile/CustomerProfileDrawer.tsx` + `CustomerTable.tsx` |
 | E | Chat & Lead | ✅ v2.0.0 | `src/components/chat/ChatWidget.tsx` + `AutoPopup.tsx` |
