@@ -1,13 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-
-const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? ''
-
-function checkAuth(request: Request) {
-  const secret = request.headers.get('x-admin-secret')
-  return secret === ADMIN_SECRET
-}
+import { isAdminRequest } from '@/lib/admin-auth'
 
 const ArticleUpdateSchema = z.object({
   title:         z.string().min(1).max(500).optional(),
@@ -24,10 +18,10 @@ const ArticleUpdateSchema = z.object({
 // ── PATCH /api/cms/[id] ───────────────────────────────────────────────────────
 
 export async function PATCH(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!checkAuth(request)) {
+  if (!isAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -64,10 +58,10 @@ export async function PATCH(
 // ── DELETE /api/cms/[id] ──────────────────────────────────────────────────────
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!checkAuth(request)) {
+  if (!isAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

@@ -36,6 +36,8 @@ export interface ItineraryResponse {
   destination:   string | null
   duration_days: number | null
   thumbnail_url: string | null
+  gallery_urls:  string[] | null
+  hashtags:      string[]
   includes:      string[] | null
   excludes:      string[] | null
   // Lịch trình cấu trúc từ tours.itinerary (JSONB)

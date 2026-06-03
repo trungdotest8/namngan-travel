@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { syncSeaStarSchedules } from '@/lib/integrations/seastar'
+import { isAdminRequest } from '@/lib/admin-auth'
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
 
@@ -78,10 +79,11 @@ export async function GET(request: Request) {
 
 // ── POST /api/departures — trigger sync ────────────────────────────────────────
 
-export async function POST(request: Request) {
-  // Auth guard
-  const incomingSecret = request.headers.get('x-webhook-secret')
-  if (!incomingSecret || incomingSecret !== process.env.WEBHOOK_SECRET) {
+export async function POST(request: NextRequest) {
+  // Accept admin cookie (browser CRM) OR webhook secret (n8n/cron)
+  const webhookSecret = request.headers.get('x-webhook-secret')
+  const webhookOk = !!process.env.WEBHOOK_SECRET && webhookSecret === process.env.WEBHOOK_SECRET
+  if (!webhookOk && !isAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

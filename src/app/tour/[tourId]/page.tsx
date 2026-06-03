@@ -129,6 +129,8 @@ export default function TourItineraryPage() {
                   destination={itinerary.destination}
                   durationDays={itinerary.duration_days}
                   thumbnailUrl={itinerary.thumbnail_url}
+                  galleryUrls={itinerary.gallery_urls}
+                  hashtags={itinerary.hashtags}
                   includes={itinerary.includes}
                   excludes={itinerary.excludes}
                   itinerary={itinerary.structured ?? undefined}

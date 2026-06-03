@@ -1,12 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-
-const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? ''
-
-function checkAuth(request: Request) {
-  return request.headers.get('x-admin-secret') === ADMIN_SECRET
-}
+import { isAdminRequest } from '@/lib/admin-auth'
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
 
@@ -29,10 +24,10 @@ const TourUpdateSchema = z.object({
 // ── PATCH /api/tours/[id] ────────────────────────────────────────────────────
 
 export async function PATCH(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!checkAuth(request)) {
+  if (!isAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
@@ -80,10 +75,10 @@ export async function PATCH(
 // ── DELETE /api/tours/[id] ───────────────────────────────────────────────────
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  if (!checkAuth(request)) {
+  if (!isAdminRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {

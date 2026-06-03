@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import {
   Plane, LayoutDashboard, Users, Settings, Newspaper, MapPin,
   Bell, Plus, TrendingUp, TrendingDown,
-  CheckCircle2, AlertCircle, Loader2,
+  CheckCircle2, AlertCircle, Loader2, LogOut,
 } from 'lucide-react'
 import { useCustomerProfileStore } from '@/store/customer-profile.store'
 import { CustomerTable } from '@/components/customer-profile/CustomerTable'
@@ -409,9 +409,7 @@ function CRMPage() {
     setLoading(true)
     setFetchError(null)
     try {
-      const res = await fetch('/api/customer-profile?limit=100', {
-        headers: { 'x-admin-secret': process.env.NEXT_PUBLIC_ADMIN_SECRET ?? '' },
-      })
+      const res = await fetch('/api/customer-profile?limit=100')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const { leads: data } = await res.json()
       setCustomers(data ?? [])
@@ -430,10 +428,7 @@ function CRMPage() {
     try {
       const res = await fetch('/api/departures', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-webhook-secret': process.env.NEXT_PUBLIC_ADMIN_SECRET ?? '',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ force: false }),
       })
       const json = await res.json()
@@ -526,6 +521,17 @@ function CRMPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#005BAA] text-white text-xs font-medium hover:bg-[#0078D7] transition-colors"
           >
             <Plus size={13} /> Thêm KH
+          </button>
+
+          <button
+            onClick={async () => {
+              await fetch('/api/admin/auth', { method: 'DELETE' })
+              window.location.href = '/admin/login'
+            }}
+            title="Đăng xuất"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 hover:bg-red-50 hover:border-red-200 text-gray-500 hover:text-red-500 transition-colors"
+          >
+            <LogOut size={14} />
           </button>
         </header>
 

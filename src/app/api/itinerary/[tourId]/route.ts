@@ -24,7 +24,7 @@ export async function GET(
     // Lấy tour cơ bản
     const { data: tour, error: tourErr } = await supabase
       .from('tours')
-      .select('id, code, name, destination, duration_days, thumbnail_url, includes, excludes, itinerary')
+      .select('id, code, name, destination, duration_days, thumbnail_url, gallery_urls, hashtags, includes, excludes, itinerary')
       .eq('id', tourId)
       .single()
 
@@ -71,6 +71,8 @@ export async function GET(
       destination:   tour.destination ?? null,
       duration_days: tour.duration_days ?? null,
       thumbnail_url: tour.thumbnail_url ?? null,
+      gallery_urls:  (tour as { gallery_urls?: string[] | null }).gallery_urls ?? null,
+      hashtags:      (tour as { hashtags?: string[] }).hashtags ?? [],
       includes:      tour.includes ?? null,
       excludes:      tour.excludes ?? null,
       structured:    tour.itinerary ?? null,

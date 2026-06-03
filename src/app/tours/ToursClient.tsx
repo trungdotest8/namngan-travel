@@ -35,9 +35,10 @@ export default function ToursClient({ tours }: Props) {
   const [activeCategory, setActiveCategory] = useState<CategoryParam>(
     toCategoryParam(searchParams.get('category'))
   )
-  const [activeCountry, setActiveCountry] = useState<string | null>(
+  const [activeCountry,  setActiveCountry]  = useState<string | null>(
     searchParams.get('country') ?? null
   )
+  const [activeHashtag,  setActiveHashtag]  = useState<string | null>(null)
 
   // Sync URL ↔ state
   useEffect(() => {
@@ -55,10 +56,11 @@ export default function ToursClient({ tours }: Props) {
     router.replace(`?${params.toString()}`, { scroll: false })
   }, [activeCategory, activeCountry, router, searchParams])
 
-  // When switching away from international, reset country
+  // When switching away from international, reset country; always reset hashtag
   function handleCategoryChange(cat: CategoryParam) {
     setActiveCategory(cat)
     if (cat !== 'international') setActiveCountry(null)
+    setActiveHashtag(null)
   }
 
   // Filter by category
@@ -80,13 +82,24 @@ export default function ToursClient({ tours }: Props) {
     return list.sort((a, b) => a.localeCompare(b, 'vi'))
   }, [categoryFiltered, activeCategory])
 
-  // Further filter by country
+  // Derive unique hashtags from category-filtered set (before country/hashtag filter)
+  const allHashtags = useMemo(() => {
+    const seen = new Set<string>()
+    categoryFiltered.forEach(t => (t.hashtags ?? []).forEach(h => seen.add(h)))
+    return [...seen].sort((a, b) => a.localeCompare(b, 'vi'))
+  }, [categoryFiltered])
+
+  // Filter by country, then hashtag
   const filtered = useMemo(() => {
+    let result = categoryFiltered
     if (activeCategory === 'international' && activeCountry) {
-      return categoryFiltered.filter(t => (t.country ?? 'Khác') === activeCountry)
+      result = result.filter(t => (t.country ?? 'Khác') === activeCountry)
     }
-    return categoryFiltered
-  }, [categoryFiltered, activeCategory, activeCountry])
+    if (activeHashtag) {
+      result = result.filter(t => (t.hashtags ?? []).includes(activeHashtag))
+    }
+    return result
+  }, [categoryFiltered, activeCategory, activeCountry, activeHashtag])
 
   // Stats
   const intlCount     = useMemo(() => tours.filter(t => t.category === 'nước ngoài').length, [tours])
@@ -146,6 +159,35 @@ export default function ToursClient({ tours }: Props) {
                 </button>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Hashtag filter chips */}
+      {allHashtags.length > 0 && (
+        <div className="overflow-x-auto pb-1 mb-5 -mx-4 px-4">
+          <div className="flex gap-2 min-w-max">
+            {activeHashtag && (
+              <button
+                onClick={() => setActiveHashtag(null)}
+                className="px-3 py-1 rounded-full text-xs font-medium border border-gray-300 bg-white text-[#666666] hover:border-[#005BAA] transition-colors shrink-0"
+              >
+                Xoá lọc ×
+              </button>
+            )}
+            {allHashtags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => setActiveHashtag(activeHashtag === tag ? null : tag)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors shrink-0 ${
+                  activeHashtag === tag
+                    ? 'bg-[#005BAA] text-white border-[#005BAA]'
+                    : 'bg-[#F0F7FF] text-[#005BAA] border-[#005BAA]/20 hover:border-[#005BAA]'
+                }`}
+              >
+                {tag.startsWith('#') ? tag : `#${tag}`}
+              </button>
+            ))}
           </div>
         </div>
       )}

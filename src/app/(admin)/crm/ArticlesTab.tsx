@@ -9,8 +9,6 @@ import type { Article } from '@/types/news.types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? ''
-
 function toSlug(text: string): string {
   return text
     .normalize('NFD')
@@ -220,7 +218,6 @@ export function ArticlesTab() {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            'x-admin-secret': ADMIN_SECRET,
           },
           body: JSON.stringify(body),
         })
@@ -255,7 +252,7 @@ export function ArticlesTab() {
     try {
       const res = await fetch(`/api/cms/${id}`, {
         method: 'DELETE',
-        headers: { 'x-admin-secret': ADMIN_SECRET },
+        headers: {},
       })
       if (!res.ok) {
         const json = await res.json()

@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { checkAdminSecret } from '@/lib/admin-auth'
+import { isAdminRequest } from '@/lib/admin-auth'
 
 const DRIVE_REGEX = /^https:\/\/(drive|docs)\.google\.com\//
 
@@ -16,9 +16,8 @@ const PatchSchema = z.object({
 })
 
 // GET /api/customer-profile?search=&status=&source=&limit=50
-export async function GET(request: Request) {
-  const authError = checkAdminSecret(request)
-  if (authError) return authError
+export async function GET(request: NextRequest) {
+  if (!isAdminRequest(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const { searchParams } = new URL(request.url)
@@ -51,9 +50,8 @@ export async function GET(request: Request) {
 }
 
 // PATCH /api/customer-profile — cập nhật google_drive_url hoặc image_attachments
-export async function PATCH(request: Request) {
-  const authError = checkAdminSecret(request)
-  if (authError) return authError
+export async function PATCH(request: NextRequest) {
+  if (!isAdminRequest(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const body = await request.json()

@@ -9,9 +9,6 @@ import {
 import type { Tour } from '@/types/tour.types'
 import { COUNTRY_MAP } from '@/lib/tour-country'
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? ''
 
 const COUNTRIES = Object.keys(COUNTRY_MAP).sort()
 
@@ -255,13 +252,13 @@ export function ToursTab() {
       if (editing) {
         res = await fetch(`/api/tours/${editing.id}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
+          headers: { 'Content-Type': 'application/json'},
           body: JSON.stringify(body),
         })
       } else {
         res = await fetch('/api/tours', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
+          headers: { 'Content-Type': 'application/json'},
           body: JSON.stringify(body),
         })
       }
@@ -287,7 +284,7 @@ export function ToursTab() {
     try {
       const res = await fetch(`/api/tours/${tour.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
+        headers: { 'Content-Type': 'application/json'},
         body: JSON.stringify({ is_active: !tour.is_active }),
       })
       if (!res.ok) throw new Error('Lỗi cập nhật')
@@ -305,7 +302,7 @@ export function ToursTab() {
     try {
       const res = await fetch(`/api/tours/${deleteId}?hard=true`, {
         method: 'DELETE',
-        headers: { 'x-admin-secret': ADMIN_SECRET },
+        headers: {},
       })
       if (!res.ok) throw new Error('Xóa thất bại')
       setTours(prev => prev.filter(t => t.id !== deleteId))

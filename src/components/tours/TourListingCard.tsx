@@ -12,6 +12,7 @@ export interface TourListingCardProps {
   next_departure: string | null   // "YYYY-MM-DD"
   min_price:      number | null
   category:       string | null
+  hashtags?:      string[]
 }
 
 function formatVND(n: number) {

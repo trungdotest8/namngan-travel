@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import type { TourItineraryDay, TourScheduleStatus } from '@/types/tour.types'
 
@@ -10,6 +11,8 @@ interface TourDetailProps {
   destination?: string | null
   durationDays?: number | null
   thumbnailUrl?: string | null
+  galleryUrls?: string[] | null
+  hashtags?: string[]
   description?: string | null
   highlights?: string | null
   itinerary?: TourItineraryDay[] | null
@@ -33,6 +36,8 @@ function TourDetailInner({
   destination = 'Đồng Tháp',
   durationDays = 3,
   thumbnailUrl = 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=900&q=80',
+  galleryUrls = null,
+  hashtags = [],
   itinerary = [
     { day: 1, title: 'Khởi hành – Cần Thơ', description: 'Đón khách tại TP.HCM, di chuyển về Cần Thơ, tham quan chợ nổi Cái Răng.' },
     { day: 2, title: 'Đồng Tháp – Sen hồng mùa nước nổi', description: 'Thăm vườn quốc gia Tràm Chim, ngắm sếu đầu đỏ, trải nghiệm bữa cơm nhà dân.' },
@@ -51,6 +56,30 @@ function TourDetailInner({
   googleDocUrl = null,
 }: TourDetailProps) {
   const [iframeLoaded, setIframeLoaded] = useState(false)
+  const [lightboxIdx, setLightboxIdx]   = useState<number | null>(null)
+
+  const allImages = [
+    ...(thumbnailUrl ? [thumbnailUrl] : []),
+    ...(galleryUrls ?? []),
+  ]
+
+  const openLightbox = useCallback((idx: number) => setLightboxIdx(idx), [])
+  const closeLightbox = useCallback(() => setLightboxIdx(null), [])
+  const prevImg = useCallback(() =>
+    setLightboxIdx(i => i !== null ? (i - 1 + allImages.length) % allImages.length : null), [allImages.length])
+  const nextImg = useCallback(() =>
+    setLightboxIdx(i => i !== null ? (i + 1) % allImages.length : null), [allImages.length])
+
+  useEffect(() => {
+    if (lightboxIdx === null) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox()
+      if (e.key === 'ArrowLeft') prevImg()
+      if (e.key === 'ArrowRight') nextImg()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [lightboxIdx, closeLightbox, prevImg, nextImg])
 
   const days = durationDays ?? 1
   const total = seatsTotal ?? 0
@@ -67,8 +96,18 @@ function TourDetailInner({
     <div className="w-full max-w-3xl mx-auto font-sans">
 
       {/* ── BANNER ── */}
-      <div className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '16/7' }}>
+      <div
+        className="relative rounded-xl overflow-hidden cursor-pointer"
+        style={{ aspectRatio: '16/7' }}
+        onClick={() => thumbnailUrl && openLightbox(0)}
+        title={allImages.length > 1 ? 'Xem thư viện ảnh' : undefined}
+      >
         <img src={thumbnailUrl ?? ''} alt={name} className="w-full h-full object-cover" />
+        {allImages.length > 1 && (
+          <span className="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
+            1 / {allImages.length}
+          </span>
+        )}
         {badge && (
           <span className={`absolute top-3 left-3 text-xs px-3 py-1 rounded-full font-medium ${badgeStyle}`}>
             {badge}
@@ -76,11 +115,82 @@ function TourDetailInner({
         )}
       </div>
 
+      {/* ── GALLERY GRID ── */}
+      {(galleryUrls ?? []).length > 0 && (
+        <div className="mt-2 grid grid-cols-3 gap-1.5">
+          {(galleryUrls ?? []).slice(0, 6).map((url, i) => (
+            <button
+              key={url}
+              onClick={() => openLightbox(i + 1)}
+              className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#005BAA]"
+            >
+              <img src={url} alt={`Ảnh ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+              {i === 5 && (galleryUrls ?? []).length > 6 && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-sm font-semibold">
+                  +{(galleryUrls ?? []).length - 6} ảnh
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── LIGHTBOX ── */}
+      {lightboxIdx !== null && allImages.length > 0 && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+          onClick={closeLightbox}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); prevImg() }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 text-white rounded-full p-2 transition-colors"
+            aria-label="Ảnh trước"
+          >
+            <ChevronLeft size={28} />
+          </button>
+          <img
+            src={allImages[lightboxIdx]}
+            alt={`Ảnh ${lightboxIdx + 1}/${allImages.length}`}
+            className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          />
+          <button
+            onClick={(e) => { e.stopPropagation(); nextImg() }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/25 text-white rounded-full p-2 transition-colors"
+            aria-label="Ảnh tiếp"
+          >
+            <ChevronRight size={28} />
+          </button>
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 bg-white/10 hover:bg-white/25 text-white rounded-full p-1.5 transition-colors"
+            aria-label="Đóng"
+          >
+            <X size={20} />
+          </button>
+          <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/60 text-sm">
+            {lightboxIdx + 1} / {allImages.length}
+          </span>
+        </div>
+      )}
+
       {/* ── THÔNG TIN NHANH ── */}
       <div className="flex flex-wrap items-start justify-between gap-3 py-4">
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-medium text-gray-900 mb-1">{name}</h1>
-          <p className="text-sm text-gray-500 mb-3">📍 {destination}</p>
+          <p className="text-sm text-gray-500 mb-2">📍 {destination}</p>
+          {hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {hashtags.map(tag => (
+                <span
+                  key={tag}
+                  className="text-xs px-2.5 py-0.5 rounded-full bg-[#F0F7FF] text-[#005BAA] border border-[#005BAA]/20 font-medium"
+                >
+                  {tag.startsWith('#') ? tag : `#${tag}`}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
             <MetaChip icon="🕐" label={durationLabel} />
             <MetaChip icon="🚌" label={transport ?? ''} />
