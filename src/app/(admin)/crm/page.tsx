@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import {
-  Plane, LayoutDashboard, Users, Settings, Newspaper,
+  Plane, LayoutDashboard, Users, Settings, Newspaper, MapPin,
   Bell, Plus, TrendingUp, TrendingDown,
   CheckCircle2, AlertCircle, Loader2,
 } from 'lucide-react'
@@ -11,10 +11,11 @@ import { CustomerTable } from '@/components/customer-profile/CustomerTable'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { CustomerProfileDrawer } from '@/components/customer-profile/CustomerProfileDrawer'
 import { ArticlesTab } from './ArticlesTab'
+import { ToursTab } from './ToursTab'
 import type { Lead } from '@/types/lead.types'
 
 // ── Types ─────────────────────────────────────────────────────────────────
-type TabId = 'overview' | 'customers' | 'articles' | 'config'
+type TabId = 'overview' | 'customers' | 'articles' | 'tours' | 'config'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function computeMetrics(leads: Lead[]) {
@@ -381,6 +382,7 @@ const NAV = [
   { id: 'overview'  as TabId, label: 'Chiến dịch & Thông báo', icon: LayoutDashboard },
   { id: 'customers' as TabId, label: 'Danh sách Khách hàng',   icon: Users },
   { id: 'articles'  as TabId, label: 'Bài viết / Tin tức',     icon: Newspaper },
+  { id: 'tours'     as TabId, label: 'Quản lý Tour',            icon: MapPin },
   { id: 'config'    as TabId, label: 'Webhook & Email',         icon: Settings },
 ]
 
@@ -388,6 +390,7 @@ const TAB_TITLES: Record<TabId, string> = {
   overview:  'Tổng quan Chiến dịch',
   customers: 'Danh sách Khách hàng',
   articles:  'Quản lý Bài viết',
+  tours:     'Quản lý Tour — Hình ảnh & Hashtags',
   config:    'Cấu hình Webhook & Email',
 }
 
@@ -564,6 +567,11 @@ function CRMPage() {
               {activeTab === 'articles' && (
                 <ErrorBoundary moduleName="ArticlesTab">
                   <ArticlesTab />
+                </ErrorBoundary>
+              )}
+              {activeTab === 'tours' && (
+                <ErrorBoundary moduleName="ToursTab">
+                  <ToursTab />
                 </ErrorBoundary>
               )}
               {activeTab === 'config' && (

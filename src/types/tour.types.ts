@@ -12,6 +12,7 @@ export interface Tour {
   excludes:      string[] | null
   thumbnail_url: string | null
   gallery_urls:  string[] | null
+  hashtags:      string[]         // SEO/social hashtags, e.g. ["#dulichtrongnuoc"]
   category:      string | null    // "trong nước" | "nước ngoài"
   country:       string | null    // e.g. "NHẬT BẢN", "HÀN QUỐC", "VIỆT NAM"
   is_active:     boolean

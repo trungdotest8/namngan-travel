@@ -190,6 +190,8 @@ async function getAccessToken(): Promise<string> {
   if (_cachedToken && Date.now() < _tokenExpiry) return _cachedToken;
 
   const sa  = JSON.parse(SA_JSON_RAW) as ServiceAccount;
+  // Normalize private key: some env formats store \\n (literal) instead of real newlines
+  if (sa.private_key) sa.private_key = sa.private_key.replace(/\\n/g, "\n");
   const now = Math.floor(Date.now() / 1000);
 
   const header  = { alg: "RS256", typ: "JWT" };
@@ -291,6 +293,7 @@ function json(data: unknown, status = 200): Response {
    Output: { drive_id, drive_url, path_key, already_existed }
 ──────────────────────────────────────── */
 async function handleCreateTourPdfFolder(body: Record<string, string>) {
+  try {
   const { folder_name, parent_folder_id, path_key, folder_type } = body;
   if (!folder_name || !path_key || !folder_type) {
     return json({ error: "folder_name, path_key và folder_type là bắt buộc" }, 400);
@@ -345,6 +348,11 @@ async function handleCreateTourPdfFolder(body: Record<string, string>) {
   }
 
   return json({ drive_id: folder.id, drive_url, path_key, already_existed: false });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[handleCreateTourPdfFolder]", msg);
+    return json({ error: "Internal error", detail: msg }, 500);
+  }
 }
 
 interface ServiceAccount { client_email: string; private_key: string }
