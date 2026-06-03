@@ -56,12 +56,56 @@ export interface ArticleDetail extends ArticleListItem {
 function getClient() {
   const url   = process.env.DIRECTUS_URL
   const token = process.env.DIRECTUS_STATIC_TOKEN
-  if (!url || !token) {
-    throw new Error(
-      'Directus chưa được cấu hình. Thêm DIRECTUS_URL và DIRECTUS_STATIC_TOKEN vào .env.local'
-    )
-  }
+  if (!url || !token) return null
   return createDirectus(url).with(staticToken(token)).with(rest())
+}
+
+// ── Supabase fallback (khi Directus chưa setup) ───────────────────────────────
+
+const SB_URL   = process.env.NEXT_PUBLIC_SUPABASE_URL   ?? ''
+const SB_ANON  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+
+async function sbFetchArticles(options?: {
+  limit?:    number
+  category?: string
+}): Promise<ArticleListItem[]> {
+  if (!SB_URL || !SB_ANON) return []
+  const limit = options?.limit ?? 50
+  let endpoint = `${SB_URL}/rest/v1/articles?status=eq.published&order=published_at.desc&limit=${limit}`
+  if (options?.category) endpoint += `&category=eq.${encodeURIComponent(options.category)}`
+  endpoint += '&select=id,title,slug,summary,thumbnail_url,category,tags,published_at'
+  const res = await fetch(endpoint, {
+    headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` },
+    next:    { revalidate: 300 },
+  })
+  if (!res.ok) return []
+  return res.json() as Promise<ArticleListItem[]>
+}
+
+async function sbFetchArticleBySlug(slug: string): Promise<ArticleDetail | null> {
+  if (!SB_URL || !SB_ANON) return null
+  const endpoint = `${SB_URL}/rest/v1/articles?slug=eq.${encodeURIComponent(slug)}&status=eq.published&limit=1`
+    + '&select=id,title,slug,summary,thumbnail_url,category,tags,published_at,content,source_type,author_id'
+  const res = await fetch(endpoint, {
+    headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` },
+    next:    { revalidate: 300 },
+  })
+  if (!res.ok) return null
+  const rows = await res.json() as ArticleDetail[]
+  return rows[0] ?? null
+}
+
+async function sbFetchArticleById(id: string): Promise<ArticleDetail | null> {
+  if (!SB_URL || !SB_ANON) return null
+  const endpoint = `${SB_URL}/rest/v1/articles?id=eq.${id}&limit=1`
+    + '&select=id,title,slug,summary,thumbnail_url,category,tags,published_at,content,source_type,author_id'
+  const res = await fetch(endpoint, {
+    headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` },
+    next:    { revalidate: 300 },
+  })
+  if (!res.ok) return null
+  const rows = await res.json() as ArticleDetail[]
+  return rows[0] ?? null
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -88,9 +132,10 @@ export async function fetchArticles(options?: {
   category?: string
   tag?:      string
 }): Promise<ArticleListItem[]> {
-  try {
-    const client = getClient()
+  const client = getClient()
+  if (!client) return sbFetchArticles(options)
 
+  try {
     const filter: Record<string, unknown> = {
       status: { _eq: 'published' },
     }
@@ -109,7 +154,7 @@ export async function fetchArticles(options?: {
     return (items ?? []) as ArticleListItem[]
   } catch (err) {
     console.error('[directus] fetchArticles error:', err instanceof Error ? err.message : err)
-    return []
+    return sbFetchArticles(options)
   }
 }
 
@@ -120,9 +165,10 @@ export async function fetchArticles(options?: {
  * Trả null khi không tìm thấy hoặc lỗi.
  */
 export async function fetchArticleBySlug(slug: string): Promise<ArticleDetail | null> {
-  try {
-    const client = getClient()
+  const client = getClient()
+  if (!client) return sbFetchArticleBySlug(slug)
 
+  try {
     const items = await client.request(
       readItems('articles', {
         fields: [...DETAIL_FIELDS],
@@ -138,7 +184,7 @@ export async function fetchArticleBySlug(slug: string): Promise<ArticleDetail | 
     return item ? (item as ArticleDetail) : null
   } catch (err) {
     console.error('[directus] fetchArticleBySlug error:', err instanceof Error ? err.message : err)
-    return null
+    return sbFetchArticleBySlug(slug)
   }
 }
 
@@ -149,9 +195,10 @@ export async function fetchArticleBySlug(slug: string): Promise<ArticleDetail | 
  * Trả null khi không tìm thấy hoặc lỗi.
  */
 export async function fetchArticleById(id: string): Promise<ArticleDetail | null> {
-  try {
-    const client = getClient()
+  const client = getClient()
+  if (!client) return sbFetchArticleById(id)
 
+  try {
     const item = await client.request(
       readItem('articles', id, {
         fields: [...DETAIL_FIELDS],
@@ -161,6 +208,6 @@ export async function fetchArticleById(id: string): Promise<ArticleDetail | null
     return item ? (item as ArticleDetail) : null
   } catch (err) {
     console.error('[directus] fetchArticleById error:', err instanceof Error ? err.message : err)
-    return null
+    return sbFetchArticleById(id)
   }
 }
