@@ -23,3 +23,4 @@ export type {
   ItineraryResponse,
 } from './pdf-index.types'
 export type { DriveFolderRegistry, DriveFolderType } from './drive-registry.types'
+export type { AdminUser, AdminRole, AdminUserRow } from './admin.types'

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import {
   Plane, LayoutDashboard, Users, Settings, Newspaper, MapPin,
   Bell, Plus, TrendingUp, TrendingDown,
-  CheckCircle2, AlertCircle, Loader2, LogOut,
+  CheckCircle2, AlertCircle, Loader2, LogOut, UserCog,
 } from 'lucide-react'
 import { useCustomerProfileStore } from '@/store/customer-profile.store'
 import { CustomerTable } from '@/components/customer-profile/CustomerTable'
@@ -12,10 +12,12 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { CustomerProfileDrawer } from '@/components/customer-profile/CustomerProfileDrawer'
 import { ArticlesTab } from './ArticlesTab'
 import { ToursTab } from './ToursTab'
+import { StaffTab } from './StaffTab'
 import type { Lead } from '@/types/lead.types'
+import type { AdminUser } from '@/types/admin.types'
 
 // ── Types ─────────────────────────────────────────────────────────────────
-type TabId = 'overview' | 'customers' | 'articles' | 'tours' | 'config'
+type TabId = 'overview' | 'customers' | 'articles' | 'tours' | 'staff' | 'config'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function computeMetrics(leads: Lead[]) {
@@ -383,6 +385,7 @@ const NAV = [
   { id: 'customers' as TabId, label: 'Danh sách Khách hàng',   icon: Users },
   { id: 'articles'  as TabId, label: 'Bài viết / Tin tức',     icon: Newspaper },
   { id: 'tours'     as TabId, label: 'Quản lý Tour',            icon: MapPin },
+  { id: 'staff'     as TabId, label: 'Nhân Viên',               icon: UserCog },
   { id: 'config'    as TabId, label: 'Webhook & Email',         icon: Settings },
 ]
 
@@ -391,6 +394,7 @@ const TAB_TITLES: Record<TabId, string> = {
   customers: 'Danh sách Khách hàng',
   articles:  'Quản lý Bài viết',
   tours:     'Quản lý Tour — Hình ảnh & Hashtags',
+  staff:     'Quản lý Nhân Viên',
   config:    'Cấu hình Webhook & Email',
 }
 
@@ -399,6 +403,7 @@ function CRMPage() {
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<{ synced: number; errors: string[] } | null>(null)
+  const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null)
   const setCustomers = useCustomerProfileStore((s) => s.setCustomers)
   const setLoading   = useCustomerProfileStore((s) => s.setLoading)
   const leads        = useCustomerProfileStore((s) => s.customers)
@@ -421,6 +426,13 @@ function CRMPage() {
   }, [setCustomers, setLoading])
 
   useEffect(() => { fetchLeads() }, [fetchLeads])
+
+  useEffect(() => {
+    fetch('/api/admin/me')
+      .then((r) => r.json())
+      .then((d: { user?: AdminUser }) => { if (d.user) setCurrentAdmin(d.user) })
+      .catch(() => null)
+  }, [])
 
   async function handleSyncSeastar() {
     setSyncing(true)
@@ -482,11 +494,15 @@ function CRMPage() {
         <div className="px-4 py-3 border-t border-white/10">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
-              AN
+              {(currentAdmin?.display_name ?? 'A').slice(0, 2).toUpperCase()}
             </div>
             <div>
-              <div className="text-white/80 text-[12px] font-medium">Admin Ngọc</div>
-              <div className="text-white/40 text-[10px]">Super Admin</div>
+              <div className="text-white/80 text-[12px] font-medium">
+                {currentAdmin?.display_name ?? 'Admin'}
+              </div>
+              <div className="text-white/40 text-[10px]">
+                {currentAdmin?.role === 'admin' ? 'Super Admin' : 'Nhân viên'}
+              </div>
             </div>
           </div>
         </div>
@@ -578,6 +594,11 @@ function CRMPage() {
               {activeTab === 'tours' && (
                 <ErrorBoundary moduleName="ToursTab">
                   <ToursTab />
+                </ErrorBoundary>
+              )}
+              {activeTab === 'staff' && (
+                <ErrorBoundary moduleName="StaffTab">
+                  <StaffTab />
                 </ErrorBoundary>
               )}
               {activeTab === 'config' && (

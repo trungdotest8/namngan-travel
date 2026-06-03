@@ -1,22 +1,22 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Lock, Loader2 } from 'lucide-react'
+import { Lock, User, Loader2 } from 'lucide-react'
 import { Suspense } from 'react'
 
 function LoginForm() {
   const router       = useRouter()
   const searchParams = useSearchParams()
-  const inputRef     = useRef<HTMLInputElement>(null)
 
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState<string | null>(null)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const password = inputRef.current?.value ?? ''
-    if (!password) return
+    if (!username || !password) return
 
     setLoading(true)
     setError(null)
@@ -25,7 +25,7 @@ function LoginForm() {
       const res = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username: username.trim().toLowerCase(), password }),
       })
 
       if (res.ok) {
@@ -34,8 +34,7 @@ function LoginForm() {
       } else {
         const data = await res.json() as { error?: string }
         setError(data.error ?? 'Đăng nhập thất bại')
-        if (inputRef.current) inputRef.current.value = ''
-        inputRef.current?.focus()
+        setPassword('')
       }
     } catch {
       setError('Lỗi kết nối. Vui lòng thử lại.')
@@ -58,16 +57,36 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
           <div>
+            <label htmlFor="username" className="block text-sm font-medium text-[#1A1A2E] mb-1.5">
+              Tên đăng nhập
+            </label>
+            <div className="relative">
+              <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                id="username"
+                type="text"
+                autoFocus
+                autoComplete="username"
+                placeholder="admin"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={loading}
+                className="w-full border border-gray-200 rounded-lg pl-9 pr-4 py-2.5 text-sm text-[#1A1A2E] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#005BAA] focus:border-transparent disabled:opacity-60 transition"
+              />
+            </div>
+          </div>
+
+          <div>
             <label htmlFor="password" className="block text-sm font-medium text-[#1A1A2E] mb-1.5">
               Mật khẩu
             </label>
             <input
               id="password"
-              ref={inputRef}
               type="password"
-              autoFocus
               autoComplete="current-password"
-              placeholder="Nhập mật khẩu admin"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
               className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-[#1A1A2E] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#005BAA] focus:border-transparent disabled:opacity-60 transition"
             />
@@ -79,7 +98,7 @@ function LoginForm() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !username || !password}
             className="w-full bg-[#005BAA] hover:bg-[#0078D7] text-white font-semibold py-2.5 rounded-lg text-sm transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {loading && <Loader2 size={16} className="animate-spin" />}
