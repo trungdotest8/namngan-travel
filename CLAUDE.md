@@ -339,11 +339,11 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | TOURS-ADMIN | Admin Tour (CRM tab) | ✅ v1.0.0 | `src/app/(admin)/crm/ToursTab.tsx` — gallery + hashtags CRUD |
 | TOURS-LIST | /tours listing | ✅ v1.2.0 | `ToursClient.tsx` + hashtag filter + stagger animation |
 | NAV | Mega-menu Navigation | ✅ v1.0.0 | `Header.tsx` + `src/lib/mega-menu-data.ts` — 2 dropdown 3 cột |
-| ANIM | Animations | ✅ v1.0.0 | `tailwind.config.ts` + `globals.css` — stagger/fade-in-down/slide-up |
-| GALLERY | Gallery seed | ✅ **v1.0.0 MỚI** | migration #13 — Unsplash placeholder 3 ảnh/tour, 20 quốc gia |
-| DOMESTIC | /tour-trong-nuoc | ✅ **v2.0.0 MỚI** | `DomesticToursClient.tsx` — hashtag filter chips |
-| INTL | /tour-nuoc-ngoai | ✅ **v2.1.0 MỚI** | `InternationalToursClient.tsx` — hashtag chips + country filter |
-| BOOKING | Booking form | ✅ **v1.0.0 MỚI** | `src/components/booking/BookingModal.tsx` — modal + floating CTA |
+| ANIM | Animations | ✅ **v1.1.0** | `globals.css` — @keyframes defined trực tiếp (fix Tailwind purge bug) |
+| GALLERY | Gallery seed | ✅ v1.0.0 | migration #13 — Unsplash placeholder 3 ảnh/tour, 20 quốc gia |
+| DOMESTIC | /tour-trong-nuoc | ✅ **v2.1.0** | `DomesticToursClient.tsx` — hashtag flex-wrap (fix scroll ngang) |
+| INTL | /tour-nuoc-ngoai | ✅ **v2.2.0** | `InternationalToursClient.tsx` — hashtag flex-wrap + country filter |
+| BOOKING | Booking form | ✅ v1.0.0 | `src/components/booking/BookingModal.tsx` — modal + floating CTA |
 | EDGE | Edge Functions | ✅ v1.1.0 | `supabase/functions/google-drive/` — 23 folders created |
 | PDF | PDF Crawler & Indexer | ✅ v1.3.0 | `/api/pdf-index` + migration #6+#7 |
 | CRON | Vercel Cron | ✅ v1.0.0 | `/api/cron/crawl-pdf` + `vercel.json` |
@@ -356,7 +356,7 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 
 | Route | Method | Trạng thái | Ghi chú |
 |-------|--------|-----------|---------|
-| `/api/leads` | POST | ✅ | Zod + luồng kép Email+Realtime; **`pax` field MỚI** |
+| `/api/leads` | POST | ✅ | Zod + luồng kép Email+Realtime; `pax` field |
 | `/api/cms` | GET/POST | ✅ | status=all cho admin; limit max 200 |
 | `/api/cms/[id]` | PATCH/DELETE | ✅ | Auth: cookie hoặc x-admin-secret |
 | `/api/tours` | GET/POST | ✅ | filter category/country/is_active/search |
@@ -389,7 +389,7 @@ useCmsStore             (store/cms.store.ts)               ✅
 useCustomerProfileStore (store/customer-profile.store.ts)  ✅
 ```
 
-### Data Contract — Delta phiên #21
+### Data Contract — Delta phiên #22
 
 ```typescript
 // ── ⚠️ QUAN TRỌNG — URL thực tế của Admin (route group không thêm path) ────
@@ -397,34 +397,31 @@ useCustomerProfileStore (store/customer-profile.store.ts)  ✅
 // src/app/(admin)/crm/page.tsx    → URL: /crm      (KHÔNG phải /admin/crm)
 // middleware.ts matcher: ['/crm', '/crm/:path*']   redirect → /login
 
-// ── LeadFormSchema (THAY ĐỔI — src/lib/validations/lead.schema.ts) ───────
-// Thêm field mới: pax: z.number().int().min(1).optional()
-// BookingModal dùng để gửi số hành khách kèm lead (adults + children)
+// ── LeadFormSchema (src/lib/validations/lead.schema.ts) ──────────────────
+// pax: z.number().int().min(1).optional() — BookingModal gửi adults + children
 
-// ── BookingModal (NEW — src/components/booking/BookingModal.tsx) ──────────
+// ── BookingModal (src/components/booking/BookingModal.tsx) ────────────────
 // Props: tourId, tourName, schedules: TourSchedule[], onClose
 // Submit POST /api/leads: { full_name, phone, email?, message, tour_id, lead_source:'organic', pax }
-// message chứa: "Đặt tour: [name] | Lịch: [date] | Người lớn: X | Trẻ em: Y | Tổng: Z ₫"
-// Floating CTA: fixed bottom-6 right-6 (desktop) / bottom-6 center (mobile) — màu #FF6B00
+// Floating CTA: fixed bottom-6 right-6 (desktop) / center (mobile) — màu #FF6B00
 
-// ── /tour/[tourId]/page.tsx (THAY ĐỔI) ───────────────────────────────────
-// Luôn fetch /api/departures?tour_id=XXX&status=open&limit=20 (không còn conditional)
-// Lưu allSchedules: TourSchedule[] trong state → truyền vào BookingModal
+// ── globals.css — @keyframes FIX (phiên #22) ─────────────────────────────
+// @keyframes slide-up, fade-in-down, fade-in định nghĩa TRỰC TIẾP trong globals.css
+// KHÔNG phụ thuộc vào Tailwind config (tránh bị purge trong production build)
+// Lý do: animate-stagger dùng animation: slide-up nhưng không có component nào
+//        dùng class animate-slide-up → Tailwind purge @keyframes slide-up → cards vô hình
+
+// ── Hashtag chips (phiên #22) ─────────────────────────────────────────────
+// InternationalToursClient + DomesticToursClient: đổi overflow-x-auto/min-w-max
+// → flex-wrap, bỏ shrink-0 trên buttons → chips xuống dòng thay vì scroll ngang
+
+// ── /tour/[tourId]/page.tsx ───────────────────────────────────────────────
+// Luôn fetch departures → allSchedules: TourSchedule[] → truyền vào BookingModal
 // showBooking state điều khiển modal visibility
-
-// ── /tour-trong-nuoc (THAY ĐỔI) ──────────────────────────────────────────
-// page.tsx: thêm hashtags vào query, processTours trả TourListingCardProps
-// DomesticToursClient.tsx (NEW): client component, hashtag chips filter
-
-// ── /tour-nuoc-ngoai (THAY ĐỔI) ──────────────────────────────────────────
-// page.tsx: thêm hashtags vào query, processTours pass-through hashtags
-// InternationalToursClient: thêm activeHashtag state + allHashtags derived
-// handleCountryChange() reset hashtag khi đổi quốc gia
 
 // ── Gallery URLs (migration #13) ─────────────────────────────────────────
 // tours.gallery_urls seeded 3 Unsplash photos/tour theo country (20 quốc gia)
-// Chỉ fill tours chưa có ảnh (safe re-run với WHERE cardinality = 0)
-// Admin nên thay bằng ảnh thực qua /crm → tab Tour → edit gallery_urls
+// Admin thay bằng ảnh thực qua /crm → tab Tour → edit gallery_urls
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
@@ -486,6 +483,7 @@ CRM ArticlesTab: WYSIWYG editor (Tiptap lite) thay textarea HTML
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-04 | Handover #22 — Bug Fixes: Tour Cards + Hashtag Wrap | Fix @keyframes slide-up purge; hashtag flex-wrap cả 2 listing pages |
 | 2026-06-04 | Handover #21 — Gallery Seed + Hashtag Filter + Booking Form | migration #13 gallery_urls ✅; DomesticToursClient hashtag ✅; BookingModal ✅; pax field ✅ |
 | 2026-06-04 | Handover #20 — Mega-menu + Animations + Hashtag Seed | Mega-menu 3 cột Header ✅; stagger/fade animations ✅; 49 tours hashtags seeded ✅; Resend domain created ✅ |
 | 2026-06-03 | Handover #19 — Multi-User Auth + Staff Tab + URL fix | admin_users migration #10 ✅; bcrypt auth ✅; StaffTab ✅; fix /crm /login URLs ✅ |
