@@ -17,6 +17,7 @@ export const LeadFormSchema = z.object({
   message:      z.string().max(1000).optional(),
   tour_id:      z.string().uuid().optional(),
   lead_source:  LeadSourceEnum,
+  pax:          z.number().int().min(1).optional(),
   // UTM tracking — thu thập tự động từ URL params, không do người dùng nhập thủ công
   utm_source:   z.string().max(100).optional(),
   utm_medium:   z.string().max(100).optional(),

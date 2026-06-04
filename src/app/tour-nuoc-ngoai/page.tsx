@@ -23,6 +23,7 @@ interface TourRow {
   duration_days:  number | null
   category:       string | null
   thumbnail_url:  string | null
+  hashtags:       string[] | null
   tour_schedules: ScheduleRow[]
 }
 
@@ -50,6 +51,7 @@ function processTours(tours: TourRow[]): TourListingCardProps[] {
         ? Math.min(...openSchedules.map(s => s.price_adult))
         : null,
       category:       t.category,
+      hashtags:       t.hashtags ?? [],
     }
   })
 }
@@ -67,7 +69,7 @@ export default async function TourNuocNgoaiPage() {
   const { data, error } = await supabase
     .from('tours')
     .select(`
-      id, name, destination, country, duration_days, category, thumbnail_url,
+      id, name, destination, country, duration_days, category, thumbnail_url, hashtags,
       tour_schedules(departure_date, price_adult, status)
     `)
     .eq('is_active', true)

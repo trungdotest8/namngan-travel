@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Phone } from 'lucide-react'
+import { ArrowLeft, Phone, CalendarCheck } from 'lucide-react'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import TourDetail from '@/components/itinerary/TourDetail'
 import PdfViewer from '@/components/itinerary/PdfViewer'
+import BookingModal from '@/components/booking/BookingModal'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import type { ItineraryResponse } from '@/types/pdf-index.types'
 import type { TourSchedule } from '@/types/tour.types'
@@ -17,10 +18,12 @@ export default function TourItineraryPage() {
   const searchParams = useSearchParams()
   const scheduleId = searchParams.get('schedule')
 
-  const [itinerary, setItinerary] = useState<ItineraryResponse | null>(null)
-  const [schedule,  setSchedule]  = useState<TourSchedule | null>(null)
-  const [loading,   setLoading]   = useState(true)
-  const [error,     setError]     = useState<string | null>(null)
+  const [itinerary,      setItinerary]      = useState<ItineraryResponse | null>(null)
+  const [schedule,       setSchedule]       = useState<TourSchedule | null>(null)
+  const [allSchedules,   setAllSchedules]   = useState<TourSchedule[]>([])
+  const [loading,        setLoading]        = useState(true)
+  const [error,          setError]          = useState<string | null>(null)
+  const [showBooking,    setShowBooking]    = useState(false)
 
   useEffect(() => {
     if (!tourId) return
@@ -30,12 +33,10 @@ export default function TourItineraryPage() {
       setError(null)
 
       try {
-        // Fetch itinerary và schedule song song
+        // Fetch itinerary và tất cả schedules song song
         const [itiRes, schRes] = await Promise.all([
           fetch(`/api/itinerary/${tourId}`),
-          scheduleId
-            ? fetch(`/api/departures?tour_id=${tourId}`)
-            : Promise.resolve(null),
+          fetch(`/api/departures?tour_id=${tourId}&status=open&limit=20`),
         ])
 
         if (!itiRes.ok) {
@@ -50,11 +51,13 @@ export default function TourItineraryPage() {
         const itiData: ItineraryResponse = await itiRes.json()
         setItinerary(itiData)
 
-        if (schRes?.ok) {
+        if (schRes.ok) {
           const schData: { schedules: TourSchedule[] } = await schRes.json()
+          const list = schData.schedules ?? []
+          setAllSchedules(list)
           const match = scheduleId
-            ? schData.schedules?.find((s) => s.id === scheduleId)
-            : schData.schedules?.[0]
+            ? list.find((s) => s.id === scheduleId)
+            : list[0]
           if (match) setSchedule(match)
         }
       } catch {
@@ -91,6 +94,32 @@ export default function TourItineraryPage() {
             </a>
           </div>
         </div>
+
+        {/* Floating booking CTA — hiện sau khi load xong */}
+        {!loading && !error && itinerary && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 sm:left-auto sm:translate-x-0 sm:right-6">
+            <button
+              onClick={() => setShowBooking(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-[#FF6B00] text-white font-bold rounded-full shadow-lg
+                         hover:bg-orange-600 active:scale-95 transition-all text-sm"
+            >
+              <CalendarCheck size={18} />
+              Đặt tour ngay
+            </button>
+          </div>
+        )}
+
+        {/* Booking modal */}
+        {showBooking && itinerary && (
+          <ErrorBoundary moduleName="BookingModal">
+            <BookingModal
+              tourId={tourId}
+              tourName={itinerary.tour_name ?? ''}
+              schedules={allSchedules}
+              onClose={() => setShowBooking(false)}
+            />
+          </ErrorBoundary>
+        )}
 
         <div className="container-main py-6 max-w-3xl mx-auto">
 

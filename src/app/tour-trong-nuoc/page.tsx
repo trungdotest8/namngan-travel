@@ -1,8 +1,8 @@
-import type { CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import TourListingCard from '@/components/tours/TourListingCard'
+import DomesticToursClient from './DomesticToursClient'
+import type { TourListingCardProps } from '@/components/tours/TourListingCard'
 import { Phone, MapPin } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -14,30 +14,19 @@ interface ScheduleRow {
 }
 
 interface TourRow {
-  id:            string
-  name:          string
-  destination:   string | null
-  duration_days: number | null
-  category:      string | null
-  thumbnail_url: string | null
-  tour_schedules: ScheduleRow[]
-}
-
-interface ProcessedTour {
   id:             string
   name:           string
   destination:    string | null
-  country:        null
   duration_days:  number | null
-  thumbnail_url:  string | null
-  next_departure: string | null
-  min_price:      number | null
   category:       string | null
+  thumbnail_url:  string | null
+  hashtags:       string[] | null
+  tour_schedules: ScheduleRow[]
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function processTours(tours: TourRow[]): ProcessedTour[] {
+function processTours(tours: TourRow[]): TourListingCardProps[] {
   const today = new Date().toISOString().slice(0, 10)
   return tours.map(t => {
     const openSchedules = (t.tour_schedules ?? [])
@@ -55,6 +44,7 @@ function processTours(tours: TourRow[]): ProcessedTour[] {
         ? Math.min(...openSchedules.map(s => s.price_adult))
         : null,
       category:       t.category,
+      hashtags:       t.hashtags ?? [],
     }
   })
 }
@@ -72,7 +62,7 @@ export default async function TourTrongNuocPage() {
   const { data, error } = await supabase
     .from('tours')
     .select(`
-      id, name, destination, duration_days, category, thumbnail_url,
+      id, name, destination, duration_days, category, thumbnail_url, hashtags,
       tour_schedules(departure_date, price_adult, status)
     `)
     .eq('is_active', true)
@@ -111,22 +101,7 @@ export default async function TourTrongNuocPage() {
           {tours.length === 0 ? (
             <EmptyState />
           ) : (
-            <>
-              <p className="text-sm text-[#666666] mb-6">
-                Tìm thấy <span className="font-semibold text-[#1A1A2E]">{tours.length}</span> tour trong nước
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                {tours.map((t, index) => (
-                  <div
-                    key={t.id}
-                    className="animate-stagger"
-                    style={{ '--i': Math.min(index, 11) } as CSSProperties}
-                  >
-                    <TourListingCard {...t} />
-                  </div>
-                ))}
-              </div>
-            </>
+            <DomesticToursClient tours={tours} />
           )}
         </section>
       </main>

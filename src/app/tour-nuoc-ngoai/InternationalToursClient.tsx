@@ -25,6 +25,7 @@ export default function InternationalToursClient({ tours }: Props) {
   const [activeCountry, setActiveCountry] = useState<string | null>(
     searchParams.get('country') ?? null
   )
+  const [activeHashtag, setActiveHashtag] = useState<string | null>(null)
   const [sort, setSort] = useState<SortKey>('default')
   const [showFilter, setShowFilter] = useState(true)
 
@@ -47,13 +48,32 @@ export default function InternationalToursClient({ tours }: Props) {
       .sort(([a], [b]) => a.localeCompare(b, 'vi'))
   }, [tours])
 
-  // Filter
-  const filtered = useMemo(
-    () => activeCountry
+  // Derive unique hashtags from country-filtered set
+  const allHashtags = useMemo(() => {
+    const base = activeCountry
       ? tours.filter(t => (t.country ?? 'Khác') === activeCountry)
-      : tours,
-    [tours, activeCountry]
-  )
+      : tours
+    const seen = new Set<string>()
+    base.forEach(t => (t.hashtags ?? []).forEach(h => seen.add(h)))
+    return [...seen].sort((a, b) => a.localeCompare(b, 'vi'))
+  }, [tours, activeCountry])
+
+  // Reset hashtag when country changes
+  function handleCountryChange(c: string | null) {
+    setActiveCountry(c)
+    setActiveHashtag(null)
+  }
+
+  // Filter: country → hashtag
+  const filtered = useMemo(() => {
+    let result = activeCountry
+      ? tours.filter(t => (t.country ?? 'Khác') === activeCountry)
+      : tours
+    if (activeHashtag) {
+      result = result.filter(t => (t.hashtags ?? []).includes(activeHashtag))
+    }
+    return result
+  }, [tours, activeCountry, activeHashtag])
 
   // Sort
   const sorted = useMemo(() => {
@@ -98,7 +118,7 @@ export default function InternationalToursClient({ tours }: Props) {
               <div className="flex flex-wrap gap-2">
                 {/* Tất cả */}
                 <button
-                  onClick={() => setActiveCountry(null)}
+                  onClick={() => handleCountryChange(null)}
                   className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
                     !activeCountry
                       ? 'bg-[#005BAA] text-white border-[#005BAA] shadow-sm'
@@ -116,7 +136,7 @@ export default function InternationalToursClient({ tours }: Props) {
                 {countries.map(([c, count]) => (
                   <button
                     key={c}
-                    onClick={() => setActiveCountry(c === activeCountry ? null : c)}
+                    onClick={() => handleCountryChange(c === activeCountry ? null : c)}
                     className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
                       activeCountry === c
                         ? 'bg-[#005BAA] text-white border-[#005BAA] shadow-sm'
@@ -137,16 +157,46 @@ export default function InternationalToursClient({ tours }: Props) {
         </div>
       )}
 
+      {/* Hashtag chips */}
+      {allHashtags.length > 0 && (
+        <div className="overflow-x-auto pb-1 mb-5 -mx-4 px-4">
+          <div className="flex gap-2 min-w-max">
+            {activeHashtag && (
+              <button
+                onClick={() => setActiveHashtag(null)}
+                className="px-3 py-1.5 rounded-full text-xs font-medium border border-gray-300 bg-white text-[#666666] hover:border-[#005BAA] transition-colors shrink-0"
+              >
+                Xoá tag ×
+              </button>
+            )}
+            {allHashtags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => setActiveHashtag(activeHashtag === tag ? null : tag)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors shrink-0 ${
+                  activeHashtag === tag
+                    ? 'bg-[#005BAA] text-white border-[#005BAA]'
+                    : 'bg-[#F0F7FF] text-[#005BAA] border-[#005BAA]/20 hover:border-[#005BAA]'
+                }`}
+              >
+                {tag.startsWith('#') ? tag : `#${tag}`}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Toolbar: result count + sort */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
           <p className="text-sm text-[#666666]">
             <span className="font-semibold text-[#1A1A2E]">{sorted.length}</span> tour
             {activeCountry ? ` tại ${activeCountry}` : ' quốc tế'}
+            {activeHashtag ? ` với tag "${activeHashtag}"` : ''}
           </p>
-          {activeCountry && (
+          {(activeCountry || activeHashtag) && (
             <button
-              onClick={() => setActiveCountry(null)}
+              onClick={() => { handleCountryChange(null); setActiveHashtag(null) }}
               className="inline-flex items-center gap-1 text-xs text-[#005BAA] bg-[#F0F7FF] hover:bg-[#005BAA] hover:text-white px-2 py-1 rounded-full transition-colors"
             >
               <X size={11} />

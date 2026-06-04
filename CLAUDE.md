@@ -332,14 +332,18 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | D | Hồ sơ khách | ✅ v1.1.0 | `src/components/customer-profile/CustomerProfileDrawer.tsx` + `CustomerTable.tsx` |
 | E | Chat & Lead | ✅ v2.0.0 | `src/components/chat/ChatWidget.tsx` + `AutoPopup.tsx` |
 | F | CMS / RSS | ✅ v1.2.0 | `src/components/cms/ArticleFeed.tsx` |
-| G | DB Schema | ✅ **12/12 cloud** | `supabase/migrations/` — Supabase: indjoegnsvcteaozmgrg |
+| G | DB Schema | ✅ **13/13 cloud** | `supabase/migrations/` — Supabase: indjoegnsvcteaozmgrg |
 | CRM | Admin CRM | ✅ v4.0.0 | `crm/page.tsx` + `ArticlesTab.tsx` + `ToursTab.tsx` + `StaffTab.tsx` — 6 tabs |
 | AUTH | Admin Auth | ✅ v2.0.0 | `src/app/(admin)/login/page.tsx` + `src/middleware.ts` + `/api/admin/auth` |
 | STAFF | Quản lý nhân viên | ✅ v1.0.0 | `crm/StaffTab.tsx` + `/api/admin/users` + `/api/admin/me` |
 | TOURS-ADMIN | Admin Tour (CRM tab) | ✅ v1.0.0 | `src/app/(admin)/crm/ToursTab.tsx` — gallery + hashtags CRUD |
-| TOURS-LIST | /tours listing | ✅ v1.2.0 | `ToursClient.tsx` + stagger animation |
-| NAV | Mega-menu Navigation | ✅ **v1.0.0 MỚI** | `Header.tsx` + `src/lib/mega-menu-data.ts` — 2 dropdown 3 cột |
-| ANIM | Animations | ✅ **v1.0.0 MỚI** | `tailwind.config.ts` + `globals.css` — stagger, fade-in-down, slide-up |
+| TOURS-LIST | /tours listing | ✅ v1.2.0 | `ToursClient.tsx` + hashtag filter + stagger animation |
+| NAV | Mega-menu Navigation | ✅ v1.0.0 | `Header.tsx` + `src/lib/mega-menu-data.ts` — 2 dropdown 3 cột |
+| ANIM | Animations | ✅ v1.0.0 | `tailwind.config.ts` + `globals.css` — stagger/fade-in-down/slide-up |
+| GALLERY | Gallery seed | ✅ **v1.0.0 MỚI** | migration #13 — Unsplash placeholder 3 ảnh/tour, 20 quốc gia |
+| DOMESTIC | /tour-trong-nuoc | ✅ **v2.0.0 MỚI** | `DomesticToursClient.tsx` — hashtag filter chips |
+| INTL | /tour-nuoc-ngoai | ✅ **v2.1.0 MỚI** | `InternationalToursClient.tsx` — hashtag chips + country filter |
+| BOOKING | Booking form | ✅ **v1.0.0 MỚI** | `src/components/booking/BookingModal.tsx` — modal + floating CTA |
 | EDGE | Edge Functions | ✅ v1.1.0 | `supabase/functions/google-drive/` — 23 folders created |
 | PDF | PDF Crawler & Indexer | ✅ v1.3.0 | `/api/pdf-index` + migration #6+#7 |
 | CRON | Vercel Cron | ✅ v1.0.0 | `/api/cron/crawl-pdf` + `vercel.json` |
@@ -352,7 +356,7 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 
 | Route | Method | Trạng thái | Ghi chú |
 |-------|--------|-----------|---------|
-| `/api/leads` | POST | ✅ | Zod + luồng kép Email+Realtime |
+| `/api/leads` | POST | ✅ | Zod + luồng kép Email+Realtime; **`pax` field MỚI** |
 | `/api/cms` | GET/POST | ✅ | status=all cho admin; limit max 200 |
 | `/api/cms/[id]` | PATCH/DELETE | ✅ | Auth: cookie hoặc x-admin-secret |
 | `/api/tours` | GET/POST | ✅ | filter category/country/is_active/search |
@@ -385,7 +389,7 @@ useCmsStore             (store/cms.store.ts)               ✅
 useCustomerProfileStore (store/customer-profile.store.ts)  ✅
 ```
 
-### Data Contract — Delta phiên #20
+### Data Contract — Delta phiên #21
 
 ```typescript
 // ── ⚠️ QUAN TRỌNG — URL thực tế của Admin (route group không thêm path) ────
@@ -393,36 +397,49 @@ useCustomerProfileStore (store/customer-profile.store.ts)  ✅
 // src/app/(admin)/crm/page.tsx    → URL: /crm      (KHÔNG phải /admin/crm)
 // middleware.ts matcher: ['/crm', '/crm/:path*']   redirect → /login
 
-// ── Mega-menu Navigation (NEW — src/lib/mega-menu-data.ts) ───────────────
-// INTL_COLUMNS: MegaMenuColumn[] — 3 cột × 8-9 items, country = exact COUNTRY_MAP key
-// DOMESTIC_COLUMNS: MegaMenuColumn[] — 3 cột × 5 items, tất cả → /tour-trong-nuoc
-// Header build href: '/tour-nuoc-ngoai?country=' + encodeURIComponent(dest.country)
-// InternationalToursClient.tsx đọc searchParams.get('country') và so khớp t.country
+// ── LeadFormSchema (THAY ĐỔI — src/lib/validations/lead.schema.ts) ───────
+// Thêm field mới: pax: z.number().int().min(1).optional()
+// BookingModal dùng để gửi số hành khách kèm lead (adults + children)
 
-// ── Animation utilities (globals.css) ────────────────────────────────────
-// .animate-stagger — CSS custom property --i, delay = i × 60ms, max index 11
-// .link-underline  — ::after width slide 0→100% on hover
-// tailwind keyframes: fade-in-down (0.18s), fade-in (0.15s), slide-up (0.35s)
+// ── BookingModal (NEW — src/components/booking/BookingModal.tsx) ──────────
+// Props: tourId, tourName, schedules: TourSchedule[], onClose
+// Submit POST /api/leads: { full_name, phone, email?, message, tour_id, lead_source:'organic', pax }
+// message chứa: "Đặt tour: [name] | Lịch: [date] | Người lớn: X | Trẻ em: Y | Tổng: Z ₫"
+// Floating CTA: fixed bottom-6 right-6 (desktop) / bottom-6 center (mobile) — màu #FF6B00
 
-// ── Hashtags (migration #11+#12) ─────────────────────────────────────────
-// 49/49 tours đã có hashtags seeded theo country
-// tours.hashtags: TEXT[] — GIN index — dùng cho filter chips trong /tours
+// ── /tour/[tourId]/page.tsx (THAY ĐỔI) ───────────────────────────────────
+// Luôn fetch /api/departures?tour_id=XXX&status=open&limit=20 (không còn conditional)
+// Lưu allSchedules: TourSchedule[] trong state → truyền vào BookingModal
+// showBooking state điều khiển modal visibility
+
+// ── /tour-trong-nuoc (THAY ĐỔI) ──────────────────────────────────────────
+// page.tsx: thêm hashtags vào query, processTours trả TourListingCardProps
+// DomesticToursClient.tsx (NEW): client component, hashtag chips filter
+
+// ── /tour-nuoc-ngoai (THAY ĐỔI) ──────────────────────────────────────────
+// page.tsx: thêm hashtags vào query, processTours pass-through hashtags
+// InternationalToursClient: thêm activeHashtag state + allHashtags derived
+// handleCountryChange() reset hashtag khi đổi quốc gia
+
+// ── Gallery URLs (migration #13) ─────────────────────────────────────────
+// tours.gallery_urls seeded 3 Unsplash photos/tour theo country (20 quốc gia)
+// Chỉ fill tours chưa có ảnh (safe re-run với WHERE cardinality = 0)
+// Admin nên thay bằng ảnh thực qua /crm → tab Tour → edit gallery_urls
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
-GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main, commit 04abe51)
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main)
 Vercel  : namngan-travel — ✅ deployed; URL: namngan-travel.vercel.app
           ⚠️ CẦN THÊM: DIRECTUS_URL + DIRECTUS_STATIC_TOKEN
-Supabase: indjoegnsvcteaozmgrg — ✅ 12/12 migrations cloud; 49 tours (49/49 có hashtags)
+Supabase: indjoegnsvcteaozmgrg — ✅ 13/13 migrations cloud; 49 tours có gallery + hashtags
 Edge Fn : ✅ deployed v1.1.0 — 23 Drive folders đã tạo
 Directus: ⚠️ CHƯA setup — /tin-tuc dùng Supabase fallback (6 bài mẫu)
 Vercel Cron: "0 2 * * *" /api/cron/crawl-pdf — ✅ CRON_SECRET đã có
 Resend  : Domain namngantravel.com ĐÃ TẠO (ID: 4cf3c8a2-d600-43a6-bef8-03182924c30b)
           ⚠️ DNS chưa verify — cần thêm 3 records (xem bên dưới)
           RESEND_FROM_EMAIL đã đổi → noreply@namngantravel.com trên Vercel (prod+dev)
-          Chờ DNS verify để email hoạt động thực sự
 SeaStar : ✅ 49 tours tổng (41 nước ngoài + 8 trong nước)
 Drive   : ✅ 23 folders created — root/domestic/international/[20 countries]
 ```
@@ -453,24 +470,23 @@ Resend DNS: thêm 3 records vào registrar → verify trên resend.com (xem sect
 Vercel env: DIRECTUS_URL + DIRECTUS_STATIC_TOKEN (khi setup Directus instance)
 
 # CÓ THỂ TIẾP (feature):
-CRM ToursTab: upload ảnh trực tiếp (base64 → Drive) thay vì chỉ nhập URL
+Gallery thực: 49 tours có Unsplash placeholder — admin nhập ảnh thực qua /crm → tab Tour
+CRM ToursTab: upload ảnh trực tiếp (base64 → Supabase Storage) thay vì chỉ nhập URL
 CRM ArticlesTab: WYSIWYG editor (Tiptap lite) thay textarea HTML
 /tin-tuc: pagination khi có nhiều bài viết
-/tour-trong-nuoc + /tour-nuoc-ngoai: hashtag filter chips (hiện chỉ có /tours)
-Tour public page (/tour/[tourId]): nút "Đặt tour ngay" mở booking form
-Gallery: thêm ảnh thực cho 49 tours qua CRM (gallery_urls đã có cột)
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Verify Resend DNS** — Đăng nhập vào domain registrar của `namngantravel.com`, thêm 3 DNS records ở section trên → vào resend.com/domains → click "Verify" → email sẽ gửi từ `noreply@namngantravel.com`
-2. **Thêm ảnh gallery cho 49 tours** — `/crm` → tab "Quản lý Tour" → edit từng tour, nhập `gallery_urls` (URLs ảnh thực của tour) để lightbox hoạt động trên `/tour/[id]`
-3. **Setup Directus** — Tạo Directus instance (self-host hoặc Directus Cloud) → thêm `DIRECTUS_URL` + `DIRECTUS_STATIC_TOKEN` vào Vercel env → `/tin-tuc` sẽ dùng CMS thực thay Supabase fallback
+1. **Verify Resend DNS** — Đăng nhập vào domain registrar `namngantravel.com`, thêm 3 DNS records ở section trên → resend.com/domains → "Verify" → email hoạt động từ `noreply@namngantravel.com`
+2. **Thêm ảnh gallery thực** — `/crm` → tab "Quản lý Tour" → edit từng tour, nhập `gallery_urls` (ảnh thực thay Unsplash placeholder) để lightbox chuyên nghiệp hơn
+3. **Setup Directus** — Tạo Directus instance → thêm `DIRECTUS_URL` + `DIRECTUS_STATIC_TOKEN` vào Vercel → `/tin-tuc` dùng CMS thực thay Supabase fallback
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-04 | Handover #21 — Gallery Seed + Hashtag Filter + Booking Form | migration #13 gallery_urls ✅; DomesticToursClient hashtag ✅; BookingModal ✅; pax field ✅ |
 | 2026-06-04 | Handover #20 — Mega-menu + Animations + Hashtag Seed | Mega-menu 3 cột Header ✅; stagger/fade animations ✅; 49 tours hashtags seeded ✅; Resend domain created ✅ |
 | 2026-06-03 | Handover #19 — Multi-User Auth + Staff Tab + URL fix | admin_users migration #10 ✅; bcrypt auth ✅; StaffTab ✅; fix /crm /login URLs ✅ |
 | 2026-06-03 | Handover #18 — Admin Auth + Gallery Lightbox + Hashtag Filter | Login page + middleware + HttpOnly cookie ✅; gallery lightbox ✅; hashtag filter /tours ✅ |
