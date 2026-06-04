@@ -159,12 +159,12 @@ export default function InternationalToursClient({ tours }: Props) {
 
       {/* Hashtag chips */}
       {allHashtags.length > 0 && (
-        <div className="overflow-x-auto pb-1 mb-5 -mx-4 px-4">
-          <div className="flex gap-2 min-w-max">
+        <div className="mb-5">
+          <div className="flex flex-wrap gap-2">
             {activeHashtag && (
               <button
                 onClick={() => setActiveHashtag(null)}
-                className="px-3 py-1.5 rounded-full text-xs font-medium border border-gray-300 bg-white text-[#666666] hover:border-[#005BAA] transition-colors shrink-0"
+                className="px-3 py-1.5 rounded-full text-xs font-medium border border-gray-300 bg-white text-[#666666] hover:border-[#005BAA] transition-colors"
               >
                 Xoá tag ×
               </button>
@@ -173,7 +173,7 @@ export default function InternationalToursClient({ tours }: Props) {
               <button
                 key={tag}
                 onClick={() => setActiveHashtag(activeHashtag === tag ? null : tag)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors shrink-0 ${
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   activeHashtag === tag
                     ? 'bg-[#005BAA] text-white border-[#005BAA]'
                     : 'bg-[#F0F7FF] text-[#005BAA] border-[#005BAA]/20 hover:border-[#005BAA]'
