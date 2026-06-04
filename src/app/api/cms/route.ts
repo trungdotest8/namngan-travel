@@ -8,6 +8,8 @@ const GetQuerySchema = z.object({
   source_type: z.enum(['manual', 'rss', 'tiktok', 'facebook']).optional(),
   status:      z.enum(['draft', 'published', 'archived', 'all']).default('published'),
   limit:       z.coerce.number().int().min(1).max(200).default(50),
+  page:        z.coerce.number().int().min(1).optional(),
+  category:    z.string().optional(),
 })
 
 const ArticleCreateSchema = z.object({
@@ -34,9 +36,49 @@ export async function GET(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
-    const { source_type, status, limit } = parsed.data
+    const { source_type, status, limit, page, category } = parsed.data
 
     const supabase = await createClient()
+
+    // Pagination mode — uses range + count
+    if (page !== undefined) {
+      const pageSize = limit <= 200 ? limit : 6
+      const from = (page - 1) * pageSize
+      const to = from + pageSize - 1
+
+      let countQuery = supabase
+        .from('articles')
+        .select('*', { count: 'exact', head: true })
+      if (status !== 'all') countQuery = countQuery.eq('status', status)
+      if (source_type)      countQuery = countQuery.eq('source_type', source_type)
+      if (category)         countQuery = countQuery.eq('category', category)
+      const { count } = await countQuery
+
+      let dataQuery = supabase
+        .from('articles')
+        .select('*')
+        .order('published_at', { ascending: false })
+        .range(from, to)
+      if (status !== 'all') dataQuery = dataQuery.eq('status', status)
+      if (source_type)      dataQuery = dataQuery.eq('source_type', source_type)
+      if (category)         dataQuery = dataQuery.eq('category', category)
+
+      const { data, error } = await dataQuery
+      if (error) throw error
+
+      const totalItems = count ?? 0
+      return NextResponse.json({
+        articles: data ?? [],
+        pagination: {
+          page,
+          limit: pageSize,
+          totalItems,
+          totalPages: Math.ceil(totalItems / pageSize),
+        },
+      })
+    }
+
+    // Legacy mode — simple limit (admin panel, etc.)
     let query = supabase
       .from('articles')
       .select('*')
@@ -45,6 +87,7 @@ export async function GET(request: Request) {
 
     if (status !== 'all') query = query.eq('status', status)
     if (source_type)      query = query.eq('source_type', source_type)
+    if (category)         query = query.eq('category', category)
 
     const { data, error } = await query
     if (error) throw error

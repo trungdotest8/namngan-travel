@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Plus, Pencil, Trash2, Loader2, AlertCircle,
   CheckCircle2, X, Image as ImageIcon, Hash, Globe, MapPin,
-  Eye, EyeOff,
+  Eye, EyeOff, Upload,
 } from 'lucide-react'
 import type { Tour } from '@/types/tour.types'
 import { COUNTRY_MAP } from '@/lib/tour-country'
@@ -99,6 +99,72 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
       <div className="h-px flex-1 bg-blue-100" />
       {children}
       <div className="h-px flex-1 bg-blue-100" />
+    </div>
+  )
+}
+
+// ── ImageUploadInput ──────────────────────────────────────────────────────────
+
+function ImageUploadInput({ onUploadSuccess }: { onUploadSuccess: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('Kích thước ảnh không được vượt quá 5MB')
+      return
+    }
+    setUploading(true)
+    setUploadError(null)
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onloadend = async () => {
+      try {
+        const base64Data = reader.result as string
+        const res = await fetch('/api/admin/upload-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64Data, fileName: file.name, fileType: file.type }),
+        })
+        const result = await res.json()
+        if (!res.ok) throw new Error(result.error || 'Upload thất bại')
+        onUploadSuccess(result.url)
+        if (inputRef.current) inputRef.current.value = ''
+      } catch (err) {
+        setUploadError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi upload ảnh')
+      } finally {
+        setUploading(false)
+      }
+    }
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <label className="flex items-center gap-2 px-3 py-1.5 border border-dashed border-[#005BAA]/40 rounded-lg cursor-pointer hover:bg-[#F0F7FF] transition-colors w-full">
+        {uploading
+          ? <Loader2 size={12} className="animate-spin text-[#0078D7]" />
+          : <Upload size={12} className="text-[#005BAA]" />
+        }
+        <span className="text-xs text-[#005BAA] font-medium">
+          {uploading ? 'Đang tải lên...' : 'Tải ảnh từ máy tính (≤5MB)'}
+        </span>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          disabled={uploading}
+          className="hidden"
+        />
+      </label>
+      {uploadError && (
+        <p className="text-[10.5px] text-red-500 flex items-center gap-1">
+          <AlertCircle size={10} /> {uploadError}
+        </p>
+      )}
     </div>
   )
 }
@@ -711,6 +777,15 @@ export function ToursTab() {
               {/* Gallery */}
               <div>
                 <Label>Thư viện ảnh ({form.gallery_urls.length} ảnh)</Label>
+
+                {/* Upload from local */}
+                <div className="mb-2">
+                  <ImageUploadInput
+                    onUploadSuccess={url =>
+                      setForm(prev => ({ ...prev, gallery_urls: [...prev.gallery_urls, url] }))
+                    }
+                  />
+                </div>
 
                 {/* Add URL input */}
                 <div className="flex gap-2 mb-2">

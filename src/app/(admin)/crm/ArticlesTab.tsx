@@ -5,7 +5,17 @@ import {
   Plus, Pencil, Trash2, Loader2, AlertCircle,
   CheckCircle2, X, ExternalLink, Eye, EyeOff, Archive,
 } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import type { Article } from '@/types/news.types'
+
+const TiptapLiteEditor = dynamic(() => import('@/components/cms/TiptapLiteEditor'), {
+  ssr: false,
+  loading: () => (
+    <div className="border border-gray-200 rounded-lg h-[260px] flex items-center justify-center text-gray-400 text-sm">
+      <Loader2 size={16} className="animate-spin mr-2" /> Đang tải editor...
+    </div>
+  ),
+})
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -564,17 +574,11 @@ export function ArticlesTab() {
 
               {/* Content */}
               <div>
-                <Label>Nội dung (HTML)</Label>
-                <textarea
-                  value={form.content}
-                  onChange={e => onField('content', e.target.value)}
-                  rows={12}
-                  placeholder="<h2>Tiêu đề</h2><p>Nội dung bài viết...</p>"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:border-[#005BAA] focus:outline-none resize-y leading-relaxed"
+                <Label>Nội dung</Label>
+                <TiptapLiteEditor
+                  content={form.content}
+                  onChange={html => onField('content', html)}
                 />
-                <div className="text-[10.5px] text-gray-400 mt-0.5">
-                  Hỗ trợ HTML: &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;strong&gt;, &lt;a&gt;, &lt;img&gt;...
-                </div>
               </div>
 
               {/* Error */}

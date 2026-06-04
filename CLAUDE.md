@@ -333,6 +333,178 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | E | Chat & Lead | ✅ v2.0.0 | `src/components/chat/ChatWidget.tsx` + `AutoPopup.tsx` |
 | F | CMS / RSS | ✅ v1.2.0 | `src/components/cms/ArticleFeed.tsx` |
 | G | DB Schema | ✅ **13/13 cloud** | `supabase/migrations/` — Supabase: indjoegnsvcteaozmgrg |
+| CRM | Admin CRM | ✅ v4.1.0 | `crm/page.tsx` + `ArticlesTab.tsx` (Tiptap) + `ToursTab.tsx` (upload) — 6 tabs |
+| AUTH | Admin Auth | ✅ v2.0.0 | `src/app/(admin)/login/page.tsx` + `src/middleware.ts` + `/api/admin/auth` |
+| STAFF | Quản lý nhân viên | ✅ v1.0.0 | `crm/StaffTab.tsx` + `/api/admin/users` + `/api/admin/me` |
+| TOURS-ADMIN | Admin Tour (CRM tab) | ✅ v1.1.0 | `ToursTab.tsx` — upload ảnh base64 + URL paste |
+| TOURS-LIST | /tours listing | ✅ v1.2.0 | `ToursClient.tsx` + hashtag filter + stagger animation |
+| NAV | Mega-menu Navigation | ✅ v1.0.0 | `Header.tsx` + `src/lib/mega-menu-data.ts` — 2 dropdown 3 cột |
+| ANIM | Animations | ✅ v1.1.0 | `globals.css` — @keyframes defined trực tiếp (fix Tailwind purge bug) |
+| GALLERY | Gallery seed | ✅ v1.0.0 | migration #13 — Unsplash placeholder 3 ảnh/tour, 20 quốc gia |
+| DOMESTIC | /tour-trong-nuoc | ✅ v2.1.0 | `DomesticToursClient.tsx` — hashtag flex-wrap |
+| INTL | /tour-nuoc-ngoai | ✅ v2.2.0 | `InternationalToursClient.tsx` — hashtag flex-wrap + country filter |
+| BOOKING | Booking form | ✅ v1.0.0 | `src/components/booking/BookingModal.tsx` — modal + floating CTA |
+| UPLOAD | Image Upload API | ✅ v1.0.0 | `/api/admin/upload-image` — base64 → Supabase Storage `tour-galleries` |
+| TIPTAP | WYSIWYG Editor | ✅ v1.0.0 | `src/components/cms/TiptapLiteEditor.tsx` — @tiptap/react v3.25 |
+| TIN-TUC | Blog Tin Tức | ✅ v1.2.0 | `TinTucClient.tsx` — pagination 6/trang + NewsPagination component |
+| EDGE | Edge Functions | ✅ v1.1.0 | `supabase/functions/google-drive/` — 23 folders created |
+| PDF | PDF Crawler & Indexer | ✅ v1.3.0 | `/api/pdf-index` + migration #6+#7 |
+| CRON | Vercel Cron | ✅ v1.0.0 | `/api/cron/crawl-pdf` + `vercel.json` |
+| HOME | Trang chủ | ✅ v1.0.0 | `src/app/page.tsx` |
+| LICH | Lịch Khởi Hành | ✅ v1.1.0 | `src/app/lich-khoi-hanh/page.tsx` |
+| DIRECTUS | CMS Integration | ✅ v1.1.0 | `src/lib/directus.ts` — Supabase fallback hoạt động |
+
+### Trạng thái API Routes
+
+| Route | Method | Trạng thái | Ghi chú |
+|-------|--------|-----------|---------|
+| `/api/leads` | POST | ✅ | Zod + luồng kép Email+Realtime; `pax` field |
+| `/api/cms` | GET/POST | ✅ | pagination: `?page=N&limit=6&category=X`; legacy `?status=all&limit=200` |
+| `/api/cms/[id]` | PATCH/DELETE | ✅ | Auth: cookie hoặc x-admin-secret |
+| `/api/tours` | GET/POST | ✅ | filter category/country/is_active/search |
+| `/api/tours/[id]` | PATCH/DELETE | ✅ | Auth: cookie hoặc x-admin-secret; ?hard=true |
+| `/api/customer-profile` | GET/PATCH | ✅ | Auth: cookie hoặc x-admin-secret |
+| `/api/admin/auth` | POST/DELETE | ✅ | Login {username,password} → HttpOnly cookie 24h; DELETE = logout |
+| `/api/admin/users` | GET/POST | ✅ | List + tạo admin users; bcrypt hash |
+| `/api/admin/users/[id]` | PATCH/DELETE | ✅ | Update + soft deactivate |
+| `/api/admin/me` | GET | ✅ | Trả AdminUser từ httpOnly cookie |
+| `/api/admin/upload-image` | POST | ✅ | Auth kép; base64 → `tour-galleries` bucket; ≤5MB |
+| `/api/search` | POST | ✅ | category filter |
+| `/api/notifications` | POST | ✅ | Auth: x-webhook-secret |
+| `/api/webhooks/n8n` | POST | ✅ | Auth: x-webhook-secret |
+| `/api/webhooks/moda` | POST | ✅ | luồng kép nếu confirmed |
+| `/api/departures` | GET/POST | ✅ | POST: cookie OR x-webhook-secret |
+| `/api/itinerary/[tourId]` | GET | ✅ | Cache 5min; trả gallery_urls + hashtags |
+| `/api/pdf-index` | GET | ✅ | FTS RPC |
+| `/api/cron/crawl-pdf` | GET | ✅ | Auth kép |
+| `/api/admin/setup-drive-folders` | POST | ✅ | 23 folders đã tạo |
+| Edge: `google-drive` | POST | ✅ v1.1.0 | private_key fix; 3 actions |
+
+### Zustand Stores
+
+```
+useUIStore              (store/ui.store.ts)               ✅
+useNotificationStore    (store/notification.store.ts)      ✅ admin realtime
+useSearchStore          (store/search.store.ts)            ✅
+useCalendarStore        (store/calendar.store.ts)          ✅ fetchSchedules()
+useChatStore            (store/chat.store.ts)              ✅
+useCmsStore             (store/cms.store.ts)               ✅
+useCustomerProfileStore (store/customer-profile.store.ts)  ✅
+```
+
+### Data Contract — Delta phiên #23
+
+```typescript
+// ── Domain chính thức (phiên #23) ─────────────────────────────────────────────
+// PRIMARY DOMAIN: namngantravel.site (DNS đã cấu hình tại TenTen.vn, đang propagate)
+// OLD DOMAIN:     namngantravel.com  (không có DNS, Resend domain status: not_started)
+// Vercel: namngantravel.site đã alias → namngan-travel production deployment
+// RESEND_FROM_EMAIL hiện vẫn là noreply@namngantravel.com → CẦN cập nhật (xem Next Steps)
+
+// ── /api/cms GET — Pagination mode (phiên #23) ────────────────────────────────
+// Khi có ?page=N: trả { articles, pagination: { page, limit, totalItems, totalPages } }
+// Khi không có ?page: giữ nguyên legacy { articles } (admin panel dùng ?status=all&limit=200)
+// PAGE_SIZE mặc định = 6 bài/trang (TinTucClient.tsx)
+
+// ── Upload ảnh (phiên #23) ────────────────────────────────────────────────────
+// POST /api/admin/upload-image: { base64Data, fileName, fileType } → { url }
+// Bucket: 'tour-galleries' — CẦN TẠO trong Supabase Dashboard nếu chưa có
+// Path: tours/{timestamp}-{random}-{filename}
+// ImageUploadInput component inline trong ToursTab.tsx (≤5MB, loading state, error UI)
+
+// ── TiptapLiteEditor (phiên #23) ──────────────────────────────────────────────
+// ArticlesTab.tsx dùng dynamic import (ssr: false) để tránh SSR issues
+// setContent dùng { emitUpdate: false } (Tiptap v3 API — không phải boolean false)
+// Toolbar: Bold, Italic, H2, H3, Bullet, Ordered, Blockquote, Undo, Redo
+
+// ── TinTucClient.tsx (phiên #23) ──────────────────────────────────────────────
+// Client component tách riêng, page.tsx giữ server component để export metadata
+// Fetch /api/cms?page=N&limit=6&status=published — reset trang 1 khi đổi category
+// scroll-to-top khi đổi trang (window.scrollTo)
+```
+
+### Hạ tầng & Tích hợp bên ngoài
+
+```
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main)
+Vercel  : namngan-travel — ✅ deployed
+          Domain: namngantravel.site (alias set ✅, DNS propagating ~1-3h)
+          ⚠️ CẦN THÊM: DIRECTUS_URL + DIRECTUS_STATIC_TOKEN
+Supabase: indjoegnsvcteaozmgrg — ✅ 13/13 migrations cloud; 49 tours có gallery + hashtags
+          ⚠️ CẦN TẠO: bucket 'tour-galleries' (Public) cho upload-image API
+Edge Fn : ✅ deployed v1.1.0 — 23 Drive folders đã tạo
+Directus: ⚠️ CHƯA setup — /tin-tuc dùng Supabase fallback (6 bài mẫu)
+Vercel Cron: "0 2 * * *" /api/cron/crawl-pdf — ✅ CRON_SECRET đã có
+Resend  : ⚠️ PENDING MIGRATION
+          - namngantravel.com (ID: 4cf3c8a2) — status: not_started, chưa verify bao giờ
+          - CẦN: xóa .com → tạo .site → thêm DNS → cập nhật RESEND_FROM_EMAIL
+          - RESEND_API_KEY: xem .env.local (đã xác nhận hoạt động)
+SeaStar : ✅ 49 tours tổng (41 nước ngoài + 8 trong nước)
+Drive   : ✅ 23 folders created — root/domestic/international/[20 countries]
+TenTen  : namngantravel.site — DNS records đã thêm:
+          @ A → 76.76.21.21 | www CNAME → cname.vercel-dns.com
+```
+
+### Files ưu tiên cao chưa tồn tại / chưa hoàn chỉnh
+
+```
+# ƯU TIÊN CAO — CẦN LÀM NGAY:
+1. Supabase bucket 'tour-galleries': Dashboard → Storage → New bucket → Public
+   (cần có trước khi upload-image API hoạt động)
+2. Resend migration .com → .site:
+   a) DELETE /domains/4cf3c8a2-d600-43a6-bef8-03182924c30b (namngantravel.com)
+   b) POST /domains { name: "namngantravel.site" } → lấy DNS records
+   c) Thêm DNS records vào TenTen.vn
+   d) Vercel: cập nhật RESEND_FROM_EMAIL → noreply@namngantravel.site
+3. Vercel env: DIRECTUS_URL + DIRECTUS_STATIC_TOKEN (khi setup Directus instance)
+
+# CÓ THỂ TIẾP (feature):
+Gallery thực: 49 tours có Unsplash placeholder → admin upload qua /crm → tab Tour (bucket cần tạo trước)
+CRM ArticlesTab: thumbnail upload (tương tự ImageUploadInput — chỉ 1 ảnh)
+/tin-tuc: open graph meta tags per article
+```
+
+### Next Steps (3 việc làm ngay khi mở phiên mới)
+
+1. **Tạo Supabase bucket `tour-galleries`** — Dashboard Supabase → Storage → New bucket → đặt tên `tour-galleries`, chọn Public → Save. Sau đó upload-image API mới hoạt động.
+2. **Migrate Resend về `.site`** — Xác nhận xóa domain `.com` → tôi tự động gọi API Resend tạo `.site`, lấy DNS records, hướng dẫn thêm TenTen, update Vercel env `RESEND_FROM_EMAIL`
+3. **Verify DNS namngantravel.site** — Sau ~1-3h propagate, kiểm tra tại whatsmydns.net → khi có A record `76.76.21.21` là xong
+
+### Change Log
+
+| Ngày | Giai đoạn | Thay đổi |
+|------|-----------|---------|
+| 2026-06-05 | Handover #23 — CRM Upload + Tiptap + Pagination | upload-image API ✅; ImageUploadInput ToursTab ✅; TiptapLiteEditor ✅; /api/cms pagination ✅; TinTucClient ✅ |
+| 2026-06-05 | Domain Migration | namngantravel.site DNS→TenTen ✅; Vercel alias ✅; Resend pending migration |
+| 2026-06-04 | Handover #22 — Bug Fixes: Tour Cards + Hashtag Wrap | Fix @keyframes slide-up purge; hashtag flex-wrap cả 2 listing pages |
+| 2026-06-04 | Handover #21 — Gallery Seed + Hashtag Filter + Booking Form | migration #13 gallery_urls ✅; DomesticToursClient ✅; BookingModal ✅; pax field ✅ |
+| 2026-06-04 | Handover #20 — Mega-menu + Animations + Hashtag Seed | Mega-menu 3 cột ✅; animations ✅; 49 tours hashtags ✅; Resend domain ✅ |
+| 2026-06-03 | Handover #19 — Multi-User Auth + Staff Tab + URL fix | admin_users #10 ✅; bcrypt ✅; StaffTab ✅; URL fix ✅ |
+| 2026-06-03 | Handover #18 — Admin Auth + Gallery Lightbox + Hashtag Filter | Login+middleware ✅; lightbox ✅; hashtag /tours ✅ |
+| 2026-06-03 | Handover #17 — ToursTab CRUD + Edge Fn Fix + Migration #9 | ToursTab ✅; /api/tours ✅; migration #9 ✅ |
+| 2026-06-03 | Handover #16 — CMS Admin + Articles + Thumbnails | ArticlesTab ✅; 6 bài mẫu ✅; Directus fallback ✅ |
+| 2026-06-02 | Handover #15 — Directus CMS + /tours + Blog | /tours ✅; /tour-nuoc-ngoai v2 ✅; /tin-tuc ✅ |
+| 2026-06-02 | Handover #14 — Bug Fixes + Domestic Data | /tours/[slug] ✅; 8 tour trong nước ✅ |
+| 2026-06-01 | Handover #13 — Tour Categories + 2 Listing Pages | /tour-trong-nuoc ✅; /tour-nuoc-ngoai ✅; migration #8 ✅ |
+| 2026-06-01 | Handover #9–12 | Lịch khởi hành; PDF Crawler; Tour Detail; Secrets fix |
+| 2026-05-31 | Handover #8 | SeaStar 313 records; api/departures ✅ |
+| 2026-05-30 | Session 1–7 | Child A–G; CRM; leads luồng kép ✅ |
+
+> ⚙️ **Mục này được tự động ghi đè bởi lệnh `/handover`.**
+> Không sửa tay — mọi thay đổi sẽ bị overwrite lần `/handover` tiếp theo.
+> Trigger: khi context > 70% HOẶC khi kết thúc một giai đoạn lập trình lớn.
+
+### Trạng thái Child Modules
+
+| Child | Module | Trạng thái | Files chính |
+|-------|--------|-----------|-------------|
+| A | Search UI | ✅ v2.0.0 | `src/components/search/TourSearchBar.tsx` + `SearchResults.tsx` |
+| B | Lịch khởi hành (SeaStar) + PDF Indexer | ✅ v1.2.0 | `src/lib/integrations/seastar.ts` + migrations #6+#7+#8 |
+| C | Itinerary + PDF Embed | ✅ v2.1.0 | `TourDetail.tsx` (gallery lightbox + hashtag chips) + `PdfViewer.tsx` |
+| D | Hồ sơ khách | ✅ v1.1.0 | `src/components/customer-profile/CustomerProfileDrawer.tsx` + `CustomerTable.tsx` |
+| E | Chat & Lead | ✅ v2.0.0 | `src/components/chat/ChatWidget.tsx` + `AutoPopup.tsx` |
+| F | CMS / RSS | ✅ v1.2.0 | `src/components/cms/ArticleFeed.tsx` |
+| G | DB Schema | ✅ **13/13 cloud** | `supabase/migrations/` — Supabase: indjoegnsvcteaozmgrg |
 | CRM | Admin CRM | ✅ v4.0.0 | `crm/page.tsx` + `ArticlesTab.tsx` + `ToursTab.tsx` + `StaffTab.tsx` — 6 tabs |
 | AUTH | Admin Auth | ✅ v2.0.0 | `src/app/(admin)/login/page.tsx` + `src/middleware.ts` + `/api/admin/auth` |
 | STAFF | Quản lý nhân viên | ✅ v1.0.0 | `crm/StaffTab.tsx` + `/api/admin/users` + `/api/admin/me` |
