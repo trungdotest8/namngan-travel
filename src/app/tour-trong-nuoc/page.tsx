@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
@@ -115,8 +116,14 @@ export default async function TourTrongNuocPage() {
                 Tìm thấy <span className="font-semibold text-[#1A1A2E]">{tours.length}</span> tour trong nước
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                {tours.map(t => (
-                  <TourListingCard key={t.id} {...t} />
+                {tours.map((t, index) => (
+                  <div
+                    key={t.id}
+                    className="animate-stagger"
+                    style={{ '--i': Math.min(index, 11) } as CSSProperties}
+                  >
+                    <TourListingCard {...t} />
+                  </div>
                 ))}
               </div>
             </>

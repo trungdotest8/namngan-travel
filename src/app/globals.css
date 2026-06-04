@@ -28,4 +28,37 @@
   .container-main {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
+
+  .animate-stagger {
+    opacity: 0;
+    animation: slide-up 0.35s ease-out forwards;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+
+  .link-underline {
+    position: relative;
+  }
+  .link-underline::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 0;
+    height: 1.5px;
+    background-color: currentColor;
+    transition: width 0.2s ease-out;
+  }
+  .link-underline:hover::after {
+    width: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-stagger,
+    .animate-fade-in-down,
+    .animate-slide-up,
+    .animate-fade-in {
+      animation: none !important;
+      opacity: 1 !important;
+    }
+  }
 }

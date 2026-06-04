@@ -38,7 +38,7 @@ export default function TourListingCard({
   return (
     <Link
       href={`/tour/${id}`}
-      className="group flex flex-col rounded-xl overflow-hidden border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow"
+      className="group flex flex-col rounded-xl overflow-hidden border border-gray-100 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out"
     >
       {/* Thumbnail */}
       <div className="relative aspect-[16/10] overflow-hidden bg-gray-100">
@@ -48,13 +48,16 @@ export default function TourListingCard({
             alt={name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#F0F7FF] to-[#D0E8FF]">
             <MapPin size={32} className="text-[#005BAA] opacity-40" />
           </div>
         )}
+        {/* Gradient overlay on hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent
+                        opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <span className={`absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-xs font-semibold ${badgeCls}`}>
           {badgeText}
         </span>
@@ -99,7 +102,8 @@ export default function TourListingCard({
               <span className="text-xs text-[#666666] italic">Liên hệ báo giá</span>
             )}
           </div>
-          <span className="text-xs font-semibold text-[#005BAA] bg-[#F0F7FF] px-3 py-1 rounded-full">
+          <span className="text-xs font-semibold text-[#005BAA] bg-[#F0F7FF] px-3 py-1 rounded-full
+                           group-hover:bg-[#005BAA] group-hover:text-white transition-colors duration-200">
             Xem tour
           </span>
         </div>

@@ -210,8 +210,14 @@ export default function ToursClient({ tours }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {filtered.map(t => (
-            <TourListingCard key={t.id} {...t} />
+          {filtered.map((t, index) => (
+            <div
+              key={t.id}
+              className="animate-stagger"
+              style={{ '--i': Math.min(index, 11) } as React.CSSProperties}
+            >
+              <TourListingCard {...t} />
+            </div>
           ))}
         </div>
       )}
