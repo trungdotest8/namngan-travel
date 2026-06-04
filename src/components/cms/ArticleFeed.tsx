@@ -214,6 +214,7 @@ function ArticleCard({ article }: { article: Article }) {
       {/* Thumbnail */}
       <div className="relative w-full h-36 bg-gray-100 overflow-hidden flex-shrink-0 dark:bg-neutral-800">
         {article.thumbnail_url && !imgError ? (
+          // eslint-disable-next-line @next/next/no-img-element -- article thumbnail from Supabase or RSS, dynamic domain; uses onError fallback
           <img
             src={article.thumbnail_url}
             alt={article.title}

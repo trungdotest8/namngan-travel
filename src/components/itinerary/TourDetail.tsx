@@ -102,6 +102,7 @@ function TourDetailInner({
         onClick={() => thumbnailUrl && openLightbox(0)}
         title={allImages.length > 1 ? 'Xem thư viện ảnh' : undefined}
       >
+        {/* eslint-disable-next-line @next/next/no-img-element -- dynamic URL from admin/Supabase/Unsplash, domain unknown at build time */}
         <img src={thumbnailUrl ?? ''} alt={name} className="w-full h-full object-cover" />
         {allImages.length > 1 && (
           <span className="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
@@ -124,6 +125,7 @@ function TourDetailInner({
               onClick={() => openLightbox(i + 1)}
               className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-[#005BAA]"
             >
+              {/* eslint-disable-next-line @next/next/no-img-element -- gallery thumbnail, dynamic domain */}
               <img src={url} alt={`Ảnh ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
               {i === 5 && (galleryUrls ?? []).length > 6 && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-sm font-semibold">
@@ -148,6 +150,7 @@ function TourDetailInner({
           >
             <ChevronLeft size={28} />
           </button>
+          {/* eslint-disable-next-line @next/next/no-img-element -- lightbox needs max-h/max-w viewport units, incompatible with next/image fill */}
           <img
             src={allImages[lightboxIdx]}
             alt={`Ảnh ${lightboxIdx + 1}/${allImages.length}`}

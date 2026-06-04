@@ -17,14 +17,20 @@ const playfairDisplay = Playfair_Display({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://namngantravel.com'),
   title: {
     default: 'Nam Ngân Travel — Du lịch trọn gói',
     template: '%s | Nam Ngân Travel',
   },
-  description: 'Khám phá hàng trăm tour du lịch trong nước và quốc tế với Nam Ngân Travel.',
+  description: 'Khám phá hàng trăm tour du lịch trong nước và quốc tế với Nam Ngân Travel. Tour giá tốt, dịch vụ uy tín.',
+  keywords: ['du lịch', 'tour du lịch', 'tour trong nước', 'tour nước ngoài', 'Nam Ngân Travel'],
+  alternates: {
+    canonical: 'https://namngantravel.com',
+  },
   openGraph: {
     type: 'website',
     locale: 'vi_VN',
+    url: 'https://namngantravel.com',
     siteName: 'Nam Ngân Travel',
   },
 }

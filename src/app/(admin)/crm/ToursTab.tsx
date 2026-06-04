@@ -496,6 +496,7 @@ export function ToursTab() {
                     <td className="py-2 px-3">
                       {tour.thumbnail_url ? (
                         <div className="relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element -- admin table thumbnail, dynamic URL + onError handler */}
                           <img
                             src={tour.thumbnail_url}
                             alt={tour.name}
@@ -755,6 +756,7 @@ export function ToursTab() {
                 />
                 {form.thumbnail_url && (
                   <div className="mt-2 relative rounded-lg overflow-hidden bg-gray-100" style={{ aspectRatio: '16/9' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- admin form preview, onError replaces element innerHTML */}
                     <img
                       src={form.thumbnail_url}
                       alt="thumbnail preview"
@@ -809,6 +811,7 @@ export function ToursTab() {
                   <div className="grid grid-cols-3 gap-2">
                     {form.gallery_urls.map((url, idx) => (
                       <div key={idx} className="relative group rounded-md overflow-hidden bg-gray-100" style={{ aspectRatio: '4/3' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element -- gallery preview, dynamic URL */}
                         <img
                           src={url}
                           alt={`gallery-${idx + 1}`}

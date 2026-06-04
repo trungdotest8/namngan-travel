@@ -224,16 +224,15 @@ function TourSearchBarInner({ onSearch }: TourSearchBarProps) {
       id: 'meetingPoint',
       icon: Navigation,
       label: 'Nơi xuất phát',
-      display: criteria.meetingPoint || 'Chọn điểm đi',
+      display: criteria.meetingPoint || 'Linh hoạt',
       hasValue: !!criteria.meetingPoint,
-      error: fieldErrors.meetingPoint,
       content: (
         <select
           value={criteria.meetingPoint}
           onChange={(e) => { setCriteria({ meetingPoint: e.target.value }); setOpenAccordion(null) }}
           className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-text-primary outline-none focus:border-brand-blue"
         >
-          <option value="" disabled>Chọn điểm đi</option>
+          <option value="">Linh hoạt</option>
           {MEETING_POINTS.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       ),
@@ -336,12 +335,11 @@ function TourSearchBarInner({ onSearch }: TourSearchBarProps) {
               onChange={(e) => setCriteria({ meetingPoint: e.target.value })}
               className="w-full appearance-none bg-transparent text-sm font-medium text-text-primary border-0 outline-none cursor-pointer pr-5 truncate"
             >
-              <option value="" disabled>Chọn điểm đi</option>
+              <option value="">Linh hoạt</option>
               {MEETING_POINTS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
             <ChevronDown size={14} className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
-          {fieldErrors.meetingPoint && <p className="text-xs text-red-500 mt-1">{fieldErrors.meetingPoint}</p>}
         </div>
 
         {/* Ngày đi */}
