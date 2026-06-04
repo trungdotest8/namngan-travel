@@ -8,6 +8,7 @@ import SearchResults from '@/components/search/SearchResults'
 import ChatWidget from '@/components/chat/ChatWidget'
 import AutoPopup from '@/components/chat/AutoPopup'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // ── Mock tour data ────────────────────────────────────────────
 
@@ -162,13 +163,14 @@ const WHY_US = [
   },
 ]
 
-const POPULAR_DEST = [
-  { name: 'Trung Quốc', image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=400&q=80', href: '/tours?destination=trung-quoc', count: 24 },
-  { name: 'Nhật Bản', image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&q=80', href: '/tours?destination=nhat-ban', count: 18 },
-  { name: 'Hàn Quốc', image: 'https://images.unsplash.com/photo-1538485399081-7c8272e29df8?w=400&q=80', href: '/tours?destination=han-quoc', count: 15 },
-  { name: 'Phú Quốc', image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80', href: '/tours?destination=phu-quoc', count: 12 },
-  { name: 'Đà Nẵng', image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=400&q=80', href: '/tours?destination=da-nang', count: 20 },
-  { name: 'Hà Giang', image: 'https://images.unsplash.com/photo-1539367628448-4bc5c9d171c8?w=400&q=80', href: '/tours?destination=ha-giang', count: 10 },
+// Fallback dùng khi DB chưa có data hoặc lỗi kết nối
+const POPULAR_DEST_FALLBACK = [
+  { name: 'Trung Quốc', image_url: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=400&q=80', href: '/tours?country=Trung+Qu%E1%BB%91c&category=n%C6%B0%E1%BB%9Bc+ngo%C3%A0i' },
+  { name: 'Nhật Bản',   image_url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&q=80', href: '/tours?country=Nh%E1%BA%ADt+B%E1%BA%A3n&category=n%C6%B0%E1%BB%9Bc+ngo%C3%A0i' },
+  { name: 'Hàn Quốc',  image_url: 'https://images.unsplash.com/photo-1538485399081-7c8272e29df8?w=400&q=80', href: '/tours?country=H%C3%A0n+Qu%E1%BB%91c&category=n%C6%B0%E1%BB%9Bc+ngo%C3%A0i' },
+  { name: 'Phú Quốc',  image_url: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80', href: '/tour-trong-nuoc?destination=Ph%C3%BA+Qu%E1%BB%91c' },
+  { name: 'Đà Nẵng',   image_url: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=400&q=80', href: '/tour-trong-nuoc?destination=%C4%90%C3%A0+N%E1%BA%B5ng' },
+  { name: 'Hà Giang',  image_url: 'https://images.unsplash.com/photo-1539367628448-4bc5c9d171c8?w=400&q=80', href: '/tour-trong-nuoc?destination=H%C3%A0+Giang' },
 ]
 
 function formatPrice(vnd: number) {
@@ -284,7 +286,21 @@ const NEWS = [
 ]
 
 // ── Page ──────────────────────────────────────────────────────
-export default function HomePage() {
+export default async function HomePage() {
+  // Fetch featured destinations từ DB, fallback nếu lỗi
+  let popularDest = POPULAR_DEST_FALLBACK
+  try {
+    const supabase = createAdminClient()
+    const { data } = await supabase
+      .from('featured_destinations')
+      .select('name, image_url, href')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+    if (data && data.length > 0) popularDest = data
+  } catch {
+    // giữ fallback
+  }
+
   return (
     <>
       <Header />
@@ -368,14 +384,14 @@ export default function HomePage() {
               linkLabel="Tất cả điểm đến"
             />
             <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-              {POPULAR_DEST.map((dest) => (
+              {popularDest.map((dest) => (
                 <Link
                   key={dest.name}
                   href={dest.href}
                   className="group relative rounded-xl overflow-hidden aspect-square sm:aspect-[3/4] bg-gray-200 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <Image
-                    src={dest.image}
+                    src={dest.image_url}
                     alt={dest.name}
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-300"
@@ -384,7 +400,6 @@ export default function HomePage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 text-white">
                     <p className="font-bold text-xs sm:text-sm leading-tight">{dest.name}</p>
-                    <p className="text-[10px] text-white/75">{dest.count} tour</p>
                   </div>
                 </Link>
               ))}

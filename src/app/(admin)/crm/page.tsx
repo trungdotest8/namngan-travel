@@ -13,11 +13,12 @@ import { CustomerProfileDrawer } from '@/components/customer-profile/CustomerPro
 import { ArticlesTab } from './ArticlesTab'
 import { ToursTab } from './ToursTab'
 import { StaffTab } from './StaffTab'
+import { DestinationsTab } from './DestinationsTab'
 import type { Lead } from '@/types/lead.types'
 import type { AdminUser } from '@/types/admin.types'
 
 // ── Types ─────────────────────────────────────────────────────────────────
-type TabId = 'overview' | 'customers' | 'articles' | 'tours' | 'staff' | 'config'
+type TabId = 'overview' | 'customers' | 'articles' | 'tours' | 'destinations' | 'staff' | 'config'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function computeMetrics(leads: Lead[]) {
@@ -384,8 +385,9 @@ const NAV = [
   { id: 'overview'  as TabId, label: 'Chiến dịch & Thông báo', icon: LayoutDashboard },
   { id: 'customers' as TabId, label: 'Danh sách Khách hàng',   icon: Users },
   { id: 'articles'  as TabId, label: 'Bài viết / Tin tức',     icon: Newspaper },
-  { id: 'tours'     as TabId, label: 'Quản lý Tour',            icon: MapPin },
-  { id: 'staff'     as TabId, label: 'Nhân Viên',               icon: UserCog },
+  { id: 'tours'        as TabId, label: 'Quản lý Tour',         icon: MapPin },
+  { id: 'destinations' as TabId, label: 'Điểm đến nổi bật',    icon: Plane },
+  { id: 'staff'        as TabId, label: 'Nhân Viên',            icon: UserCog },
   { id: 'config'    as TabId, label: 'Webhook & Email',         icon: Settings },
 ]
 
@@ -393,8 +395,9 @@ const TAB_TITLES: Record<TabId, string> = {
   overview:  'Tổng quan Chiến dịch',
   customers: 'Danh sách Khách hàng',
   articles:  'Quản lý Bài viết',
-  tours:     'Quản lý Tour — Hình ảnh & Hashtags',
-  staff:     'Quản lý Nhân Viên',
+  tours:        'Quản lý Tour — Hình ảnh & Hashtags',
+  destinations: 'Điểm đến nổi bật — Trang chủ',
+  staff:        'Quản lý Nhân Viên',
   config:    'Cấu hình Webhook & Email',
 }
 
@@ -594,6 +597,11 @@ function CRMPage() {
               {activeTab === 'tours' && (
                 <ErrorBoundary moduleName="ToursTab">
                   <ToursTab />
+                </ErrorBoundary>
+              )}
+              {activeTab === 'destinations' && (
+                <ErrorBoundary moduleName="DestinationsTab">
+                  <DestinationsTab />
                 </ErrorBoundary>
               )}
               {activeTab === 'staff' && (
