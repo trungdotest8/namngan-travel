@@ -42,6 +42,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi" className={`${beVietnamPro.variable} ${playfairDisplay.variable}`}>
+      <head>
+        {/* Tự động nâng cấp mọi request http:// → https:// (fix Mixed Content) */}
+        <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+      </head>
       <body className="font-sans">{children}</body>
     </html>
   )

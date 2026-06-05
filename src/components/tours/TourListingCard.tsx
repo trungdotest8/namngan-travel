@@ -15,6 +15,11 @@ export interface TourListingCardProps {
   hashtags?:      string[]
 }
 
+function toHttps(url: string | null | undefined): string | null {
+  if (!url) return null
+  return url.startsWith('http://') ? 'https://' + url.slice(7) : url
+}
+
 function formatVND(n: number) {
   return n.toLocaleString('vi-VN') + ' ₫'
 }
@@ -28,6 +33,7 @@ export default function TourListingCard({
   id, name, destination, country, duration_days,
   thumbnail_url, next_departure, min_price, category,
 }: TourListingCardProps) {
+  const safeThumb = toHttps(thumbnail_url)
   const isIntl    = category === 'nước ngoài'
   const badgeCls  = isIntl
     ? 'bg-[#005BAA] text-white'
@@ -42,9 +48,9 @@ export default function TourListingCard({
     >
       {/* Thumbnail */}
       <div className="relative aspect-[16/10] overflow-hidden bg-gray-100">
-        {thumbnail_url ? (
+        {safeThumb ? (
           <Image
-            src={thumbnail_url}
+            src={safeThumb}
             alt={name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"

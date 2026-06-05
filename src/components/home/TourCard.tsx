@@ -3,6 +3,11 @@ import Image from 'next/image'
 import { Clock, MapPin, Star } from 'lucide-react'
 import type { Tour } from '@/types'
 
+function toHttps(url: string | null | undefined): string | null {
+  if (!url) return null
+  return url.startsWith('http://') ? 'https://' + url.slice(7) : url
+}
+
 function formatPrice(vnd: number) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(vnd)
 }
@@ -21,9 +26,9 @@ export default function TourCard({ tour, minPrice, featured = false }: TourCardP
     >
       {/* Thumbnail */}
       <div className="relative aspect-[16/10] overflow-hidden bg-brand-bg">
-        {tour.thumbnail_url ? (
+        {toHttps(tour.thumbnail_url) ? (
           <Image
-            src={tour.thumbnail_url}
+            src={toHttps(tour.thumbnail_url)!}
             alt={tour.name}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
