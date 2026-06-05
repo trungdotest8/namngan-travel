@@ -2,7 +2,7 @@
 -- Quản lý section "Điểm đến nổi bật" trên homepage qua CRM
 
 CREATE TABLE IF NOT EXISTS featured_destinations (
-  id           uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name         text NOT NULL,
   image_url    text NOT NULL,
   href         text NOT NULL,
