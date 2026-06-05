@@ -332,11 +332,11 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | D | Hồ sơ khách | ✅ v1.1.0 | `src/components/customer-profile/CustomerProfileDrawer.tsx` + `CustomerTable.tsx` |
 | E | Chat & Lead | ✅ v2.0.0 | `src/components/chat/ChatWidget.tsx` + `AutoPopup.tsx` |
 | F | CMS / RSS | ✅ v1.2.0 | `src/components/cms/ArticleFeed.tsx` |
-| G | DB Schema | ✅ **13/13 cloud** | `supabase/migrations/` — Supabase: indjoegnsvcteaozmgrg |
-| CRM | Admin CRM | ✅ v4.1.0 | `crm/page.tsx` + `ArticlesTab.tsx` (Tiptap) + `ToursTab.tsx` (upload) — 6 tabs |
+| G | DB Schema | ✅ **14 local / 13 cloud** | `supabase/migrations/` — Supabase: indjoegnsvcteaozmgrg — ⚠️ migration #14 chưa apply |
+| CRM | Admin CRM | ✅ v5.0.0 | `crm/page.tsx` + `DestinationsTab.tsx` — **7 tabs** (thêm Điểm đến nổi bật) |
 | AUTH | Admin Auth | ✅ v2.0.0 | `src/app/(admin)/login/page.tsx` + `src/middleware.ts` + `/api/admin/auth` |
-| SEARCH | Search Engine | ✅ **v2.1.0** | `api/search/route.ts` — OR query name\|destination\|country; optional date/meetingPoint |
-| DOMAIN | Domain & SEO | ✅ **v1.0.0** | `layout.tsx` metadataBase; `middleware.ts` .site→.com redirect; `robots.ts`; `sitemap.ts` |
+| SEARCH | Search Engine | ✅ v2.1.0 | `api/search/route.ts` — OR query name\|destination\|country; optional date/meetingPoint |
+| DOMAIN | Domain & SEO | ✅ v1.0.0 | `layout.tsx` metadataBase + CSP header; `middleware.ts` .site→.com; `robots.ts`; `sitemap.ts` |
 | UPLOAD | Image Upload API | ✅ v1.0.0 | `/api/admin/upload-image` — base64 → Supabase `tour-galleries` |
 | TIPTAP | WYSIWYG Editor | ✅ v1.0.0 | `src/components/cms/TiptapLiteEditor.tsx` |
 | TIN-TUC | Blog Tin Tức | ✅ v1.2.0 | `TinTucClient.tsx` — pagination 6/trang |
@@ -344,17 +344,21 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | DOMESTIC | /tour-trong-nuoc | ✅ v2.1.0 | `DomesticToursClient.tsx` |
 | INTL | /tour-nuoc-ngoai | ✅ v2.2.0 | `InternationalToursClient.tsx` — country filter |
 | BOOKING | Booking form | ✅ v1.0.0 | `src/components/booking/BookingModal.tsx` |
+| DEST | Điểm đến nổi bật | ✅ v1.0.0 | `DestinationsTab.tsx` + `/api/featured-destinations` + migration #14 |
+| SECURE | Mixed Content Fix | ✅ v1.0.0 | `layout.tsx` CSP meta; `TourListingCard.tsx` + `TourCard.tsx` toHttps() |
 
 ### Trạng thái API Routes
 
 | Route | Method | Trạng thái | Ghi chú |
 |-------|--------|-----------|---------|
 | `/api/leads` | POST | ✅ | Zod + luồng kép Email+Realtime; `pax` field |
-| `/api/search` | POST | ✅ **v2.1.0** | OR query name\|destination\|country; meetingPoint+date optional; tours without schedules included |
+| `/api/search` | POST | ✅ v2.1.0 | OR query name\|destination\|country; meetingPoint+date optional |
 | `/api/cms` | GET/POST | ✅ | `?page=N&limit=6` pagination; legacy `?status=all&limit=200` |
 | `/api/cms/[id]` | PATCH/DELETE | ✅ | Auth: cookie hoặc x-admin-secret |
 | `/api/tours` | GET/POST | ✅ | filter category/country/is_active/search |
 | `/api/tours/[id]` | PATCH/DELETE | ✅ | Auth + ?hard=true |
+| `/api/featured-destinations` | GET/POST | ✅ | GET public (?all=1 admin); POST create — Zod validated |
+| `/api/featured-destinations/[id]` | PATCH/DELETE | ✅ | Auth: cookie hoặc x-admin-secret |
 | `/api/customer-profile` | GET/PATCH | ✅ | Auth: cookie hoặc x-admin-secret |
 | `/api/admin/auth` | POST/DELETE | ✅ | HttpOnly cookie 24h |
 | `/api/admin/users` | GET/POST | ✅ | bcrypt hash |
@@ -381,30 +385,29 @@ useCmsStore             (store/cms.store.ts)               ✅
 useCustomerProfileStore (store/customer-profile.store.ts)  ✅
 ```
 
-### Data Contract — Delta phiên #24
+### Data Contract — Delta phiên #25–26
 
 ```typescript
-// ── Domain (phiên #24) ────────────────────────────────────────────────────────
-// PRIMARY DOMAIN: namngantravel.com — metadataBase + canonical + OG url
-// SECONDARY:      namngantravel.site → 301 redirect → namngantravel.com (middleware)
-// Cả 2 domain đã mua. Vercel cần thêm namngantravel.com (DNS: A @→76.76.21.21, CNAME www)
+// ── featured_destinations (migration #14 — phiên #25) ────────────────────────
+// Bảng mới quản lý section "Điểm đến nổi bật" trên homepage
+FeaturedDestination.id          → uuid (gen_random_uuid())
+FeaturedDestination.name        → string
+FeaturedDestination.image_url   → string (URL ảnh)
+FeaturedDestination.href        → string (link tới /tours?country=... hoặc /tour-trong-nuoc?...)
+FeaturedDestination.sort_order  → number (thứ tự hiển thị, số nhỏ trước)
+FeaturedDestination.is_active   → boolean (ẩn/hiện)
+// Homepage fetch SSR: createAdminClient() → fallback sang POPULAR_DEST_FALLBACK nếu lỗi
+// Admin GET: /api/featured-destinations?all=1 (với cookie auth) → trả cả inactive
 
-// ── SearchCriteriaSchema v2.1.0 (phiên #24) ──────────────────────────────────
-// destination: required (min 1)
-// meetingPoint: OPTIONAL (không bắt buộc nữa) — UI hiển thị "Linh hoạt"
-// departureDate: OPTIONAL — nếu không có → tự động filter từ hôm nay
-// Search query: OR(name, destination, country) — bắt cả "Trung Quốc"→country="TRUNG QUỐC"
-// Tours không có schedules vẫn xuất hiện, sort: có lịch trước → rồi theo giá tăng
+// ── Mixed Content Fix (phiên #26) ────────────────────────────────────────────
+// layout.tsx: <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests">
+// TourListingCard.tsx: toHttps(thumbnail_url) trước khi truyền vào <Image>
+// TourCard.tsx: toHttps(tour.thumbnail_url) tương tự
+// toHttps(): url.startsWith('http://') → 'https://' + url.slice(7)
 
-// ── SEO files mới (phiên #24) ────────────────────────────────────────────────
-// src/app/robots.ts   → GET /robots.txt   (block /crm /login /api)
-// src/app/sitemap.ts  → GET /sitemap.xml  (6 trang chính, BASE=namngantravel.com)
-// .eslintrc.json      → next/core-web-vitals (đã fix lint không chạy được)
-
-// ── Resend domain (phiên #24) ────────────────────────────────────────────────
-// Domain: namngantravel.com (ID: 4cf3c8a2-d600-43a6-bef8-03182924c30b)
-// Status: PENDING (verify đã trigger, đang chờ DNS propagate)
-// CẦN: thêm 3 DNS records vào registrar namngantravel.com (xem Next Steps)
+// ── Domain (phiên #24 — không đổi) ───────────────────────────────────────────
+// PRIMARY: namngantravel.com | SECONDARY: namngantravel.site → 301 → .com
+// Resend domain: namngantravel.com — status PENDING (chờ DNS records)
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
@@ -413,7 +416,8 @@ useCustomerProfileStore (store/customer-profile.store.ts)  ✅
 GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main)
 Vercel  : namngan-travel — ✅ deployed
           namngantravel.site alias ✅ | namngantravel.com ⚠️ CẦN THÊM vào Vercel
-Supabase: indjoegnsvcteaozmgrg — ✅ 13/13 migrations; 49 tours có gallery + hashtags
+Supabase: indjoegnsvcteaozmgrg — 14 migrations local / 13 cloud
+          ⚠️ CẦN CHẠY: migration #14 (featured_destinations) trên Supabase Dashboard
           ⚠️ CẦN TẠO: bucket 'tour-galleries' (Public) cho upload-image API
 Edge Fn : ✅ deployed v1.1.0 — 23 Drive folders đã tạo
 Directus: ⚠️ CHƯA setup — /tin-tuc dùng Supabase fallback (6 bài mẫu)
@@ -430,27 +434,31 @@ SeaStar : ✅ 49 tours (41 nước ngoài + 8 trong nước)
 
 ```
 # CẦN LÀM NGAY:
-1. Supabase bucket 'tour-galleries' (Public) — Dashboard → Storage → New bucket → Public
-2. Vercel: thêm domain namngantravel.com → DNS: A @→76.76.21.21 + CNAME www→cname.vercel-dns.com
-3. Resend DNS: thêm 3 records vào registrar namngantravel.com (xem section Hạ tầng trên)
+1. Supabase: chạy migration #14 (featured_destinations) — SQL Editor → dán nội dung file migration
+2. Supabase bucket 'tour-galleries' (Public) — Dashboard → Storage → New bucket → Public
+3. Vercel: thêm domain namngantravel.com → DNS: A @→76.76.21.21 + CNAME www→cname.vercel-dns.com
+4. Resend DNS: thêm 3 records vào registrar namngantravel.com (xem section Hạ tầng trên)
 
 # FEATURE TIẾP:
-- Gallery ảnh thực 49 tours (cần bucket trước)
+- Gallery ảnh thực 49 tours (cần bucket 'tour-galleries' trước)
 - ArticlesTab CRM: thumbnail upload (1 ảnh, tương tự ImageUploadInput ToursTab)
 - /tin-tuc: open graph meta per article
 - sitemap.ts: thêm dynamic tour URLs (/tour/[slug]) từ DB
+- DestinationsTab: drag-and-drop sort thứ tự thực sự (hiện chỉ là visual handle)
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Tạo Supabase bucket `tour-galleries`** — Dashboard → Storage → New bucket → đặt Public → Save. Upload-image API cần bucket này để hoạt động.
-2. **Thêm DNS Resend vào registrar `namngantravel.com`** — 3 records (TXT DKIM + MX SPF + TXT SPF) đã có ở section Hạ tầng. Sau khi thêm ~15–60 phút Resend tự verify, email hoạt động.
-3. **Thêm domain `namngantravel.com` vào Vercel** — Dashboard → Project → Settings → Domains → Add → nhập `namngantravel.com` → Vercel hướng dẫn DNS tiếp.
+1. **Chạy migration #14 trên Supabase** — Dashboard → SQL Editor → dán nội dung `supabase/migrations/20260605000014_featured_destinations.sql` → Run. Sau đó tab CRM "Điểm đến nổi bật" sẽ load được 6 destinations seed.
+2. **Tạo Supabase bucket `tour-galleries`** — Dashboard → Storage → New bucket → tên `tour-galleries` → đặt Public → Save. Upload-image API và gallery tour cần bucket này.
+3. **Thêm domain `namngantravel.com` vào Vercel + DNS Resend** — Vercel: Settings → Domains → Add `namngantravel.com`. Registrar: thêm 3 DNS records Resend (TXT DKIM + MX + TXT SPF) ở section Hạ tầng.
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-05 | Handover #26 — Mixed Content Fix | CSP upgrade-insecure-requests layout.tsx; toHttps() TourListingCard + TourCard |
+| 2026-06-05 | Handover #25 — Điểm đến nổi bật CRM | migration #14 featured_destinations; DestinationsTab CRM; /api/featured-destinations; homepage SSR |
 | 2026-06-05 | Handover #24 — Domain SEO + Search Fix | Domain middleware redirect .site→.com; robots+sitemap; search OR query fix; schema optional fields |
 | 2026-06-05 | Handover #23 — CRM Upload + Tiptap + Pagination | upload-image API ✅; TiptapLiteEditor ✅; /api/cms pagination ✅; TinTucClient ✅ |
 | 2026-06-05 | Domain Migration | namngantravel.site DNS+Vercel alias ✅; Resend pending migration |
