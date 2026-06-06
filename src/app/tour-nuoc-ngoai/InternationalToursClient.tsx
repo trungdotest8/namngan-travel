@@ -3,7 +3,14 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import TourListingCard, { type TourListingCardProps } from '@/components/tours/TourListingCard'
+import { deriveCountry } from '@/lib/tour-country'
 import { MapPin, SlidersHorizontal, X } from 'lucide-react'
+
+function normalizeCountry(raw: string | null): string | null {
+  if (!raw) return null
+  const derived = deriveCountry(raw)
+  return derived !== 'Khác' ? derived : raw
+}
 
 interface Props {
   tours: TourListingCardProps[]
@@ -23,7 +30,7 @@ export default function InternationalToursClient({ tours }: Props) {
   const router       = useRouter()
 
   const [activeCountry, setActiveCountry] = useState<string | null>(
-    searchParams.get('country') ?? null
+    normalizeCountry(searchParams.get('country'))
   )
   const [activeHashtag, setActiveHashtag] = useState<string | null>(null)
   const [sort, setSort] = useState<SortKey>('default')
