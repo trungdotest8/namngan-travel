@@ -35,9 +35,13 @@ function processTours(tours: TourRow[]): TourListingCardProps[] {
       .filter(s => s.status === 'open' && s.departure_date >= today)
       .sort((a, b) => a.departure_date.localeCompare(b.departure_date))
 
-    const isIntl  = t.category === 'nước ngoài'
-    const country = t.country ??
+    const isIntl     = t.category === 'nước ngoài'
+    const rawCountry = t.country ??
       (isIntl && deriveCountry(t.destination) !== 'Khác' ? deriveCountry(t.destination) : null)
+    // Normalize DB value (may be ALL CAPS) to canonical title case via deriveCountry
+    const country = rawCountry
+      ? (deriveCountry(rawCountry) !== 'Khác' ? deriveCountry(rawCountry) : rawCountry)
+      : null
 
     return {
       id:             t.id,
