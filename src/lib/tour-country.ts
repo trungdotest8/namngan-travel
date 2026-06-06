@@ -24,6 +24,7 @@ export const COUNTRY_MAP: Record<string, string[]> = {
   'Thổ Nhĩ Kỳ': ['ISTANBUL', 'THỔ NHĨ KỲ'],
   'Malaysia':    ['KUALA LUMPUR', 'PENANG', 'MALAYSIA'],
   'Việt Nam': [
+    'VIỆT NAM', 'VIET NAM',
     'ĐÀ NẴNG', 'DA NANG', 'HỘI AN', 'HOI AN', 'NHA TRANG',
     'PHÚ QUỐC', 'PHU QUOC', 'HÀ NỘI', 'HA NOI', 'HỒ CHÍ MINH',
     'ĐÀ LẠT', 'DA LAT', 'SA PA', 'SAPA', 'HẠ LONG', 'HA LONG',
