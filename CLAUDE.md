@@ -332,21 +332,22 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | D | Hồ sơ khách | ✅ v1.1.0 | `src/components/customer-profile/CustomerProfileDrawer.tsx` + `CustomerTable.tsx` |
 | E | Chat & Lead | ✅ v2.0.0 | `src/components/chat/ChatWidget.tsx` + `AutoPopup.tsx` |
 | F | CMS / RSS | ✅ v1.2.0 | `src/components/cms/ArticleFeed.tsx` |
-| G | DB Schema | ✅ **14 local / 13 cloud** | `supabase/migrations/` — Supabase: indjoegnsvcteaozmgrg — ⚠️ migration #14 chưa apply |
+| G | DB Schema | ✅ **14 local / 13 cloud** | `supabase/migrations/` — Supabase: indjoegnsvcteaozmgrg — ⚠️ migration #14 chưa apply cloud |
 | CRM | Admin CRM | ✅ v6.0.0 | `crm/page.tsx` + 4 tab files — **7 tabs, MOBILE RESPONSIVE** |
 | AUTH | Admin Auth | ✅ v2.0.0 | `src/app/(admin)/login/page.tsx` + `src/middleware.ts` + `/api/admin/auth` |
-| SEARCH | Search Engine | ✅ v2.1.0 | `api/search/route.ts` — OR query name\|destination\|country; optional date/meetingPoint |
-| DOMAIN | Domain & SEO | ✅ v1.0.0 | `layout.tsx` metadataBase + CSP header; `middleware.ts` .site→.com; `robots.ts`; `sitemap.ts` |
+| SEARCH | Search Engine | ✅ v2.1.0 | `api/search/route.ts` — OR query name\|destination\|country |
+| DOMAIN | Domain & SEO | ✅ v1.0.0 | `layout.tsx` metadataBase + CSP; `middleware.ts` .site→.com; `robots.ts`; `sitemap.ts` |
 | UPLOAD | Image Upload API | ✅ v1.0.0 | `/api/admin/upload-image` — base64 → Supabase `tour-galleries` |
 | TIPTAP | WYSIWYG Editor | ✅ v1.0.0 | `src/components/cms/TiptapLiteEditor.tsx` |
 | TIN-TUC | Blog Tin Tức | ✅ v1.2.0 | `TinTucClient.tsx` — pagination 6/trang |
-| TOURS-LIST | /tours listing | ✅ v1.2.0 | `ToursClient.tsx` + hashtag filter + stagger animation |
+| TOURS-LIST | /tours listing | ✅ v2.0.0 | `ToursClient.tsx` — country filter normalizeCountry() |
 | DOMESTIC | /tour-trong-nuoc | ✅ v2.1.0 | `DomesticToursClient.tsx` |
-| INTL | /tour-nuoc-ngoai | ✅ v2.2.0 | `InternationalToursClient.tsx` — country filter |
+| INTL | /tour-nuoc-ngoai | ✅ v2.3.0 | `InternationalToursClient.tsx` — normalizeCountry() fix |
 | BOOKING | Booking form | ✅ v1.0.0 | `src/components/booking/BookingModal.tsx` |
-| DEST | Điểm đến nổi bật | ✅ v1.0.0 | `DestinationsTab.tsx` + `/api/featured-destinations` + migration #14 |
+| DEST | Điểm đến nổi bật | ✅ v1.1.0 | `DestinationsTab.tsx` + `/api/featured-destinations` + migration #14 |
 | SECURE | Mixed Content Fix | ✅ v1.0.0 | `layout.tsx` CSP meta; `TourListingCard.tsx` + `TourCard.tsx` toHttps() |
-| MOBILE | CRM Mobile Responsive | ✅ v1.0.0 | `page.tsx` hamburger sidebar; `ArticlesTab` + `ToursTab` + `StaffTab` slide panels |
+| MOBILE | CRM Mobile Responsive | ✅ v1.0.0 | `page.tsx` hamburger; `ArticlesTab`+`ToursTab`+`StaffTab` slide panels |
+| COUNTRY | Country Filter Fix | ✅ v1.0.0 | `tour-country.ts` + `mega-menu-data.ts` + `normalizeCountry()` |
 
 ### Trạng thái API Routes
 
@@ -386,24 +387,29 @@ useCmsStore             (store/cms.store.ts)               ✅
 useCustomerProfileStore (store/customer-profile.store.ts)  ✅
 ```
 
-### Data Contract — Delta phiên #27 (không đổi so với #26)
+### Data Contract — Delta phiên #28
 
 ```typescript
-// ── Mobile Responsive CRM (phiên #27) ────────────────────────────────────────
-// Không thay đổi Data Contract — chỉ thay đổi UI/layout
+// ── Country Filter Fix (phiên #28) ───────────────────────────────────────────
+// tour-country.ts: COUNTRY_MAP keys → title case ('Trung Quốc', 'Nhật Bản'...)
+// deriveCountry(destination) giờ trả về title case thay vì ALL CAPS
+// normalizeCountry(raw): deriveCountry(raw) !== 'Khác' ? deriveCountry(raw) : raw
+//   dùng ở ToursClient + InternationalToursClient khi đọc searchParams.get('country')
+// mega-menu-data.ts: country fields ALL CAPS → title case (khớp COUNTRY_MAP keys)
+// processTours (tours/page.tsx + tour-nuoc-ngoai/page.tsx):
+//   t.country từ DB được normalize qua deriveCountry trước khi dùng filter
 
-// ── featured_destinations (migration #14 — phiên #25) — không đổi ────────────
-FeaturedDestination.{ id, name, image_url, href, sort_order, is_active }
-
-// ── Mixed Content Fix (phiên #26) — không đổi ────────────────────────────────
-// toHttps(url): url.startsWith('http://') → 'https://' + url.slice(7)
+// ── Quy ước URL country filter (chuẩn duy nhất từ phiên #28) ─────────────────
+// /tours?category=international&country=Trung+Qu%E1%BB%91c
+// /tour-nuoc-ngoai?country=Singapore
+// Mọi nguồn (mega menu, homepage, CRM HREF_SUGGESTIONS) đều dùng title case
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
 GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main)
-Vercel  : namngan-travel — ✅ deployed
+Vercel  : namngan-travel — ✅ deployed (commit 09cf433)
           namngantravel.site alias ✅ | namngantravel.com ⚠️ CẦN THÊM vào Vercel
 Supabase: indjoegnsvcteaozmgrg — 14 migrations local / 13 cloud
           ⚠️ CẦN CHẠY: migration #14 (featured_destinations) trên Supabase Dashboard
@@ -434,19 +440,20 @@ SeaStar : ✅ 49 tours (41 nước ngoài + 8 trong nước)
 - /tin-tuc: open graph meta per article
 - sitemap.ts: thêm dynamic tour URLs (/tour/[slug]) từ DB
 - DestinationsTab: drag-and-drop sort thứ tự thực sự (hiện chỉ là visual handle)
-- Public-facing pages: mobile responsive (Header mega-menu, TourDetail, ChatWidget)
+- Public-facing pages: mobile responsive (Header mega-menu mobile, TourDetail, ChatWidget)
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Chạy migration #14 trên Supabase** — Dashboard → SQL Editor → dán nội dung `supabase/migrations/20260605000014_featured_destinations.sql` → Run. Tab CRM "Điểm đến nổi bật" sẽ hoạt động.
+1. **Chạy migration #14 trên Supabase** — Dashboard → SQL Editor → dán nội dung `supabase/migrations/20260605000014_featured_destinations.sql` → Run. Tab CRM "Điểm đến nổi bật" sẽ hoạt động đúng.
 2. **Tạo Supabase bucket `tour-galleries`** — Dashboard → Storage → New bucket → tên `tour-galleries` → Public → Save. Upload-image API và gallery cần bucket này.
-3. **Thêm domain `namngantravel.com` vào Vercel + DNS Resend** — Vercel: Settings → Domains → Add. Registrar: thêm 3 DNS records Resend (TXT DKIM + MX + TXT SPF) ở section Hạ tầng.
+3. **Thêm domain `namngantravel.com` vào Vercel + DNS Resend** — Vercel: Settings → Domains → Add. Registrar: thêm 3 DNS records Resend (xem section Hạ tầng trên).
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-06 | Handover #28 — Country Filter Fix | COUNTRY_MAP title case; normalizeCountry(); mega-menu-data fix; HREF_SUGGESTIONS 19 nước |
 | 2026-06-06 | Handover #27 — CRM Mobile Responsive | Sidebar hamburger; slide panels full-width; grids responsive; table scroll |
 | 2026-06-05 | Handover #26 — Mixed Content Fix | CSP upgrade-insecure-requests layout.tsx; toHttps() TourListingCard + TourCard |
 | 2026-06-05 | Handover #25 — Điểm đến nổi bật CRM | migration #14 featured_destinations; DestinationsTab CRM; /api/featured-destinations; homepage SSR |
