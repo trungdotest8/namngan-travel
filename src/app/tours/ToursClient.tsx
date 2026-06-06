@@ -22,7 +22,11 @@ const CATEGORY_TABS = [
 ] as const
 
 function toCategoryParam(value: string | null): CategoryParam {
-  if (value === 'international' || value === 'domestic') return value
+  if (value === 'international') return 'international'
+  if (value === 'domestic')      return 'domestic'
+  // backward-compat: old hrefs stored in DB used Vietnamese strings
+  if (value === 'nước ngoài' || value === 'quốc tế') return 'international'
+  if (value === 'trong nước')                        return 'domestic'
   return null
 }
 
