@@ -168,9 +168,9 @@ export function StaffTab() {
     : !!form.display_name
 
   return (
-    <div className="flex gap-6 h-full min-h-0">
+    <div className="flex flex-col lg:flex-row gap-6 h-full min-h-0">
       {/* ── Left: user table ── */}
-      <div className={`flex flex-col gap-4 ${showPanel ? 'w-1/2' : 'w-full'} transition-all`}>
+      <div className={`flex flex-col gap-4 transition-all ${showPanel ? 'w-full lg:w-1/2' : 'w-full'}`}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -212,7 +212,8 @@ export function StaffTab() {
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[420px]">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
                   <th className="text-left px-4 py-3 font-medium text-[#666666]">Tài khoản</th>
@@ -293,13 +294,14 @@ export function StaffTab() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>
 
       {/* ── Right: create / edit panel ── */}
       {showPanel && (
-        <div className="w-1/2 bg-white rounded-xl border border-gray-100 p-6 flex flex-col gap-5 self-start">
+        <div className="w-full lg:w-1/2 bg-white rounded-xl border border-gray-100 p-6 flex flex-col gap-5 self-start">
           {/* Panel header */}
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-[#1A1A2E]">

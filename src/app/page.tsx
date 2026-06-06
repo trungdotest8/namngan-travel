@@ -165,9 +165,9 @@ const WHY_US = [
 
 // Fallback dùng khi DB chưa có data hoặc lỗi kết nối
 const POPULAR_DEST_FALLBACK = [
-  { name: 'Trung Quốc', image_url: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=400&q=80', href: '/tours?country=Trung+Qu%E1%BB%91c&category=n%C6%B0%E1%BB%9Bc+ngo%C3%A0i' },
-  { name: 'Nhật Bản',   image_url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&q=80', href: '/tours?country=Nh%E1%BA%ADt+B%E1%BA%A3n&category=n%C6%B0%E1%BB%9Bc+ngo%C3%A0i' },
-  { name: 'Hàn Quốc',  image_url: 'https://images.unsplash.com/photo-1538485399081-7c8272e29df8?w=400&q=80', href: '/tours?country=H%C3%A0n+Qu%E1%BB%91c&category=n%C6%B0%E1%BB%9Bc+ngo%C3%A0i' },
+  { name: 'Trung Quốc', image_url: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=400&q=80', href: '/tours?category=international&country=Trung+Qu%E1%BB%91c' },
+  { name: 'Nhật Bản',   image_url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&q=80', href: '/tours?category=international&country=Nh%E1%BA%ADt+B%E1%BA%A3n' },
+  { name: 'Hàn Quốc',  image_url: 'https://images.unsplash.com/photo-1538485399081-7c8272e29df8?w=400&q=80', href: '/tours?category=international&country=H%C3%A0n+Qu%E1%BB%91c' },
   { name: 'Phú Quốc',  image_url: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80', href: '/tour-trong-nuoc?destination=Ph%C3%BA+Qu%E1%BB%91c' },
   { name: 'Đà Nẵng',   image_url: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=400&q=80', href: '/tour-trong-nuoc?destination=%C4%90%C3%A0+N%E1%BA%B5ng' },
   { name: 'Hà Giang',  image_url: 'https://images.unsplash.com/photo-1539367628448-4bc5c9d171c8?w=400&q=80', href: '/tour-trong-nuoc?destination=H%C3%A0+Giang' },

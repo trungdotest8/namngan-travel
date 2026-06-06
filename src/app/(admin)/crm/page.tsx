@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   Plane, LayoutDashboard, Users, Settings, Newspaper, MapPin,
-  Bell, Plus, TrendingUp, TrendingDown,
+  Bell, Plus, TrendingUp, TrendingDown, Menu, X,
   CheckCircle2, AlertCircle, Loader2, LogOut, UserCog,
 } from 'lucide-react'
 import { useCustomerProfileStore } from '@/store/customer-profile.store'
@@ -157,7 +157,7 @@ function OverviewTab({ leads }: { leads: Lead[] }) {
   return (
     <div className="space-y-3">
       {/* KPI */}
-      <div className="grid grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         <MetricCard label="Tổng Lead tháng này" value={String(m.total || 248)} sub="+18% so tháng trước" up />
         <MetricCard label="Tỷ lệ chuyển đổi"   value={`${m.cvr || 34}%`}      sub="+5.2% cải thiện"    up />
         <MetricCard label="Doanh thu ước tính"  value="₫892M"                  sub="+22% vs tháng 4"    up />
@@ -165,8 +165,8 @@ function OverviewTab({ leads }: { leads: Lead[] }) {
       </div>
 
       {/* Chart + source + notifications */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="col-span-2 bg-white border border-gray-100 rounded-xl p-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-xl p-4">
           <div className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mb-3">
             Biểu đồ Lead theo ngày (T5/2026)
           </div>
@@ -213,7 +213,7 @@ function OverviewTab({ leads }: { leads: Lead[] }) {
       </div>
 
       {/* Campaign + Pipeline */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="bg-white border border-gray-100 rounded-xl p-4">
           <div className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mb-3">
             Hiệu suất chiến dịch đang chạy
@@ -403,6 +403,7 @@ const TAB_TITLES: Record<TabId, string> = {
 
 function CRMPage() {
   const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<{ synced: number; errors: string[] } | null>(null)
@@ -457,30 +458,44 @@ function CRMPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 font-sans">
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* ── Sidebar ── */}
-      <aside className="w-[220px] bg-[#005BAA] flex flex-col flex-shrink-0">
+      <aside className={`w-[220px] bg-[#005BAA] flex flex-col flex-shrink-0 fixed md:static inset-y-0 left-0 z-50 transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         {/* Logo */}
-        <div className="px-4 py-4 border-b border-white/10">
+        <div className="px-4 py-4 border-b border-white/10 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 bg-[#FF6B00] rounded-md flex items-center justify-center flex-shrink-0">
               <Plane size={15} className="text-white" />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="text-white font-bold text-[14px] leading-tight">Nam Ngân Travel</div>
               <div className="text-white/40 text-[10px] tracking-widest uppercase">CRM Platform</div>
             </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="md:hidden p-1.5 text-white/50 hover:text-white/80 rounded-md transition-colors flex-shrink-0"
+            >
+              <X size={15} />
+            </button>
           </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 py-3">
+        <nav className="flex-1 py-3 overflow-y-auto">
           <div className="px-4 py-1.5 text-[10px] font-semibold text-white/30 uppercase tracking-widest">
             Tổng quan
           </div>
           {NAV.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => setActiveTab(id)}
+              onClick={() => { setActiveTab(id); setSidebarOpen(false) }}
               className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-[12.5px] font-medium border-l-3 transition-all ${
                 activeTab === id
                   ? 'bg-white/14 text-white border-l-[3px] border-l-[#FF6B00]'
@@ -494,7 +509,7 @@ function CRMPage() {
         </nav>
 
         {/* Footer */}
-        <div className="px-4 py-3 border-t border-white/10">
+        <div className="px-4 py-3 border-t border-white/10 flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
               {(currentAdmin?.display_name ?? 'A').slice(0, 2).toUpperCase()}
@@ -514,21 +529,29 @@ function CRMPage() {
       {/* ── Main ── */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="bg-white border-b border-gray-100 h-[52px] px-5 flex items-center gap-3 flex-shrink-0">
-          <div className="flex-1 font-bold text-[15px] text-[#1A1A2E]">
+        <header className="bg-white border-b border-gray-100 h-[52px] px-3 md:px-5 flex items-center gap-2 md:gap-3 flex-shrink-0">
+          {/* Hamburger — mobile only */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 transition-colors flex-shrink-0"
+          >
+            <Menu size={16} />
+          </button>
+
+          <div className="flex-1 font-bold text-[14px] md:text-[15px] text-[#1A1A2E] min-w-0 truncate">
             {TAB_TITLES[activeTab]}
-            <span className="text-gray-400 text-xs font-normal ml-2">
+            <span className="hidden md:inline text-gray-400 text-xs font-normal ml-2">
               · Cập nhật {new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
 
-          {/* Live indicator */}
-          <span className="flex items-center gap-1.5 text-[11px] font-medium text-green-600 mr-1">
+          {/* Live indicator — hidden on mobile */}
+          <span className="hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-green-600 mr-1">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
             Live
           </span>
 
-          <button className="relative w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors">
+          <button className="relative w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors flex-shrink-0">
             <Bell size={15} className="text-gray-500" />
             <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#FF6B00] rounded-full text-[9px] font-bold text-white flex items-center justify-center border border-white">
               4
@@ -537,9 +560,10 @@ function CRMPage() {
 
           <button
             onClick={() => { setActiveTab('customers'); openDrawer('') }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#005BAA] text-white text-xs font-medium hover:bg-[#0078D7] transition-colors"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#005BAA] text-white text-xs font-medium hover:bg-[#0078D7] transition-colors flex-shrink-0"
           >
-            <Plus size={13} /> Thêm KH
+            <Plus size={13} />
+            <span className="hidden sm:inline">Thêm KH</span>
           </button>
 
           <button
@@ -548,14 +572,14 @@ function CRMPage() {
               window.location.href = '/login'
             }}
             title="Đăng xuất"
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 hover:bg-red-50 hover:border-red-200 text-gray-500 hover:text-red-500 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 hover:bg-red-50 hover:border-red-200 text-gray-500 hover:text-red-500 transition-colors flex-shrink-0"
           >
             <LogOut size={14} />
           </button>
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-5">
+        <main className="flex-1 overflow-y-auto p-3 md:p-5">
           {/* Error banner */}
           {fetchError && (
             <div className="flex items-center gap-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">

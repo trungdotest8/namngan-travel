@@ -37,12 +37,12 @@ const EMPTY_FORM: DestFormState = {
 
 // Gợi ý link nhanh cho các điểm đến phổ biến
 const HREF_SUGGESTIONS = [
-  { label: 'Tour Trung Quốc',  href: '/tours?country=Trung+Qu%E1%BB%91c&category=n%C6%B0%E1%BB%9Bc+ngo%C3%A0i' },
-  { label: 'Tour Nhật Bản',   href: '/tours?country=Nh%E1%BA%ADt+B%E1%BA%A3n&category=n%C6%B0%E1%BB%9Bc+ngo%C3%A0i' },
-  { label: 'Tour Hàn Quốc',   href: '/tours?country=H%C3%A0n+Qu%E1%BB%91c&category=n%C6%B0%E1%BB%9Bc+ngo%C3%A0i' },
-  { label: 'Tour Thái Lan',   href: '/tours?country=Th%C3%A1i+Lan&category=n%C6%B0%E1%BB%9Bc+ngo%C3%A0i' },
-  { label: 'Tour Đài Loan',   href: '/tours?country=%C4%90%C3%A0i+Loan&category=n%C6%B0%E1%BB%9Bc+ngo%C3%A0i' },
-  { label: 'Tour Singapore',  href: '/tours?country=Singapore&category=n%C6%B0%E1%BB%9Bc+ngo%C3%A0i' },
+  { label: 'Tour Trung Quốc',  href: '/tours?category=international&country=Trung+Qu%E1%BB%91c' },
+  { label: 'Tour Nhật Bản',   href: '/tours?category=international&country=Nh%E1%BA%ADt+B%E1%BA%A3n' },
+  { label: 'Tour Hàn Quốc',   href: '/tours?category=international&country=H%C3%A0n+Qu%E1%BB%91c' },
+  { label: 'Tour Thái Lan',   href: '/tours?category=international&country=Th%C3%A1i+Lan' },
+  { label: 'Tour Đài Loan',   href: '/tours?category=international&country=%C4%90%C3%A0i+Loan' },
+  { label: 'Tour Singapore',  href: '/tours?category=international&country=Singapore' },
   { label: 'Tour Phú Quốc',   href: '/tour-trong-nuoc?destination=Ph%C3%BA+Qu%E1%BB%91c' },
   { label: 'Tour Đà Nẵng',    href: '/tour-trong-nuoc?destination=%C4%90%C3%A0+N%E1%BA%B5ng' },
   { label: 'Tour Hà Giang',   href: '/tour-trong-nuoc?destination=H%C3%A0+Giang' },

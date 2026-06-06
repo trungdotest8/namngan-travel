@@ -390,7 +390,7 @@ export function ToursTab() {
   ]
 
   return (
-    <div className="relative flex gap-5">
+    <div className="relative flex flex-col lg:flex-row gap-5">
 
       {/* ── Toast ── */}
       {toast && (
@@ -401,32 +401,32 @@ export function ToursTab() {
       )}
 
       {/* ── Left: list ── */}
-      <div className={`flex-1 min-w-0 transition-all ${panelOpen ? 'max-w-[calc(100%-420px)]' : ''}`}>
+      <div className={`flex-1 min-w-0 transition-all ${panelOpen ? 'lg:max-w-[calc(100%-420px)]' : ''}`}>
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
+        <div className="flex items-start sm:items-center justify-between mb-4 gap-3">
+          <div className="min-w-0">
             <div className="font-bold text-xl text-[#1A1A2E]">Quản lý Tour</div>
-            <div className="text-sm text-gray-400 mt-0.5">
+            <div className="text-sm text-gray-400 mt-0.5 hidden sm:block">
               CRUD hình ảnh, hashtag, thông tin tour trong nước &amp; nước ngoài
             </div>
           </div>
           <button
             onClick={openNew}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#005BAA] text-white text-xs font-medium hover:bg-[#0078D7] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#005BAA] text-white text-xs font-medium hover:bg-[#0078D7] transition-colors flex-shrink-0"
           >
             <Plus size={13} /> Thêm tour
           </button>
         </div>
 
         {/* Filter tabs + search */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex border-b border-gray-200 flex-1">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4">
+          <div className="flex border-b border-gray-200 overflow-x-auto flex-1">
             {filterTabs.map(f => (
               <button
                 key={f.key}
                 onClick={() => setFilterCat(f.key)}
-                className={`px-3 py-2 text-[12.5px] font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5 ${
+                className={`px-3 py-2 text-[12.5px] font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                   filterCat === f.key
                     ? 'border-[#005BAA] text-[#005BAA]'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -446,7 +446,7 @@ export function ToursTab() {
             placeholder="Tìm tour..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs w-44 focus:border-[#005BAA] outline-none bg-gray-50"
+            className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs w-full sm:w-44 focus:border-[#005BAA] outline-none bg-gray-50"
           />
         </div>
 
@@ -604,7 +604,13 @@ export function ToursTab() {
 
       {/* ── Right: Slide-over panel ── */}
       {panelOpen && (
-        <div className="w-[400px] flex-shrink-0 bg-white border border-gray-200 rounded-xl flex flex-col shadow-lg max-h-[calc(100vh-120px)] sticky top-0 overflow-hidden">
+        <>
+          {/* Mobile backdrop */}
+          <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={closePanel} />
+        </>
+      )}
+      {panelOpen && (
+        <div className="fixed right-0 top-0 h-full w-full sm:w-[440px] z-50 lg:static lg:inset-auto lg:z-auto lg:w-[400px] lg:flex-shrink-0 bg-white border border-gray-200 lg:rounded-xl rounded-none flex flex-col shadow-2xl lg:shadow-lg lg:max-h-[calc(100vh-120px)] lg:sticky lg:top-0 overflow-hidden">
           {/* Panel header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
             <div className="font-semibold text-[13px] text-[#1A1A2E]">
@@ -910,7 +916,7 @@ export function ToursTab() {
       {/* ── Delete confirm dialog ── */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-[340px]">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-[calc(100%-2rem)] sm:w-[340px] max-w-sm">
             <div className="text-[15px] font-bold text-[#1A1A2E] mb-2">Xóa tour?</div>
             <div className="text-sm text-gray-500 mb-5">
               Thao tác này sẽ xóa vĩnh viễn tour khỏi database. Không thể hoàn tác.

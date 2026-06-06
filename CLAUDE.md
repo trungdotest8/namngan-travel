@@ -333,7 +333,7 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | E | Chat & Lead | ✅ v2.0.0 | `src/components/chat/ChatWidget.tsx` + `AutoPopup.tsx` |
 | F | CMS / RSS | ✅ v1.2.0 | `src/components/cms/ArticleFeed.tsx` |
 | G | DB Schema | ✅ **14 local / 13 cloud** | `supabase/migrations/` — Supabase: indjoegnsvcteaozmgrg — ⚠️ migration #14 chưa apply |
-| CRM | Admin CRM | ✅ v5.0.0 | `crm/page.tsx` + `DestinationsTab.tsx` — **7 tabs** (thêm Điểm đến nổi bật) |
+| CRM | Admin CRM | ✅ v6.0.0 | `crm/page.tsx` + 4 tab files — **7 tabs, MOBILE RESPONSIVE** |
 | AUTH | Admin Auth | ✅ v2.0.0 | `src/app/(admin)/login/page.tsx` + `src/middleware.ts` + `/api/admin/auth` |
 | SEARCH | Search Engine | ✅ v2.1.0 | `api/search/route.ts` — OR query name\|destination\|country; optional date/meetingPoint |
 | DOMAIN | Domain & SEO | ✅ v1.0.0 | `layout.tsx` metadataBase + CSP header; `middleware.ts` .site→.com; `robots.ts`; `sitemap.ts` |
@@ -346,6 +346,7 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | BOOKING | Booking form | ✅ v1.0.0 | `src/components/booking/BookingModal.tsx` |
 | DEST | Điểm đến nổi bật | ✅ v1.0.0 | `DestinationsTab.tsx` + `/api/featured-destinations` + migration #14 |
 | SECURE | Mixed Content Fix | ✅ v1.0.0 | `layout.tsx` CSP meta; `TourListingCard.tsx` + `TourCard.tsx` toHttps() |
+| MOBILE | CRM Mobile Responsive | ✅ v1.0.0 | `page.tsx` hamburger sidebar; `ArticlesTab` + `ToursTab` + `StaffTab` slide panels |
 
 ### Trạng thái API Routes
 
@@ -385,29 +386,17 @@ useCmsStore             (store/cms.store.ts)               ✅
 useCustomerProfileStore (store/customer-profile.store.ts)  ✅
 ```
 
-### Data Contract — Delta phiên #25–26
+### Data Contract — Delta phiên #27 (không đổi so với #26)
 
 ```typescript
-// ── featured_destinations (migration #14 — phiên #25) ────────────────────────
-// Bảng mới quản lý section "Điểm đến nổi bật" trên homepage
-FeaturedDestination.id          → uuid (gen_random_uuid())
-FeaturedDestination.name        → string
-FeaturedDestination.image_url   → string (URL ảnh)
-FeaturedDestination.href        → string (link tới /tours?country=... hoặc /tour-trong-nuoc?...)
-FeaturedDestination.sort_order  → number (thứ tự hiển thị, số nhỏ trước)
-FeaturedDestination.is_active   → boolean (ẩn/hiện)
-// Homepage fetch SSR: createAdminClient() → fallback sang POPULAR_DEST_FALLBACK nếu lỗi
-// Admin GET: /api/featured-destinations?all=1 (với cookie auth) → trả cả inactive
+// ── Mobile Responsive CRM (phiên #27) ────────────────────────────────────────
+// Không thay đổi Data Contract — chỉ thay đổi UI/layout
 
-// ── Mixed Content Fix (phiên #26) ────────────────────────────────────────────
-// layout.tsx: <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests">
-// TourListingCard.tsx: toHttps(thumbnail_url) trước khi truyền vào <Image>
-// TourCard.tsx: toHttps(tour.thumbnail_url) tương tự
-// toHttps(): url.startsWith('http://') → 'https://' + url.slice(7)
+// ── featured_destinations (migration #14 — phiên #25) — không đổi ────────────
+FeaturedDestination.{ id, name, image_url, href, sort_order, is_active }
 
-// ── Domain (phiên #24 — không đổi) ───────────────────────────────────────────
-// PRIMARY: namngantravel.com | SECONDARY: namngantravel.site → 301 → .com
-// Resend domain: namngantravel.com — status PENDING (chờ DNS records)
+// ── Mixed Content Fix (phiên #26) — không đổi ────────────────────────────────
+// toHttps(url): url.startsWith('http://') → 'https://' + url.slice(7)
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
@@ -445,18 +434,20 @@ SeaStar : ✅ 49 tours (41 nước ngoài + 8 trong nước)
 - /tin-tuc: open graph meta per article
 - sitemap.ts: thêm dynamic tour URLs (/tour/[slug]) từ DB
 - DestinationsTab: drag-and-drop sort thứ tự thực sự (hiện chỉ là visual handle)
+- Public-facing pages: mobile responsive (Header mega-menu, TourDetail, ChatWidget)
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Chạy migration #14 trên Supabase** — Dashboard → SQL Editor → dán nội dung `supabase/migrations/20260605000014_featured_destinations.sql` → Run. Sau đó tab CRM "Điểm đến nổi bật" sẽ load được 6 destinations seed.
-2. **Tạo Supabase bucket `tour-galleries`** — Dashboard → Storage → New bucket → tên `tour-galleries` → đặt Public → Save. Upload-image API và gallery tour cần bucket này.
-3. **Thêm domain `namngantravel.com` vào Vercel + DNS Resend** — Vercel: Settings → Domains → Add `namngantravel.com`. Registrar: thêm 3 DNS records Resend (TXT DKIM + MX + TXT SPF) ở section Hạ tầng.
+1. **Chạy migration #14 trên Supabase** — Dashboard → SQL Editor → dán nội dung `supabase/migrations/20260605000014_featured_destinations.sql` → Run. Tab CRM "Điểm đến nổi bật" sẽ hoạt động.
+2. **Tạo Supabase bucket `tour-galleries`** — Dashboard → Storage → New bucket → tên `tour-galleries` → Public → Save. Upload-image API và gallery cần bucket này.
+3. **Thêm domain `namngantravel.com` vào Vercel + DNS Resend** — Vercel: Settings → Domains → Add. Registrar: thêm 3 DNS records Resend (TXT DKIM + MX + TXT SPF) ở section Hạ tầng.
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-06 | Handover #27 — CRM Mobile Responsive | Sidebar hamburger; slide panels full-width; grids responsive; table scroll |
 | 2026-06-05 | Handover #26 — Mixed Content Fix | CSP upgrade-insecure-requests layout.tsx; toHttps() TourListingCard + TourCard |
 | 2026-06-05 | Handover #25 — Điểm đến nổi bật CRM | migration #14 featured_destinations; DestinationsTab CRM; /api/featured-destinations; homepage SSR |
 | 2026-06-05 | Handover #24 — Domain SEO + Search Fix | Domain middleware redirect .site→.com; robots+sitemap; search OR query fix; schema optional fields |

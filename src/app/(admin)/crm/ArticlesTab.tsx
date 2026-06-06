@@ -289,19 +289,20 @@ export function ArticlesTab() {
   return (
     <div className="relative">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div>
+      <div className="flex items-start sm:items-center justify-between mb-5 gap-3">
+        <div className="min-w-0">
           <div className="font-bold text-xl text-[#1A1A2E]">Quản lý Bài viết</div>
-          <div className="text-sm text-gray-400 mt-0.5">
+          <div className="text-sm text-gray-400 mt-0.5 hidden sm:block">
             Tạo, chỉnh sửa và xuất bản bài viết cho trang /tin-tuc
           </div>
         </div>
         <button
           onClick={openNew}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#005BAA] text-white text-sm font-medium hover:bg-[#0078D7] transition-colors"
+          className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg bg-[#005BAA] text-white text-sm font-medium hover:bg-[#0078D7] transition-colors flex-shrink-0"
         >
           <Plus size={15} />
-          Thêm bài viết
+          <span className="hidden sm:inline">Thêm bài viết</span>
+          <span className="sm:hidden">Thêm</span>
         </button>
       </div>
 
@@ -351,67 +352,69 @@ export function ArticlesTab() {
               {filter !== 'all' && ` ở trạng thái "${FILTER_TABS.find(t => t.key === filter)?.label}"`}.
             </div>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left px-4 py-3 text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">Tiêu đề</th>
-                  <th className="text-left px-3 py-3 text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide w-28">Danh mục</th>
-                  <th className="text-left px-3 py-3 text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide w-28">Trạng thái</th>
-                  <th className="text-left px-3 py-3 text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide w-28">Ngày đăng</th>
-                  <th className="w-24 px-3 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {displayed.map(a => {
-                  const st = STATUS_MAP[a.status] ?? STATUS_MAP.draft
-                  return (
-                    <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-[#1A1A2E] line-clamp-1">{a.title}</div>
-                        <div className="text-[11px] text-gray-400 font-mono mt-0.5">/tin-tuc/{a.slug}</div>
-                      </td>
-                      <td className="px-3 py-3 text-gray-500 text-xs">{a.category ?? '—'}</td>
-                      <td className="px-3 py-3">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-semibold ${st.cls}`}>
-                          {a.status === 'published' && <Eye size={10} />}
-                          {a.status === 'draft'     && <EyeOff size={10} />}
-                          {a.status === 'archived'  && <Archive size={10} />}
-                          {st.label}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 text-gray-500 text-xs">{fmtDate(a.published_at)}</td>
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-1 justify-end">
-                          <a
-                            href={`/tin-tuc/${a.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#005BAA] transition-colors"
-                            title="Xem bài viết"
-                          >
-                            <ExternalLink size={13} />
-                          </a>
-                          <button
-                            onClick={() => openEdit(a)}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#005BAA] transition-colors"
-                            title="Chỉnh sửa"
-                          >
-                            <Pencil size={13} />
-                          </button>
-                          <button
-                            onClick={() => setDeleteId(a.id)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-                            title="Xóa"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[480px]">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left px-4 py-3 text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide">Tiêu đề</th>
+                    <th className="text-left px-3 py-3 text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide w-28 hidden sm:table-cell">Danh mục</th>
+                    <th className="text-left px-3 py-3 text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide w-28">Trạng thái</th>
+                    <th className="text-left px-3 py-3 text-[10.5px] font-semibold text-gray-400 uppercase tracking-wide w-28 hidden sm:table-cell">Ngày đăng</th>
+                    <th className="w-24 px-3 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {displayed.map(a => {
+                    const st = STATUS_MAP[a.status] ?? STATUS_MAP.draft
+                    return (
+                      <tr key={a.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-[#1A1A2E] line-clamp-1">{a.title}</div>
+                          <div className="text-[11px] text-gray-400 font-mono mt-0.5">/tin-tuc/{a.slug}</div>
+                        </td>
+                        <td className="px-3 py-3 text-gray-500 text-xs hidden sm:table-cell">{a.category ?? '—'}</td>
+                        <td className="px-3 py-3">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-semibold ${st.cls}`}>
+                            {a.status === 'published' && <Eye size={10} />}
+                            {a.status === 'draft'     && <EyeOff size={10} />}
+                            {a.status === 'archived'  && <Archive size={10} />}
+                            {st.label}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-gray-500 text-xs hidden sm:table-cell">{fmtDate(a.published_at)}</td>
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-1 justify-end">
+                            <a
+                              href={`/tin-tuc/${a.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#005BAA] transition-colors"
+                              title="Xem bài viết"
+                            >
+                              <ExternalLink size={13} />
+                            </a>
+                            <button
+                              onClick={() => openEdit(a)}
+                              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#005BAA] transition-colors"
+                              title="Chỉnh sửa"
+                            >
+                              <Pencil size={13} />
+                            </button>
+                            <button
+                              onClick={() => setDeleteId(a.id)}
+                              className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                              title="Xóa"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
@@ -453,7 +456,7 @@ export function ArticlesTab() {
       {panelOpen && (
         <>
           <div className="fixed inset-0 z-40 bg-black/30" onClick={closePanel} />
-          <div className="fixed right-0 top-0 h-full w-[520px] z-50 bg-white shadow-2xl flex flex-col">
+          <div className="fixed right-0 top-0 h-full w-full sm:w-[520px] z-50 bg-white shadow-2xl flex flex-col">
             {/* Panel header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
               <div className="font-semibold text-[#1A1A2E]">
