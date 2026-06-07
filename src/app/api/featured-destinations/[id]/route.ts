@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
-import { cookies } from 'next/headers'
+import { ADMIN_COOKIE } from '@/lib/admin-auth-constants'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,8 +11,7 @@ const supabaseAdmin = createClient(
 function isAuthed(req: NextRequest): boolean {
   const secret = req.headers.get('x-admin-secret')
   if (secret === process.env.WEBHOOK_SECRET) return true
-  const cookieStore = cookies()
-  return !!cookieStore.get('admin_token')?.value
+  return !!req.cookies.get(ADMIN_COOKIE)?.value
 }
 
 const PatchSchema = z.object({
