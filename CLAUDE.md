@@ -393,13 +393,14 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | D | Hồ sơ khách | ✅ v1.1.0 | `CustomerProfileDrawer.tsx` + `CustomerTable.tsx` |
 | E | Chat & Lead | ✅ v2.2.0 | `ChatWidget.tsx` — 2 tab: "Để lại số" + "Chat AI" |
 | F | CMS / RSS | ✅ v1.3.0 | `ArticleFeed.tsx` — TiptapEditor ✅ |
-| G | DB Schema | ✅ **17 local / 15 cloud** | `supabase/migrations/` — #16 + #17 chưa apply cloud ⚠️ |
-| CRM | Admin CRM | ✅ v6.1.0 | `crm/page.tsx` — badge HOT/WARM/COLD ✅ |
+| G | DB Schema | ✅ **18 local / 15 cloud** | `supabase/migrations/` — #16+#17+#18 chưa apply cloud ⚠️ |
+| CRM | Admin CRM | ✅ v7.0.0 | `crm/page.tsx` — Source cards + Realtime bell + NotificationPanel ✅ |
 | AUTH | Admin Auth | ✅ v2.0.0 | `login/page.tsx` + `middleware.ts` — cookie: `admin_session` |
-| TRIPGENIE | AI Chat Core | ✅ v1.2.0 | `/api/ai/chat` Node.js runtime (Edge bỏ — SDK v0.102 không tương thích); RAG ✅ |
-| TRIPGENIE-LEADS | Lead Capture | ✅ v1.0.0 | `/api/leads` POST+GET ✅; `/api/leads/[id]` PATCH ✅; LeadCaptureSchema + honeypot + lead_score |
-| TRIPGENIE-CLASSIFY | AI Classification | ✅ v1.0.0 | `src/lib/ai/classify.ts`; `/api/ai/classify-lead`; migration #17; badge CRM ✅ |
-| NOTIFY | Notification | ✅ v2.0.0 | 8 events; welcome-lead template ✅; Telegram ✅ |
+| TRIPGENIE | AI Chat Core | ✅ v1.2.0 | `/api/ai/chat` Node.js runtime; RAG ✅ |
+| TRIPGENIE-LEADS | Lead Capture | ✅ v2.0.0 | `/api/leads` POST+GET ✅ (adminClient — RLS bypassed); `/api/leads/[id]` PATCH ✅ |
+| TRIPGENIE-CLASSIFY | AI Classification | ✅ v1.0.0 | `src/lib/ai/classify.ts`; `/api/ai/classify-lead`; migration #17 |
+| TRIPGENIE-AFFILIATE | Affiliate Engine | ✅ v1.0.0 | migration #18; `src/lib/affiliate/tracker.ts`; `/api/affiliate/track` |
+| NOTIFY | Notification | ✅ v2.1.0 | Luồng 3: Email + Realtime + Telegram ✅; SĐT trong Telegram ✅ |
 | RAG | AI Context | ✅ v1.0.0 | `src/lib/ai/rag.ts` — searchRelevantTours() |
 | AICHAT-PANEL | Full-page AI Chat | ✅ v1.0.0 | `src/components/ai/AiChatPanel.tsx` — embedded /tao-lich-trinh |
 
@@ -407,11 +408,12 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 
 | Route | Method | Trạng thái | Ghi chú |
 |-------|--------|-----------|---------|
-| `/api/leads` | POST | ✅ v2.0.0 | LeadCaptureSchema + honeypot + lead_score + welcome-lead email |
+| `/api/leads` | POST | ✅ v2.1.0 | **createAdminClient** (bypass RLS) + honeypot + lead_score + Telegram SĐT |
 | `/api/leads` | GET | ✅ v1.0.0 | Auth + filter ?channel= ?status= ?page= ?limit= |
 | `/api/leads/[id]` | PATCH | ✅ v1.0.0 | LeadStatusUpdateSchema + auth |
-| `/api/ai/chat` | POST | ✅ v1.2.0 | Node.js runtime (bỏ Edge) + RAG + SSE streaming |
+| `/api/ai/chat` | POST | ✅ v1.2.0 | Node.js runtime + RAG + SSE streaming |
 | `/api/ai/classify-lead` | POST | ✅ v1.0.0 | classifyLead() → UPDATE ai_tier + ai_tags |
+| `/api/affiliate/track` | GET | ✅ v1.0.0 | record click → 302 redirect; IP hash SHA-256 |
 | `/api/search` | POST | ✅ | OR query name\|destination\|country |
 | `/api/cms` | GET/POST | ✅ | pagination + new_article notification |
 | `/api/tours` | GET/POST | ✅ | filter category/country/is_active |
@@ -424,67 +426,53 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | `/api/cron/crawl-pdf` | GET | ✅ | |
 | `/api/webhooks/n8n` | POST | ✅ | |
 | `/api/webhooks/moda` | POST | ✅ | |
-| `/api/affiliate/track` | GET | ❌ | Phase 3 — chưa build |
 | `/api/webhooks/zalo` | POST | ❌ | Phase 4 — chưa build |
 
 ### Zustand Stores
 
 ```
 useUIStore              (store/ui.store.ts)               ✅
-useNotificationStore    (store/notification.store.ts)      ✅ 8 events
+useNotificationStore    (store/notification.store.ts)      ✅ — wired vào CRM bell
 useSearchStore          (store/search.store.ts)            ✅
 useCalendarStore        (store/calendar.store.ts)          ✅
 useChatStore            (store/chat.store.ts)              ✅
 useCmsStore             (store/cms.store.ts)               ✅
-useCustomerProfileStore (store/customer-profile.store.ts)  ✅
-useAiChatStore          (store/ai-chat.store.ts)           ✅ dùng cho ChatWidget + AiChatPanel
+useCustomerProfileStore (store/customer-profile.store.ts)  ✅ — CRMFilter mở rộng
+useAiChatStore          (store/ai-chat.store.ts)           ✅ — ChatWidget + AiChatPanel
 ```
 
-### Data Contract — Delta phiên #34
+### Data Contract — Delta phiên #35
 
 ```typescript
-// ── Lead type (phiên #34) — MỞ RỘNG ─────────────────────────────────────────
-// src/types/lead.types.ts: thêm LeadSourceChannel, LeadTier
-// Lead: + zalo_id, source_channel, destination_interest, travel_date, budget_range,
-//         number_of_people, travel_style, lead_score (migration #16)
-//         + ai_tier ('hot'|'warm'|'cold'), ai_tags string[] (migration #17)
+// ── CRMFilter (phiên #35) — MỞ RỘNG ──────────────────────────────────────
+// 'all' | 'fb_ads' | 'web_ads' | 'deposited' | 'new'
+// + 'hot' | 'warm' | 'cold'          (AI tier — phiên #34)
+// + 'popup' | 'chat' | 'tiktok' | 'zalo'  (source channel — phiên #35)
 
-// ── classifyLead() (phiên #34) — MỚI ─────────────────────────────────────────
-// src/lib/ai/classify.ts: Claude Haiku → { tier, ai_tags, reasoning }
-// Fallback rule-based khi không có API key
-// Trigger: POST /api/leads → fire-and-forget /api/ai/classify-lead
+// ── /api/leads POST (phiên #35) — FIX ────────────────────────────────────
+// Đổi createClient() → createAdminClient() → bypass RLS hoàn toàn
+// triggerNotification: thêm detail: lead.phone → Telegram hiển thị SĐT
 
-// ── /api/leads nâng cấp (phiên #34) ─────────────────────────────────────────
-// POST: LeadCaptureSchema + honeypot website_hp + calcLeadScore() + welcome-lead email
-// GET:  auth (cookie/x-admin-secret) + filter + pagination
-// PATCH /api/leads/[id]: LeadStatusUpdateSchema { lead_status, lead_score? }
+// ── CRM page (phiên #35) — MỚI ────────────────────────────────────────────
+// SourceCards: 5 card (Facebook / Website·Popup / Tư vấn / TikTok / Zalo)
+//   count thực từ leads store; click → setFilter; click lại → 'all'
+// NotificationPanel: dropdown từ bell — dismiss / đọc hết (dùng useNotificationStore)
+// Realtime subscription: channel 'admin-notifications' → new_lead + new_booking
+//   → addNotification() + fetchLeads() auto-refresh
 
-// ── TripGenieLeadModal (phiên #34) — MAP ─────────────────────────────────────
-// Vẫn dùng TripGenieLeadSchema client-side; map trước khi gửi server:
-//   zalo_number → zalo_id | budget → budget_range | source_channel: 'web_form'
-//   website_hp: honeypot hidden input (bots fill → server returns 200 silently)
-
-// ── next.config.mjs (phiên #34) — QUAN TRỌNG ────────────────────────────────
-// serverExternalPackages: ['@anthropic-ai/sdk']
-// BẮT BUỘC do SDK v0.102+ dùng node:fs / node:path — webpack không bundle được
-// /api/ai/chat: bỏ export const runtime = 'edge' → Node.js runtime
-
-// ── AiChatPanel (phiên #34) — MỚI ────────────────────────────────────────────
-// src/components/ai/AiChatPanel.tsx: standalone panel, suggested questions, auto-resize
-// Embedded vào /tao-lich-trinh (TaoLichTrinhClient.tsx) thay placeholder "Đang phát triển"
-
-// ── CustomerTable badge (phiên #34) — CẬP NHẬT ───────────────────────────────
-// HOT (Flame/đỏ) | WARM (ThermometerSun/cam) | COLD (Snowflake/xanh)
-// score bar dùng lead.lead_score từ DB thay vì computeScore() giả
+// ── affiliate_links / affiliate_clicks (phiên #34) — migration #18 ────────
+// GET /api/affiliate/track?link_id=&lead_id=&session_id=
+//   → recordClick() fire-and-forget → 302 redirect tracking_url
+// tracker.ts: getActiveLinks(), getLinkById(), recordClick() (IP sha256)
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
 GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main)
-Vercel  : namngan-travel — cần redeploy để nhận env ANTHROPIC_API_KEY + Telegram
-Supabase: indjoegnsvcteaozmgrg — 17 migrations local / 15 cloud
-          ⚠️ Migration #16 + #17 chưa apply cloud
+Vercel  : namngan-travel — cần redeploy để nhận migrations cloud
+Supabase: indjoegnsvcteaozmgrg — 18 migrations local / 15 cloud
+          ⚠️ Migration #16 + #17 + #18 chưa apply cloud
           ✅ bucket 'tour-galleries' | ✅ ai_conversations | ✅ featured_destinations
 Resend  : Domain namngantravel.com — PENDING DNS
 SeaStar : ✅ 49 tours | Vercel Cron: "0 2 * * *" /api/cron/crawl-pdf ✅
@@ -498,30 +486,34 @@ TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID: ✅ Vercel đã set
 # APPLY NGAY (không cần code):
 1. Supabase Dashboard → SQL Editor → paste migration #16 → Run
 2. Supabase Dashboard → SQL Editor → paste migration #17 → Run
-3. Vercel → Redeploy production (nhận ANTHROPIC_API_KEY + Telegram env)
+3. Supabase Dashboard → SQL Editor → paste migration #18 → Run
+4. Vercel → Redeploy production (nhận ANTHROPIC_API_KEY)
 
-# TRIPGENIE — Phase 3 (Affiliate Engine):
-4. migration #18: affiliate_links + affiliate_clicks tables
-5. src/lib/affiliate/tracker.ts
-6. /api/affiliate/track
+# TRIPGENIE Phase 4 (Zalo OA + FB Lead Ads):
+5. /api/webhooks/zalo — nhận OA webhook, insert lead với source_channel='zalo'
+6. /api/webhooks/fb-leads — nhận FB Lead Ads, insert lead với lead_source='fb_ads'
 
-# FEATURE còn lại:
-7. Gallery ảnh thực 49 tours — bucket ✅ sẵn, upload qua ToursTab CRM
-8. CRM LeadsTab: filter theo ai_tier (HOT/WARM/COLD)
-9. DestinationsTab CRM: drag-and-drop sort thực sự
+# TRIPGENIE Phase 5 (Itinerary Builder AI):
+7. /api/ai/itinerary — streaming, nhúng affiliate links
+8. src/components/ai/ItineraryBuilder.tsx
+
+# CRM enhancement:
+9. CRM LeadsTab: filter theo ai_tier (HOT/WARM/COLD) đã có chip — cần test production
+10. Affiliate links nhúng vào tour pages (Phase 3 backend ✅, frontend còn thiếu)
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Apply migration #16 + #17 lên Supabase cloud** — Dashboard → SQL Editor → paste lần lượt 2 file migration → Run. Sau đó `vercel --prod` để redeploy.
-2. **Build TripGenie Phase 3 — Affiliate Engine** — migration #18 `affiliate_links` + `affiliate_clicks`; `src/lib/affiliate/tracker.ts`; `/api/affiliate/track`; nhúng affiliate link vào tour pages.
-3. **CRM filter theo AI tier** — Thêm filter HOT/WARM/COLD vào `FILTER_OPTIONS` trong `CustomerTable.tsx` (filter theo `lead.ai_tier`).
+1. **Apply migration #16 + #17 + #18 lên Supabase cloud** — SQL Editor → paste lần lượt → Run → `vercel --prod`
+2. **TripGenie Phase 4 — Zalo & FB Webhook** — `/api/webhooks/zalo` + `/api/webhooks/fb-leads`; insert lead với đúng source_channel; test trigger Telegram
+3. **Nhúng affiliate links vào tour detail pages** — dùng `getActiveLinks({ destination })` từ `tracker.ts`; render card bên dưới tour description
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
-| 2026-06-08 | Handover #34 — TripGenie Phase 2 + Build Fix | Phase 2 classify ✅; /api/leads v2 ✅; AiChatPanel ✅; Edge→Node fix ✅; serverExternalPackages |
+| 2026-06-08 | Handover #35 — CRM Source Tabs + Fix 500 leads | Fix /api/leads createAdminClient; Source cards 5 kênh; Realtime bell; NotificationPanel |
+| 2026-06-08 | Handover #34 — TripGenie Phase 2+3 + Build Fix | Phase 2 classify ✅; Affiliate Engine ✅; CRM HOT/WARM/COLD filter ✅; Edge→Node fix ✅ |
 | 2026-06-08 | Handover #33 — TripGenie Leads WIP + RAG + Env Vercel | Migration #16 ✅; lead-capture.schema ✅; Edge+RAG ✅; Telegram Vercel ✅ |
 | 2026-06-07 | Handover #32 — TripGenie Phase 1 + Notification v2 | AI Chat ✅; Telegram ✅; 8 events; auth cookie fix; ISR |
 | 2026-06-07 | Handover #31 — SEO + Server Component | blog/tao-lich-trinh Static; generateMetadata; JSON-LD |
@@ -541,4 +533,3 @@ TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID: ✅ Vercel đã set
 > ⚙️ **Mục này được tự động ghi đè bởi lệnh `/handover`.**
 > Không sửa tay — mọi thay đổi sẽ bị overwrite lần `/handover` tiếp theo.
 > Trigger: khi context > 70% HOẶC khi kết thúc một giai đoạn lập trình lớn.
-
