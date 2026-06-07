@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Clock, MapPin, Star, Shield, Users, Award, HeadphonesIcon, ChevronRight, Phone } from 'lucide-react'
@@ -8,7 +9,51 @@ import SearchResults from '@/components/search/SearchResults'
 import ChatWidget from '@/components/chat/ChatWidget'
 import AutoPopup from '@/components/chat/AutoPopup'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { TripGenieSection } from '@/components/home/TripGenieSection'
 import { createAdminClient } from '@/lib/supabase/admin'
+
+// ── Metadata ──────────────────────────────────────────────────────────────────
+
+export const metadata: Metadata = {
+  title:       'Nam Ngân Travel — Tour Du Lịch Trọn Gói Uy Tín Trong Nước & Quốc Tế',
+  description: 'Nam Ngân Travel chuyên tour du lịch trong nước và quốc tế. Hơn 49 tour chất lượng cao, giá tốt, đội ngũ hướng dẫn viên 10+ năm kinh nghiệm. Tư vấn miễn phí 24/7.',
+  openGraph: {
+    title:       'Nam Ngân Travel — Tour Du Lịch Trọn Gói Uy Tín',
+    description: 'Khám phá hàng chục điểm đến trong nước và quốc tế. Tour chất lượng, giá tốt, tư vấn miễn phí.',
+    images:      [{ url: '/og-default.jpg', width: 1200, height: 630, alt: 'Nam Ngân Travel' }],
+    type:        'website',
+    siteName:    'Nam Ngân Travel',
+    locale:      'vi_VN',
+  },
+  alternates: { canonical: 'https://namngantravel.com' },
+  keywords:   ['tour du lịch', 'du lịch trọn gói', 'tour nước ngoài', 'tour trong nước', 'Nam Ngân Travel'],
+}
+
+// ── JSON-LD: TravelAgency ─────────────────────────────────────────────────────
+
+const travelAgencySchema = {
+  '@context':  'https://schema.org',
+  '@type':     'TravelAgency',
+  name:        'Nam Ngân Travel',
+  url:         'https://namngantravel.com',
+  logo:        'https://namngantravel.com/logo.png',
+  description: 'Công ty du lịch Nam Ngân Travel — chuyên tour trọn gói trong nước và quốc tế hơn 10 năm kinh nghiệm.',
+  telephone:   '+84932611933',
+  address: {
+    '@type':           'PostalAddress',
+    addressLocality:   'TP. Hồ Chí Minh',
+    addressCountry:    'VN',
+  },
+  sameAs: [
+    'https://zalo.me/0932611933',
+  ],
+  aggregateRating: {
+    '@type':       'AggregateRating',
+    ratingValue:   '4.9',
+    bestRating:    '5',
+    ratingCount:   '10000',
+  },
+}
 
 // ── Mock tour data ────────────────────────────────────────────
 
@@ -303,6 +348,12 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* TravelAgency JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(travelAgencySchema) }}
+      />
+
       <Header />
 
       <main>
@@ -373,6 +424,9 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* ── TRIPGENIE AI SECTION ─────────────────────────── */}
+        <TripGenieSection />
 
         {/* ── POPULAR DESTINATIONS ─────────────────────────── */}
         <section className="py-8 sm:py-12 bg-brand-bg">

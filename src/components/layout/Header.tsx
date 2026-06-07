@@ -174,7 +174,7 @@ export default function Header() {
 
       {/* Mobile dropdown */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-gray-100 bg-white animate-fade-in">
+        <div className="lg:hidden border-t border-gray-100 bg-white animate-fade-in max-h-[80vh] overflow-y-auto">
           <ul className="container-main py-3 flex flex-col gap-0.5">
             {NAV_LINKS.map((link) => (
               <li key={link.href + link.label}>
@@ -206,23 +206,25 @@ export default function Header() {
                         >
                           → Xem tất cả
                         </Link>
-                        {(link.megaMenu === 'intl' ? INTL_COLUMNS : DOMESTIC_COLUMNS)
-                          .flat()
-                          .map((dest, idx) => (
-                            <Link
-                              key={idx}
-                              href={
-                                link.megaMenu === 'intl'
-                                  ? buildIntlHref(dest.country)
-                                  : '/tour-trong-nuoc'
-                              }
-                              className="block px-3 py-1.5 text-sm text-text-secondary
-                                         hover:text-brand-blue transition-colors"
-                              onClick={() => setMobileOpen(false)}
-                            >
-                              {dest.label}
-                            </Link>
-                          ))}
+                        <div className="grid grid-cols-2 gap-x-2">
+                          {(link.megaMenu === 'intl' ? INTL_COLUMNS : DOMESTIC_COLUMNS)
+                            .flat()
+                            .map((dest, idx) => (
+                              <Link
+                                key={idx}
+                                href={
+                                  link.megaMenu === 'intl'
+                                    ? buildIntlHref(dest.country)
+                                    : '/tour-trong-nuoc'
+                                }
+                                className="block px-3 py-1.5 text-sm text-text-secondary
+                                           hover:text-brand-blue transition-colors"
+                                onClick={() => setMobileOpen(false)}
+                              >
+                                {dest.label}
+                              </Link>
+                            ))}
+                        </div>
                       </div>
                     )}
                   </>

@@ -30,3 +30,15 @@ export const LeadSchema = LeadFormSchema
 
 export type LeadFormInput = z.infer<typeof LeadFormSchema>
 export type LeadInput     = LeadFormInput
+
+// ── TripGenie Lead — form thu lead nâng cấp với thêm fields ──────────────────
+export const BudgetEnum = z.enum(['under-5m', '5-10m', '10-20m', 'over-20m'])
+
+export const TripGenieLeadSchema = LeadFormSchema.extend({
+  zalo_number:          z.string().regex(/^(0|\+84)[0-9]{8,10}$/, 'Số Zalo không hợp lệ').optional().or(z.literal('')),
+  destination_interest: z.string().min(1, 'Vui lòng nhập điểm đến quan tâm'),
+  budget:               BudgetEnum,
+  travel_date:          z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Định dạng ngày YYYY-MM-DD'),
+})
+
+export type TripGenieLeadInput = z.infer<typeof TripGenieLeadSchema>

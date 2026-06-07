@@ -118,7 +118,7 @@ function TourDetailInner({
 
       {/* ── GALLERY GRID ── */}
       {(galleryUrls ?? []).length > 0 && (
-        <div className="mt-2 grid grid-cols-3 gap-1.5">
+        <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
           {(galleryUrls ?? []).slice(0, 6).map((url, i) => (
             <button
               key={url}
@@ -178,7 +178,7 @@ function TourDetailInner({
       )}
 
       {/* ── THÔNG TIN NHANH ── */}
-      <div className="flex flex-wrap items-start justify-between gap-3 py-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 py-4">
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-medium text-gray-900 mb-1">{name}</h1>
           <p className="text-sm text-gray-500 mb-2">📍 {destination}</p>
@@ -201,7 +201,7 @@ function TourDetailInner({
             <MetaChip icon="🪑" label={`Còn ${seatsLeft}/${total} chỗ`} warn={seatsLeft <= 3} />
           </div>
         </div>
-        <div className="text-right shrink-0">
+        <div className="sm:text-right shrink-0 flex sm:block items-baseline gap-3 sm:gap-0">
           <p className="text-xs text-gray-400 uppercase tracking-wide">Giá từ</p>
           <p className="text-2xl font-medium text-gray-900">{fmtPrice(priceAdult)}</p>
           <p className="text-xs text-gray-500">/ người lớn</p>
@@ -213,7 +213,7 @@ function TourDetailInner({
 
       {/* ── DỊCH VỤ ── */}
       {((includes?.length ?? 0) > 0 || (excludes?.length ?? 0) > 0) && (
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           {(includes?.length ?? 0) > 0 && (
             <ServiceList title="Bao gồm" items={includes ?? []} color="green" />
           )}

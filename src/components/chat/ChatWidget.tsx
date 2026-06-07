@@ -67,14 +67,14 @@ function ChatWidgetInner() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] font-sans">
+    <div className="fixed bottom-6 right-4 sm:right-6 z-[9999] font-sans">
       {/* Form popup — hiện khi isOpen */}
       {isOpen && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Form chat tư vấn"
-          className="absolute bottom-[72px] right-0 w-[300px] bg-white rounded-2xl shadow-2xl overflow-hidden"
+          className="absolute bottom-[72px] right-0 w-[min(300px,calc(100vw-2rem))] bg-white rounded-2xl shadow-2xl overflow-hidden"
         >
           {/* Header */}
           <div className="bg-brand-blue px-4 py-3 flex justify-between items-center">
