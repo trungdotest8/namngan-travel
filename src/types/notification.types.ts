@@ -1,6 +1,14 @@
 // ── Realtime Pub/Sub (Supabase Channel: 'admin-notifications') ──
 
-export type NotificationEvent = 'new_lead' | 'new_booking' | 'booking_confirmed'
+export type NotificationEvent =
+  | 'new_lead'
+  | 'new_booking'
+  | 'booking_confirmed'
+  | 'lead_status_changed'
+  | 'new_article'
+  | 'new_tour'
+  | 'tour_updated'
+  | 'destination_changed'
 
 export interface RealtimeNotification {
   id: string
@@ -35,4 +43,8 @@ export interface NotificationTriggerPayload {
   tour_title?: string
   depart_date?: string
   customer_email?: string
+  // Extended fields
+  article_title?: string
+  destination_name?: string
+  detail?: string
 }

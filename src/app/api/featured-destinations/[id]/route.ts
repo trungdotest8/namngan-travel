@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { ADMIN_COOKIE } from '@/lib/admin-auth-constants'
+import { triggerNotification } from '@/lib/notifications'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,11 +47,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   if (!isAuthed(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
+    // Lấy tên trước khi xóa để ghi vào notification
+    const { data: existing } = await supabaseAdmin
+      .from('featured_destinations')
+      .select('name')
+      .eq('id', params.id)
+      .single()
+
     const { error } = await supabaseAdmin
       .from('featured_destinations')
       .delete()
       .eq('id', params.id)
     if (error) throw error
+
+    triggerNotification({
+      event:            'destination_changed',
+      destination_name: existing?.name,
+      detail:           'Đã xóa',
+    }).catch(() => {})
+
     return NextResponse.json({ ok: true })
   } catch (e) {
     return NextResponse.json({ error: 'Lỗi xóa điểm đến' }, { status: 500 })

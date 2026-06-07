@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { triggerNotification } from '@/lib/notifications'
 
 // ── Zod schemas ───────────────────────────────────────────────
 
@@ -119,6 +120,14 @@ export async function POST(request: Request) {
       .single()
 
     if (error) throw error
+
+    if (parsed.data.status === 'published') {
+      triggerNotification({
+        event:         'new_article',
+        article_title: parsed.data.title,
+      }).catch(() => {})
+    }
+
     return NextResponse.json({ article: data }, { status: 201 })
   } catch (err) {
     return NextResponse.json(

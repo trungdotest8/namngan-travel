@@ -23,9 +23,14 @@ function timeAgo(iso: string): string {
 }
 
 const EVENT_ICON: Record<NotificationEvent, string> = {
-  new_lead:          '👤',
-  new_booking:       '🎫',
-  booking_confirmed: '✅',
+  new_lead:            '👤',
+  new_booking:         '🎫',
+  booking_confirmed:   '✅',
+  lead_status_changed: '🔄',
+  new_article:         '📝',
+  new_tour:            '✈️',
+  tour_updated:        '✏️',
+  destination_changed: '📍',
 }
 
 export function NotificationPanel() {

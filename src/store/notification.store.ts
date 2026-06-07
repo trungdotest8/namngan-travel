@@ -67,9 +67,14 @@ export const useNotificationStore = create<NotificationState>((set) => ({
 // Helper: chuyển NotificationEvent sang tiêu đề tiếng Việt
 export function notificationLabel(event: NotificationEvent): string {
   const map: Record<NotificationEvent, string> = {
-    new_lead:          'Khách hàng mới',
-    new_booking:       'Đặt tour mới',
-    booking_confirmed: 'Xác nhận đặt tour',
+    new_lead:            'Khách hàng mới',
+    new_booking:         'Đặt tour mới',
+    booking_confirmed:   'Xác nhận đặt tour',
+    lead_status_changed: 'Cập nhật trạng thái lead',
+    new_article:         'Bài viết mới',
+    new_tour:            'Tour mới',
+    tour_updated:        'Cập nhật tour',
+    destination_changed: 'Điểm đến thay đổi',
   }
   return map[event] ?? event
 }

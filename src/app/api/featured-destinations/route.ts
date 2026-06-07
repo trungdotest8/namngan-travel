@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { ADMIN_COOKIE } from '@/lib/admin-auth-constants'
+import { triggerNotification } from '@/lib/notifications'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,6 +53,13 @@ export async function POST(req: NextRequest) {
       .select()
       .single()
     if (error) throw error
+
+    triggerNotification({
+      event:            'destination_changed',
+      destination_name: parsed.data.name,
+      detail:           'Đã thêm mới',
+    }).catch(() => {})
+
     return NextResponse.json({ data }, { status: 201 })
   } catch (e) {
     return NextResponse.json({ error: 'Lỗi tạo điểm đến' }, { status: 500 })

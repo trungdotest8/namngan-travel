@@ -1,20 +1,26 @@
-import type { NotificationTriggerPayload } from '@/types'
+import type { NotificationTriggerPayload, NotificationEvent } from '@/types'
 import { sendEmail } from '@/lib/email'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sendTelegram, formatTelegramMessage } from '@/lib/telegram'
 
-// Luồng kép bắt buộc: Email + Realtime (Nguyên tắc #7)
+// Luồng 3: Email + Realtime + Telegram (Nguyên tắc #7 mở rộng)
 export async function triggerNotification(
   payload: NotificationTriggerPayload
 ): Promise<void> {
-  const [emailOk, realtimeOk] = await Promise.allSettled([
+  const [emailOk, realtimeOk, telegramOk] = await Promise.allSettled([
     sendEmailNotification(payload),
     broadcastRealtime(payload),
+    sendTelegramNotification(payload),
   ])
 
-  if (emailOk.status === 'rejected')
-    console.error('[Notify] Email thất bại:', emailOk.reason)
-  if (realtimeOk.status === 'rejected')
-    console.error('[Notify] Realtime thất bại:', realtimeOk.reason)
+  if (emailOk.status    === 'rejected') console.error('[Notify] Email thất bại:',    emailOk.reason)
+  if (realtimeOk.status === 'rejected') console.error('[Notify] Realtime thất bại:', realtimeOk.reason)
+  if (telegramOk.status === 'rejected') console.error('[Notify] Telegram thất bại:', telegramOk.reason)
+}
+
+async function sendTelegramNotification(payload: NotificationTriggerPayload) {
+  const msg = formatTelegramMessage(payload)
+  await sendTelegram(msg)
 }
 
 async function sendEmailNotification(payload: NotificationTriggerPayload) {
@@ -24,14 +30,17 @@ async function sendEmailNotification(payload: NotificationTriggerPayload) {
     return
   }
 
-  const templates = {
+  const emailEvents: Partial<Record<NotificationEvent, 'lead-received' | 'booking-confirmation'>> = {
     new_lead:          'lead-received',
     new_booking:       'booking-confirmation',
     booking_confirmed: 'booking-confirmation',
-  } as const
+  }
+
+  const template = emailEvents[payload.event]
+  if (!template) return // các event khác không gửi email
 
   await sendEmail({
-    template: templates[payload.event],
+    template,
     to: adminEmail,
     subject: subjectFor(payload),
     data: {
@@ -42,7 +51,6 @@ async function sendEmailNotification(payload: NotificationTriggerPayload) {
     },
   })
 
-  // Gửi thêm email cho khách nếu có địa chỉ
   if (payload.customer_email && payload.event !== 'new_lead') {
     await sendEmail({
       template: 'booking-confirmation',
@@ -63,31 +71,56 @@ async function broadcastRealtime(payload: NotificationTriggerPayload) {
     type:    'broadcast',
     event:   payload.event,
     payload: {
-      title:       titleFor(payload),
-      body:        bodyFor(payload),
-      lead_id:     payload.lead_id,
-      booking_id:  payload.booking_id,
-      created_at:  new Date().toISOString(),
+      title:      titleFor(payload),
+      body:       bodyFor(payload),
+      meta: {
+        lead_id:          payload.lead_id,
+        booking_id:       payload.booking_id,
+        destination_name: payload.destination_name,
+        article_title:    payload.article_title,
+      },
+      created_at: new Date().toISOString(),
     },
   })
 }
 
 function subjectFor(p: NotificationTriggerPayload): string {
-  if (p.event === 'new_lead')
-    return `[Khách hàng mới] ${p.customer_name ?? ''} — Nam Ngân Travel`
-  if (p.event === 'new_booking' || p.event === 'booking_confirmed')
-    return `[Đặt tour] ${p.tour_title ?? ''} — ${p.customer_name ?? ''}`
-  return 'Thông báo — Nam Ngân Travel'
+  switch (p.event) {
+    case 'new_lead':          return `[Khách hàng mới] ${p.customer_name ?? ''} — Nam Ngân Travel`
+    case 'new_booking':
+    case 'booking_confirmed': return `[Đặt tour] ${p.tour_title ?? ''} — ${p.customer_name ?? ''}`
+    default:                  return 'Thông báo — Nam Ngân Travel'
+  }
 }
 
 function titleFor(p: NotificationTriggerPayload): string {
-  if (p.event === 'new_lead')    return 'Khách hàng mới'
-  if (p.event === 'new_booking') return 'Đặt tour mới'
-  return 'Booking xác nhận'
+  const map: Record<NotificationEvent, string> = {
+    new_lead:            'Khách hàng mới',
+    new_booking:         'Đặt tour mới',
+    booking_confirmed:   'Booking xác nhận',
+    lead_status_changed: 'Cập nhật trạng thái lead',
+    new_article:         'Bài viết mới',
+    new_tour:            'Tour mới',
+    tour_updated:        'Cập nhật tour',
+    destination_changed: 'Điểm đến thay đổi',
+  }
+  return map[p.event] ?? p.event
 }
 
 function bodyFor(p: NotificationTriggerPayload): string {
-  const name = p.customer_name ?? 'Khách hàng'
-  const tour = p.tour_title ? ` — Tour: ${p.tour_title}` : ''
-  return `${name}${tour}`
+  switch (p.event) {
+    case 'new_lead':
+    case 'new_booking':
+    case 'booking_confirmed':
+    case 'lead_status_changed': {
+      const name = p.customer_name ?? 'Khách hàng'
+      const tour = p.tour_title ? ` — ${p.tour_title}` : ''
+      return `${name}${tour}`
+    }
+    case 'new_article':         return p.article_title ?? 'Bài viết mới'
+    case 'new_tour':
+    case 'tour_updated':        return p.tour_title ?? 'Tour cập nhật'
+    case 'destination_changed': return `${p.destination_name ?? 'Điểm đến'} — ${p.detail ?? ''}`
+    default:                    return p.detail ?? ''
+  }
 }
