@@ -391,177 +391,168 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | B | Lịch khởi hành (SeaStar) + PDF Indexer | ✅ v1.2.0 | `src/lib/integrations/seastar.ts` + migrations #6+#7+#8 |
 | C | Itinerary + PDF Embed | ✅ v2.1.0 | `TourDetail.tsx` + `PdfViewer.tsx` |
 | D | Hồ sơ khách | ✅ v1.1.0 | `src/components/customer-profile/CustomerProfileDrawer.tsx` + `CustomerTable.tsx` |
-| E | Chat & Lead | ✅ v2.1.0 | `src/components/chat/ChatWidget.tsx` — mobile responsive |
+| E | Chat & Lead | ✅ v2.2.0 | `ChatWidget.tsx` — 2 tab: "Để lại số" + "Chat AI" (TripGenie) |
 | F | CMS / RSS | ✅ v1.3.0 | `src/components/cms/ArticleFeed.tsx` — ArticlesTab thumbnail upload |
-| G | DB Schema | ✅ **14 local / 13 cloud** | `supabase/migrations/` — Supabase: indjoegnsvcteaozmgrg — ⚠️ migration #14 chưa apply cloud |
-| CRM | Admin CRM | ✅ v6.0.0 | `crm/page.tsx` + 4 tab files — 7 tabs, MOBILE RESPONSIVE |
+| G | DB Schema | ✅ **15 local / 15 cloud** | `supabase/migrations/` — #14+#15 đã apply cloud ✅ |
+| CRM | Admin CRM | ✅ v6.1.0 | `crm/page.tsx` + 4 tab files — DestinationsTab: React confirm modal, auth cookie fix |
 | AUTH | Admin Auth | ✅ v2.0.0 | `src/app/(admin)/login/page.tsx` + `src/middleware.ts` + `/api/admin/auth` |
 | SEARCH | Search Engine | ✅ v2.1.0 | `api/search/route.ts` — OR query name\|destination\|country |
-| DOMAIN | Domain & SEO | ✅ v1.3.0 | `sitemap.ts` dynamic; `robots.ts`; `page.tsx` TravelAgency JSON-LD |
+| DOMAIN | Domain & SEO | ✅ v1.3.0 | `sitemap.ts` dynamic; `robots.ts`; `page.tsx` TravelAgency JSON-LD + ISR revalidate=3600 |
 | UPLOAD | Image Upload API | ✅ v1.0.0 | `/api/admin/upload-image` — base64 → Supabase `tour-galleries` |
 | TIPTAP | WYSIWYG Editor | ✅ v1.0.0 | `src/components/cms/TiptapLiteEditor.tsx` |
 | TIN-TUC | Tin Tức | ✅ v1.2.0 | `TinTucClient.tsx` — pagination 6/trang |
-| BLOG | Blog SEO | ✅ v2.0.0 | `blog/page.tsx` Server Component + metadata ✅; `BlogListClient.tsx` client island; `BlogCtaSection.tsx` |
-| DIEM-DEN | Điểm đến | ✅ v2.0.0 | `diem-den/page.tsx` ✅; `diem-den/[slug]/page.tsx` generateMetadata + Place JSON-LD; `DiemDenDetailClient.tsx` |
-| TAO-LICH-TRINH | TripGenie Landing | ✅ v2.0.0 | `tao-lich-trinh/page.tsx` Server Component + metadata; `TaoLichTrinhClient.tsx` client island |
+| BLOG | Blog SEO | ✅ v2.0.0 | `blog/page.tsx` Server Component + metadata ✅; `BlogListClient.tsx`; `BlogCtaSection.tsx` |
+| DIEM-DEN | Điểm đến | ✅ v2.0.0 | `diem-den/[slug]/page.tsx` generateMetadata + Place JSON-LD; `DiemDenDetailClient.tsx` |
+| TAO-LICH-TRINH | TripGenie Landing | ✅ v2.0.0 | `tao-lich-trinh/page.tsx` Server Component + metadata; `TaoLichTrinhClient.tsx` |
 | TOURS-LIST | /tours listing | ✅ v2.0.0 | `ToursClient.tsx` — country filter normalizeCountry() |
 | DOMESTIC | /tour-trong-nuoc | ✅ v2.1.0 | `DomesticToursClient.tsx` |
 | INTL | /tour-nuoc-ngoai | ✅ v2.3.0 | `InternationalToursClient.tsx` — normalizeCountry() fix |
 | BOOKING | Booking form | ✅ v1.0.0 | `src/components/booking/BookingModal.tsx` |
-| TRIPGENIE-LEAD | TripGenie Lead Modal | ✅ v1.0.0 | `src/components/booking/TripGenieLeadModal.tsx` — TripGenieLeadSchema, 7 fields, dual CTA |
+| TRIPGENIE-LEAD | TripGenie Lead Modal | ✅ v1.0.0 | `src/components/booking/TripGenieLeadModal.tsx` — 7 fields, dual CTA |
 | TRIPGENIE-SECTION | TripGenie Homepage | ✅ v1.0.0 | `src/components/home/TripGenieSection.tsx` — 3 feature cards + modal |
-| DEST | Điểm đến nổi bật CRM | ✅ v1.1.0 | `DestinationsTab.tsx` + `/api/featured-destinations` + migration #14 |
-| SECURE | Mixed Content Fix | ✅ v1.0.0 | `layout.tsx` CSP meta; `TourListingCard.tsx` + `TourCard.tsx` toHttps() |
-| MOBILE | Mobile Responsive | ✅ v1.1.0 | ChatWidget + TourDetail + Header mega-menu |
-| COUNTRY | Country Filter Fix | ✅ v1.0.0 | `tour-country.ts` + `mega-menu-data.ts` + `normalizeCountry()` |
-| PAGINATION | Shared Pagination | ✅ v1.0.0 | `src/components/ui/Pagination.tsx` — reuse blog + diem-den |
-| SEO | Server Component Refactor | ✅ v1.0.0 | blog/tao-lich-trinh → Static; diem-den/[slug] generateMetadata; TravelAgency JSON-LD homepage |
-| TRIPGENIE | AI Travel Platform | ⏳ v0.2.0 | Landing ✅ Lead Modal ✅ — Phase 1 AI Chat Core chưa build |
+| DEST | Điểm đến nổi bật CRM | ✅ v2.0.0 | `DestinationsTab.tsx` + `/api/featured-destinations` — auth fix ✅; React confirm delete ✅ |
+| NOTIFY | Notification System | ✅ v2.0.0 | `NotificationPanel.tsx` + `notification.store.ts` — 8 events; Telegram + Email + Realtime |
+| TELEGRAM | Telegram Bot Notify | ✅ v1.0.0 | `src/lib/telegram.ts` — cần TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID trong Vercel env |
+| TRIPGENIE | AI Travel Platform | ✅ v1.0.0 | Phase 1 DONE: ChatWidget tab AI + `/api/ai/chat` streaming + `useAiChatStore` |
+| SEO | Server Component Refactor | ✅ v1.0.0 | blog/tao-lich-trinh → Static; diem-den/[slug] generateMetadata |
 
 ### Trạng thái API Routes
 
 | Route | Method | Trạng thái | Ghi chú |
 |-------|--------|-----------|---------|
-| `/api/leads` | POST | ✅ | Zod + luồng kép Email+Realtime; TripGenieLeadSchema compatible |
+| `/api/leads` | POST | ✅ | Zod + luồng 3: Email+Realtime+Telegram |
 | `/api/search` | POST | ✅ v2.1.0 | OR query name\|destination\|country |
-| `/api/cms` | GET/POST | ✅ | `?page=N&limit=6` pagination |
+| `/api/cms` | GET/POST | ✅ | `?page=N&limit=6` pagination; POST → new_article notification |
 | `/api/cms/[id]` | PATCH/DELETE | ✅ | Auth: cookie hoặc x-admin-secret |
 | `/api/tours` | GET/POST | ✅ | filter category/country/is_active/search |
 | `/api/tours/[id]` | PATCH/DELETE | ✅ | Auth + ?hard=true |
-| `/api/featured-destinations` | GET/POST | ✅ | GET public; POST create — Zod validated |
-| `/api/featured-destinations/[id]` | PATCH/DELETE | ✅ | Auth: cookie hoặc x-admin-secret |
+| `/api/featured-destinations` | GET/POST | ✅ | auth fix: req.cookies ADMIN_COOKIE; POST → destination_changed notify |
+| `/api/featured-destinations/[id]` | PATCH/DELETE | ✅ | auth fix ✅; DELETE → destination_changed notify + fetch name trước |
 | `/api/customer-profile` | GET/PATCH | ✅ | Auth: cookie hoặc x-admin-secret |
-| `/api/admin/auth` | POST/DELETE | ✅ | HttpOnly cookie 24h |
+| `/api/admin/auth` | POST/DELETE | ✅ | HttpOnly cookie 24h — tên cookie: admin_session |
 | `/api/admin/users` | GET/POST | ✅ | bcrypt hash |
 | `/api/admin/users/[id]` | PATCH/DELETE | ✅ | soft deactivate |
 | `/api/admin/me` | GET | ✅ | từ httpOnly cookie |
 | `/api/admin/upload-image` | POST | ✅ | base64 → `tour-galleries` ≤5MB |
 | `/api/notifications` | POST | ✅ | x-webhook-secret |
 | `/api/webhooks/n8n` | POST | ✅ | |
-| `/api/webhooks/moda` | POST | ✅ | luồng kép |
+| `/api/webhooks/moda` | POST | ✅ | luồng 3 kép |
 | `/api/departures` | GET/POST | ✅ | POST: cookie OR x-webhook-secret |
 | `/api/itinerary/[tourId]` | GET | ✅ | Cache 5min |
 | `/api/pdf-index` | GET | ✅ | FTS RPC |
 | `/api/cron/crawl-pdf` | GET | ✅ | Auth kép |
-| `/api/ai/chat` | POST | ❌ | **TripGenie Phase 1 — chưa build** |
-| `/api/affiliate/track` | GET | ❌ | **TripGenie Phase 3 — chưa build** |
-| `/api/webhooks/zalo` | POST | ❌ | **TripGenie Phase 4 — chưa build** |
+| `/api/ai/chat` | POST | ✅ | **TripGenie Phase 1 DONE** — SSE streaming, Zod, Haiku model |
+| `/api/affiliate/track` | GET | ❌ | TripGenie Phase 3 — chưa build |
+| `/api/webhooks/zalo` | POST | ❌ | TripGenie Phase 4 — chưa build |
 
 ### Zustand Stores
 
 ```
 useUIStore              (store/ui.store.ts)               ✅
-useNotificationStore    (store/notification.store.ts)      ✅ admin realtime
+useNotificationStore    (store/notification.store.ts)      ✅ 8 events; icons + labels đầy đủ
 useSearchStore          (store/search.store.ts)            ✅
 useCalendarStore        (store/calendar.store.ts)          ✅ fetchSchedules()
 useChatStore            (store/chat.store.ts)              ✅
 useCmsStore             (store/cms.store.ts)               ✅
 useCustomerProfileStore (store/customer-profile.store.ts)  ✅
-useAiChatStore          (store/ai-chat.store.ts)           ❌ TripGenie Phase 1 — chưa tạo
+useAiChatStore          (store/ai-chat.store.ts)           ✅ TripGenie Phase 1 DONE
 ```
 
-### Data Contract — Delta phiên #31
+### Data Contract — Delta phiên #32
 
 ```typescript
-// ── SEO Metadata (phiên #31) — MỚI ───────────────────────────────────────────
-// page.tsx:            export const metadata + TravelAgency JSON-LD (schema.org)
-// blog/page.tsx:       export const metadata { title, description, openGraph, canonical }
-// tao-lich-trinh:      export const metadata { title, description, openGraph, canonical }
-// diem-den/[slug]:     generateMetadata() async — fetch Supabase server-side per slug
-//                      → title/description/openGraph/canonical per destination
-//                      → Place JSON-LD nhúng server-side (không phụ thuộc client render)
+// ── TripGenie Phase 1 (phiên #32) — MỚI ─────────────────────────────────────
+// src/types/ai.types.ts:       AiMessage, ConversationContext, AiChatRequest, AiChatStreamChunk
+// src/lib/ai/claude.ts:        streamChatResponse() → ReadableStream SSE (Haiku model)
+// src/lib/ai/prompts.ts:       buildTravelConsultantPrompt(context?) → system prompt 49 tours
+// src/app/api/ai/chat/route.ts: POST — Zod validate, stream SSE, 503 nếu thiếu API key
+// src/store/ai-chat.store.ts:  messages[], isStreaming, appendDelta(id, delta)
+// ChatWidget.tsx:              2 tab — "Để lại số" (lead form) + "Chat AI" (streaming)
 
-// ── Server Component Refactor (phiên #31) — THAY ĐỔI KIẾN TRÚC ──────────────
-// blog/page.tsx:        'use client' → Server Component; fetchArticles() server-side
-//                       pass initialArticles → BlogListClient (client island)
-//                       Build: ○ Static (was ƒ Dynamic)
-// tao-lich-trinh:       'use client' → Server Component; render TaoLichTrinhClient
-//                       Build: ○ Static (was ƒ Dynamic)
-// diem-den/[slug]:      'use client' → Server Component wrapper; render DiemDenDetailClient
-//                       Build: ƒ Dynamic + generateMetadata ✅
+// ── Notification System v2 (phiên #32) — MỞ RỘNG ────────────────────────────
+// NotificationEvent mới: lead_status_changed | new_article | new_tour | tour_updated | destination_changed
+// NotificationTriggerPayload: + article_title?, destination_name?, detail?
+// triggerNotification(): Email + Realtime + Telegram (Promise.allSettled 3 kênh)
+// src/lib/telegram.ts: sendTelegram(text) + formatTelegramMessage(payload) — 8 event types
 
-// ── Client Islands mới (phiên #31) ───────────────────────────────────────────
-// BlogListClient.tsx:        hero search + category filter + grid + Pagination
-// TaoLichTrinhClient.tsx:    modal state + destination shortcuts + all sections
-// DiemDenDetailClient.tsx:   fetch tours client-side + tour grid + CTA modal
-// BlogCtaSection.tsx:        CTA banner cuối blog detail — modal state + Zalo link
+// ── Auth Cookie Fix (phiên #32) ───────────────────────────────────────────────
+// ADMIN_COOKIE = 'admin_session' (admin-auth-constants.ts) — KHÔNG phải 'admin_token'
+// featured-destinations routes: dùng req.cookies.get(ADMIN_COOKIE) thay cookies() next/headers
+
+// ── Homepage ISR (phiên #32) ──────────────────────────────────────────────────
+// page.tsx: export const revalidate = 3600 — regenerate mỗi 1h từ Supabase
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
 GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) ✅ pushed
-Vercel  : namngan-travel — ✅ deployed (auto-deploy từ push)
+Vercel  : namngan-travel — ✅ DEPLOYED (vercel --prod) @ ae50138
           namngantravel.site alias ✅ | namngantravel.com ⚠️ CẦN THÊM vào Vercel
-Supabase: indjoegnsvcteaozmgrg — 14 migrations local / 13 cloud
-          ⚠️ CẦN CHẠY: migration #14 (featured_destinations) trên Supabase Dashboard
-          ✅ bucket 'tour-galleries' — public, 10MB limit, jpeg/png/webp/gif
+Supabase: indjoegnsvcteaozmgrg — 15 migrations local / 15 cloud ✅ (cả #14 + #15 đã apply)
+          ✅ bucket 'tour-galleries' — public, 10MB limit
+          ✅ table featured_destinations (6 records) + ai_conversations + slug column
 Edge Fn : ✅ deployed v1.1.0 — 23 Drive folders đã tạo
 Directus: ⚠️ CHƯA setup — /tin-tuc + /blog dùng Supabase fallback
 Vercel Cron: "0 2 * * *" /api/cron/crawl-pdf ✅
-Resend  : Domain namngantravel.com — status: PENDING (verify triggered ✅)
+Resend  : Domain namngantravel.com — status: PENDING
           ⚠️ CẦN: thêm 3 DNS records vào registrar → domain tự verify
           DNS Record 1: TXT  resend._domainkey  → p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCdFs6VUWNRa9qK1GanWJu0bVVS62QJ3AOef6CGuIWLY4nEB2niR+MXYg7ge9Uo4aAJlA2Quqx/8L3/puXUnL6jsuhYPiumZMdBQ6kYSI4r6jN+kDHppOwaerBb1RTxmmg49J3EtDSAzZllkxNlF1GCwp0HdDz1VeJCuc5m7odbQQIDAQAB
           DNS Record 2: MX   send  priority:10  → feedback-smtp.us-east-1.amazonses.com
           DNS Record 3: TXT  send              → v=spf1 include:amazonses.com ~all
 SeaStar : ✅ 49 tours (41 nước ngoài + 8 trong nước)
-TripGenie: ⏳ Landing ✅ + Lead Modal ✅ — Phase 1 AI Chat cần ANTHROPIC_API_KEY
+ANTHROPIC_API_KEY: ✅ có trong .env.local + cần add vào Vercel Env Vars
+TELEGRAM: ⚠️ cần TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID → Vercel Env Vars (xem hướng dẫn phiên #32)
 ```
 
 ### Files ưu tiên cao chưa hoàn chỉnh
 
 ```
-# CẦN LÀM NGAY (infra):
-1. Supabase: chạy migration #14 (featured_destinations) — SQL Editor → dán nội dung file migration
-2. Vercel: thêm domain namngantravel.com → DNS: A @→76.76.21.21 + CNAME www→cname.vercel-dns.com
-3. Resend DNS: thêm 3 records vào registrar namngantravel.com (xem section Hạ tầng trên)
+# CẦN LÀM NGAY (env/infra):
+1. Vercel: thêm ANTHROPIC_API_KEY → Settings → Environment Variables → Redeploy
+2. Vercel: thêm TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID (lấy từ @BotFather + @userinfobot)
+3. Vercel: thêm domain namngantravel.com → DNS: A @→76.76.21.21 + CNAME www→cname.vercel-dns.com
+4. Resend DNS: thêm 3 records vào registrar namngantravel.com
 
-# TRIPGENIE — Phase 1 (AI Chat Core):
-- pnpm add @anthropic-ai/sdk
-- src/lib/ai/claude.ts         — Anthropic SDK client + streaming helper
-- src/lib/ai/prompts.ts        — System prompt tư vấn viên 49 tours
-- src/app/api/ai/chat/route.ts — Streaming POST endpoint
-- src/store/ai-chat.store.ts   — Conversation state (Zustand)
-- src/types/ai.types.ts        — Message, ConversationContext types
-- supabase migration #15       — ai_conversations table
-- Nâng cấp ChatWidget.tsx      — thêm tab "Chat AI" bên cạnh form Zalo
-- /tao-lich-trinh nâng cấp    — embed AI chat thực thay placeholder
-- .env: ANTHROPIC_API_KEY
+# TRIPGENIE — Phase 2 (Lead Classification AI):
+- src/lib/ai/classify.ts       — phân loại lead: hot/warm/cold + ai_tags
+- /api/ai/classify-lead        — gọi sau khi POST /api/leads thành công
+- leads table: thêm ai_score + ai_tags jsonb columns (migration #16)
+- CRM LeadsTab: hiện badge "HOT/WARM/COLD" bên cạnh tên khách
 
-# FEATURE TIẾP (non-AI):
-- Gallery ảnh thực 49 tours — bucket ✅ sẵn sàng, upload qua ToursTab CRM
+# TRIPGENIE — Phase 3 (Affiliate Engine):
+- migration #17: affiliate_links + affiliate_clicks tables
+- src/lib/affiliate/tracker.ts
+- /api/affiliate/track
+
+# FEATURE NON-AI còn lại:
+- Gallery ảnh thực 49 tours — bucket ✅ sẵn, upload qua ToursTab CRM
+- /tao-lich-trinh: nhúng AI chat thực (đã có /api/ai/chat, chỉ cần wire vào TaoLichTrinhClient)
 - DestinationsTab CRM: drag-and-drop sort thực sự
-- /diem-den/[slug]: thêm slug column vào featured_destinations (migration #15)
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Build TripGenie Phase 1 — AI Chat Core** — `pnpm add @anthropic-ai/sdk` → tạo `src/lib/ai/claude.ts` + `prompts.ts` + `/api/ai/chat` streaming + nâng cấp ChatWidget. Cần `ANTHROPIC_API_KEY` trong `.env`.
-2. **Chạy migration #14 trên Supabase** — Dashboard → SQL Editor → dán nội dung `supabase/migrations/20260605000014_featured_destinations.sql` → Run. (Để `/diem-den` load data từ DB thay fallback)
-3. **Thêm domain `namngantravel.com` vào Vercel + DNS Resend** — Vercel: Settings → Domains → Add. Registrar: thêm 3 DNS records Resend (xem section Hạ tầng trên).
+1. **Thêm ANTHROPIC_API_KEY + Telegram env vào Vercel** — Vercel → Settings → Environment Variables → thêm `ANTHROPIC_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` → Redeploy. Sau đó AI Chat + Telegram notify mới hoạt động trên production.
+2. **Build TripGenie Phase 2 — Lead Classification AI** — Sau khi Phase 1 live, tiếp tục: `src/lib/ai/classify.ts` → tự động score lead hot/warm/cold khi lead mới tạo → hiện badge trong CRM.
+3. **Wire AI Chat vào /tao-lich-trinh** — `TaoLichTrinhClient.tsx` đang dùng placeholder; thay bằng `AiChatTab` component từ ChatWidget (đã có sẵn) → embed streaming chat thực.
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-07 | Handover #32 — TripGenie Phase 1 + Notification v2 + Bug Fixes | AI Chat Core ✅; Telegram ✅; 8 events notify; auth cookie fix; React confirm delete; ISR homepage |
 | 2026-06-07 | Handover #31 — SEO Metadata + Server Component Refactor | blog/tao-lich-trinh→Static; diem-den generateMetadata; TravelAgency JSON-LD; 4 client islands |
-| 2026-06-07 | Handover #30 — TripGenie Pages + Lead Modal | /blog, /diem-den, /tao-lich-trinh; TripGenieLeadModal; TripGenieSection; Pagination; TripGenieLeadSchema |
-| 2026-06-07 | Handover #29 — Mobile + Sitemap + TripGenie Plan | ChatWidget/TourDetail/Header mobile; sitemap dynamic; ArticlesTab upload; TripGenie roadmap |
-| 2026-06-06 | Handover #28 — Country Filter Fix | COUNTRY_MAP title case; normalizeCountry(); mega-menu fix; HREF_SUGGESTIONS 19 nước |
-| 2026-06-06 | Handover #27 — CRM Mobile Responsive | Sidebar hamburger; slide panels full-width; grids responsive; table scroll |
-| 2026-06-05 | Handover #26 — Mixed Content Fix | CSP upgrade-insecure-requests layout.tsx; toHttps() TourListingCard + TourCard |
-| 2026-06-05 | Handover #25 — Điểm đến nổi bật CRM | migration #14 featured_destinations; DestinationsTab CRM; /api/featured-destinations |
-| 2026-06-05 | Handover #24 — Domain SEO + Search Fix | Domain middleware redirect .site→.com; robots+sitemap; search OR query fix |
-| 2026-06-05 | Handover #23 — CRM Upload + Tiptap + Pagination | upload-image API ✅; TiptapLiteEditor ✅; /api/cms pagination ✅ |
-| 2026-06-05 | Domain Migration | namngantravel.site DNS+Vercel alias ✅; Resend pending migration |
-| 2026-06-04 | Handover #22 — Bug Fixes: Tour Cards + Hashtag Wrap | Fix @keyframes slide-up purge; hashtag flex-wrap cả 2 listing pages |
-| 2026-06-04 | Handover #21 — Gallery Seed + Hashtag Filter + Booking Form | migration #13 gallery_urls ✅; DomesticToursClient ✅; BookingModal ✅ |
-| 2026-06-04 | Handover #20 — Mega-menu + Animations + Hashtag Seed | Mega-menu 3 cột ✅; animations ✅; 49 tours hashtags ✅ |
-| 2026-06-03 | Handover #19 — Multi-User Auth + Staff Tab + URL fix | admin_users #10 ✅; bcrypt ✅; StaffTab ✅ |
-| 2026-06-03 | Handover #18 — Admin Auth + Gallery Lightbox + Hashtag Filter | Login+middleware ✅; lightbox ✅; hashtag /tours ✅ |
-| 2026-06-03 | Handover #17 — ToursTab CRUD + Edge Fn Fix + Migration #9 | ToursTab ✅; /api/tours ✅; migration #9 ✅ |
-| 2026-06-03 | Handover #16 — CMS Admin + Articles + Thumbnails | ArticlesTab ✅; 6 bài mẫu ✅; Directus fallback ✅ |
-| 2026-06-02 | Handover #15 — Directus CMS + /tours + Blog | /tours ✅; /tour-nuoc-ngoai v2 ✅; /tin-tuc ✅ |
-| 2026-06-02 | Handover #14 — Bug Fixes + Domestic Data | /tours/[slug] ✅; 8 tour trong nước ✅ |
+| 2026-06-07 | Handover #30 — TripGenie Pages + Lead Modal | /blog, /diem-den, /tao-lich-trinh; TripGenieLeadModal; TripGenieSection; Pagination |
+| 2026-06-07 | Handover #29 — Mobile + Sitemap + TripGenie Plan | ChatWidget/TourDetail/Header mobile; sitemap dynamic; ArticlesTab upload |
+| 2026-06-06 | Handover #28 — Country Filter Fix | COUNTRY_MAP title case; normalizeCountry(); mega-menu fix |
+| 2026-06-06 | Handover #27 — CRM Mobile Responsive | Sidebar hamburger; slide panels full-width; grids responsive |
+| 2026-06-05 | Handover #26 — Mixed Content Fix | CSP upgrade-insecure-requests; toHttps() TourListingCard + TourCard |
+| 2026-06-05 | Handover #25 — Điểm đến nổi bật CRM | migration #14; DestinationsTab; /api/featured-destinations |
+| 2026-06-05 | Handover #24 — Domain SEO + Search Fix | middleware .site→.com; robots+sitemap; search OR query |
+| 2026-06-05 | Handover #23 — CRM Upload + Tiptap + Pagination | upload-image; TiptapEditor; /api/cms pagination |
+| 2026-06-04 | Handover #20–22 | Mega-menu; animations; hashtags; booking; bug fixes |
+| 2026-06-03 | Handover #16–19 | Auth; Gallery; StaffTab; ToursTab; CMS |
+| 2026-06-02 | Handover #14–15 | /tours/[slug]; 8 tour trong nước; Directus CMS |
 | 2026-06-01 | Handover #9–12 | Lịch khởi hành; PDF Crawler; Tour Detail; Secrets fix |
 
