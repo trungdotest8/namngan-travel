@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+
+// Revalidate mỗi 1 giờ — đảm bảo điểm đến nổi bật luôn lấy data mới từ DB
+export const revalidate = 3600
 import Image from 'next/image'
 import { Clock, MapPin, Star, Shield, Users, Award, HeadphonesIcon, ChevronRight, Phone } from 'lucide-react'
 import Header from '@/components/layout/Header'
