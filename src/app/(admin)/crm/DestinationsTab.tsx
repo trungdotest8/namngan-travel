@@ -88,6 +88,7 @@ export function DestinationsTab() {
   const [editId, setEditId]         = useState<string | null>(null)
   const [form, setForm]             = useState<DestFormState>(EMPTY_FORM)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null)
 
   const flash = (msg: string, isError = false) => {
     if (isError) { setError(msg); setTimeout(() => setError(null), 4000) }
@@ -164,7 +165,6 @@ export function DestinationsTab() {
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`Xóa điểm đến "${name}"?`)) return
     setDeleting(id)
     try {
       const res = await fetch(`/api/featured-destinations/${id}`, { method: 'DELETE' })
@@ -175,6 +175,7 @@ export function DestinationsTab() {
       flash(e instanceof Error ? e.message : 'Lỗi xóa', true)
     } finally {
       setDeleting(null)
+      setConfirmDelete(null)
     }
   }
 
@@ -308,7 +309,7 @@ export function DestinationsTab() {
 
                   {/* Delete */}
                   <button
-                    onClick={() => handleDelete(item.id, item.name)}
+                    onClick={() => setConfirmDelete({ id: item.id, name: item.name })}
                     title="Xóa"
                     disabled={deleting === item.id}
                     className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
@@ -337,6 +338,42 @@ export function DestinationsTab() {
           {items.filter(i => i.is_active).length} điểm đến đang hiển thị trên trang chủ.
           Thứ tự hiển thị theo &ldquo;Số thứ tự&rdquo; tăng dần.
         </p>
+      )}
+
+      {/* ── Confirm Delete Modal ── */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <Trash2 size={18} className="text-red-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-[#1A1A2E] text-sm">Xóa điểm đến?</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Bạn có chắc muốn xóa <span className="font-medium text-gray-700">&ldquo;{confirmDelete.name}&rdquo;</span>?
+                  Hành động này không thể hoàn tác.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => handleDelete(confirmDelete.id, confirmDelete.name)}
+                disabled={deleting === confirmDelete.id}
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-60"
+              >
+                {deleting === confirmDelete.id && <Loader2 size={13} className="animate-spin" />}
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Modal Create/Edit ── */}
