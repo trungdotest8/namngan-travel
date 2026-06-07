@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { streamChatResponse } from '@/lib/ai/claude'
 import { buildTravelConsultantPrompt } from '@/lib/ai/prompts'
+import { searchRelevantTours } from '@/lib/ai/rag'
+
+export const runtime = 'edge'
 
 const MessageSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -34,7 +37,12 @@ export async function POST(req: NextRequest) {
     }
 
     const { messages, context } = parsed.data
-    const systemPrompt = buildTravelConsultantPrompt(context)
+
+    // RAG: tìm tour liên quan từ tin nhắn cuối của user → giảm context từ 49 → 3-5 tour
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+    const relevantTours = lastUserMsg ? await searchRelevantTours(lastUserMsg.content) : []
+
+    const systemPrompt = buildTravelConsultantPrompt(context, relevantTours)
     const stream = streamChatResponse(systemPrompt, messages)
 
     return new Response(stream, {
