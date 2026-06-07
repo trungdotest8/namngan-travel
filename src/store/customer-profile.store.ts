@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { Lead } from '@/types/lead.types'
 
-export type CRMFilter = 'all' | 'fb_ads' | 'web_ads' | 'deposited' | 'new'
+export type CRMFilter = 'all' | 'fb_ads' | 'web_ads' | 'deposited' | 'new' | 'hot' | 'warm' | 'cold'
 export type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
 
 interface CustomerProfileState {
@@ -61,7 +61,10 @@ export const selectFilteredCustomers = (state: CustomerProfileState): Lead[] => 
       (filter === 'fb_ads' && c.lead_source === 'fb_ads') ||
       (filter === 'web_ads' && (c.lead_source === 'web_ads' || c.lead_source === 'organic')) ||
       (filter === 'deposited' && (c.status === 'deposited' || c.status === 'converted')) ||
-      (filter === 'new' && c.status === 'new')
+      (filter === 'new' && c.status === 'new') ||
+      (filter === 'hot'  && c.ai_tier === 'hot') ||
+      (filter === 'warm' && c.ai_tier === 'warm') ||
+      (filter === 'cold' && c.ai_tier === 'cold')
     const matchSearch =
       !q ||
       c.full_name.toLowerCase().includes(q) ||

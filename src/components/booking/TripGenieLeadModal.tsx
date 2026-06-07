@@ -41,6 +41,7 @@ function ModalInner({ isOpen, onClose, defaultDestination }: TripGenieLeadModalP
     budget:               '' as TripGenieLeadInput['budget'] | '',
     travel_date:          '',
     message:              '',
+    website_hp:           '', // honeypot — bot sẽ điền vào đây
   })
 
   // Reset khi mở lại modal
@@ -85,7 +86,7 @@ function ModalInner({ isOpen, onClose, defaultDestination }: TripGenieLeadModalP
       ...readUtm(),
     }
 
-    // Client-side Zod validation
+    // Client-side Zod validation (TripGenieLeadSchema kiểm tra UX fields)
     let parsed: TripGenieLeadInput
     try {
       parsed = TripGenieLeadSchema.parse(payload)
@@ -101,12 +102,28 @@ function ModalInner({ isOpen, onClose, defaultDestination }: TripGenieLeadModalP
       return
     }
 
+    // Map sang contract mới của server (LeadCaptureSchema)
+    const serverPayload = {
+      full_name:            parsed.full_name,
+      phone:                parsed.phone,
+      email:                parsed.email,
+      zalo_id:              parsed.zalo_number,        // remap zalo_number → zalo_id
+      destination_interest: parsed.destination_interest,
+      travel_date:          parsed.travel_date,
+      budget_range:         parsed.budget,             // remap budget → budget_range
+      message:              parsed.message,
+      source_channel:       'web_form' as const,
+      lead_source:          'web_ads',
+      website_hp:           form.website_hp,           // honeypot (sẽ bị filter server-side)
+      ...readUtm(),
+    }
+
     setLoading(true)
     try {
       const res = await fetch('/api/leads', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(parsed),
+        body:    JSON.stringify(serverPayload),
       })
 
       if (!res.ok) {
@@ -184,6 +201,17 @@ function ModalInner({ isOpen, onClose, defaultDestination }: TripGenieLeadModalP
           ) : (
             /* ── FORM ── */
             <form onSubmit={handleSubmit} noValidate className="space-y-4">
+              {/* Honeypot — ẩn khỏi CSS, bot sẽ điền vào, người thật không thấy */}
+              <input
+                type="text"
+                name="website_hp"
+                value={form.website_hp}
+                onChange={(e) => setForm(prev => ({ ...prev, website_hp: e.target.value }))}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, pointerEvents: 'none' }}
+              />
               <p className="text-[#666666] text-sm">
                 Điền thông tin để nhận tư vấn lịch trình <strong className="text-[#005BAA]">hoàn toàn miễn phí</strong>.
               </p>

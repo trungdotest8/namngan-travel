@@ -1,4 +1,6 @@
 export type LeadSource = 'popup' | 'chat' | 'fb_ads' | 'web_ads' | 'organic' | 'other'
+export type LeadSourceChannel = 'web_form' | 'chatbot' | 'zalo' | 'facebook' | 'tiktok' | 'organic' | 'other'
+export type LeadTier = 'hot' | 'warm' | 'cold'
 
 // 6 giá trị gốc + 4 giá trị CRM (migration 20250530000003)
 export type LeadStatus =
@@ -34,8 +36,20 @@ export interface Lead {
   fb_lead_id:        string | null
   fb_page_id:        string | null
   fb_form_id:        string | null
-  created_at:        string
-  updated_at:        string
+  // TripGenie Phase 1 — migration #16
+  zalo_id:              string | null
+  source_channel:       LeadSourceChannel | null
+  destination_interest: string | null
+  travel_date:          string | null
+  budget_range:         string | null
+  number_of_people:     number | null
+  travel_style:         string | null
+  lead_score:           number | null
+  // TripGenie Phase 2 — migration #17
+  ai_tier:              LeadTier | null
+  ai_tags:              string[] | null
+  created_at:           string
+  updated_at:           string
 }
 
 export interface LeadFormData {

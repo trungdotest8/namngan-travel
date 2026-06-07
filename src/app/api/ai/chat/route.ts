@@ -4,8 +4,6 @@ import { streamChatResponse } from '@/lib/ai/claude'
 import { buildTravelConsultantPrompt } from '@/lib/ai/prompts'
 import { searchRelevantTours } from '@/lib/ai/rag'
 
-export const runtime = 'edge'
-
 const MessageSchema = z.object({
   role: z.enum(['user', 'assistant']),
   content: z.string().min(1).max(2000),

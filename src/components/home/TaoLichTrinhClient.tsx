@@ -4,9 +4,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   Sparkles, Route, MessageSquare, CheckCircle,
-  Clock, Shield, ChevronRight, ArrowRight,
+  Shield, ChevronRight, ArrowRight,
 } from 'lucide-react'
 import { TripGenieLeadModal } from '@/components/booking/TripGenieLeadModal'
+import { AiChatPanel } from '@/components/ai/AiChatPanel'
 
 const HOW_IT_WORKS = [
   {
@@ -31,7 +32,7 @@ const HOW_IT_WORKS = [
 
 const BENEFITS = [
   { icon: CheckCircle, text: 'Hoàn toàn miễn phí — không phí tư vấn' },
-  { icon: Clock,       text: 'Phản hồi trong 30 phút giờ hành chính' },
+  { icon: ChevronRight, text: 'Phản hồi trong 30 phút giờ hành chính' },
   { icon: Shield,      text: 'Thông tin bảo mật — không spam' },
   { icon: Sparkles,    text: 'Lịch trình cá nhân hóa theo sở thích' },
 ]
@@ -151,27 +152,31 @@ export function TaoLichTrinhClient() {
           </div>
         </section>
 
-        {/* ── Coming soon placeholder ── */}
+        {/* ── AI Chat ── */}
         <section className="py-10 sm:py-14 bg-white border-t border-gray-100">
-          <div className="max-w-3xl mx-auto px-4 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-50 border border-amber-200 rounded-full text-amber-700 text-xs font-semibold mb-4">
-              <Clock size={13} />
-              Đang phát triển
+          <div className="max-w-3xl mx-auto px-4">
+            <div className="text-center mb-6">
+              <p className="text-[#FF6B00] text-xs font-bold uppercase tracking-widest mb-2">TripGenie AI</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-[#1A1A2E]">
+                Hỏi AI về lịch trình của bạn
+              </h2>
+              <p className="text-[#666666] text-sm mt-2">
+                Tư vấn ngay — hoặc để lại thông tin để chuyên viên hỗ trợ chi tiết hơn.
+              </p>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-[#1A1A2E] mb-3">
-              AI Itinerary Builder — Sắp ra mắt
-            </h2>
-            <p className="text-[#666666] text-sm sm:text-base mb-6 max-w-lg mx-auto">
-              Tính năng tạo lịch trình tự động bằng AI đang được phát triển. Hiện tại chuyên viên của chúng tôi
-              sẽ tư vấn và gửi lịch trình qua Zalo trong 30 phút.
-            </p>
-            <button
-              onClick={openModal}
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#005BAA] hover:bg-[#0078D7] text-white font-semibold rounded-full transition-colors"
-            >
-              Nhận tư vấn ngay hôm nay
-              <ChevronRight size={16} />
-            </button>
+            <div className="h-[480px] sm:h-[520px]">
+              <AiChatPanel />
+            </div>
+            <div className="mt-4 text-center">
+              <button
+                onClick={openModal}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF6B00] hover:bg-orange-600 text-white font-semibold rounded-full transition-colors text-sm"
+              >
+                <Sparkles size={15} />
+                Để chuyên viên tư vấn thêm
+                <ChevronRight size={15} />
+              </button>
+            </div>
           </div>
         </section>
 

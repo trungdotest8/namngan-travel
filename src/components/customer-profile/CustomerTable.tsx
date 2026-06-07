@@ -2,7 +2,8 @@
 
 import { useCustomerProfileStore, selectFilteredCustomers, type CRMFilter } from '@/store/customer-profile.store'
 import type { Lead, LeadStatus } from '@/types/lead.types'
-import { Search, Globe, ExternalLink, Eye, FolderX } from 'lucide-react'
+import { Search, Globe, ExternalLink, Eye, FolderX, Flame, ThermometerSun, Snowflake } from 'lucide-react'
+import type { LeadTier } from '@/types/lead.types'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function getInitials(name: string): string {
@@ -10,14 +11,10 @@ function getInitials(name: string): string {
   return ((parts[0]?.[0] ?? '') + (parts[parts.length - 1]?.[0] ?? '')).toUpperCase()
 }
 
-function computeScore(lead: Lead): number {
-  const base: Record<string, number> = {
-    converted: 92, deposited: 82, consulting: 62,
-    contacted: 55, new: 42, lost: 22,
-  }
-  const b = base[lead.status] ?? 50
-  const variance = lead.id.split('').reduce((s, c) => s + c.charCodeAt(0), 0) % 14 - 7
-  return Math.max(10, Math.min(100, b + variance))
+const TIER_CONFIG: Record<LeadTier, { label: string; cls: string; Icon: React.ElementType }> = {
+  hot:  { label: 'HOT',  cls: 'bg-red-50 text-red-600 border border-red-200',      Icon: Flame },
+  warm: { label: 'WARM', cls: 'bg-amber-50 text-amber-600 border border-amber-200', Icon: ThermometerSun },
+  cold: { label: 'COLD', cls: 'bg-sky-50 text-sky-600 border border-sky-200',       Icon: Snowflake },
 }
 
 const STATUS_MAP: Record<LeadStatus, { label: string; cls: string }> = {
@@ -38,12 +35,15 @@ const AVATAR_COLORS = [
   '#065f46', '#6b21a8', '#b45309', '#be123c',
 ]
 
-const FILTER_OPTIONS: { value: CRMFilter; label: string }[] = [
-  { value: 'all',      label: 'Tất cả' },
-  { value: 'fb_ads',   label: 'Facebook Ads' },
-  { value: 'web_ads',  label: 'Web / UTM' },
-  { value: 'deposited',label: 'Đã đặt cọc' },
-  { value: 'new',      label: 'Mới nhập' },
+const FILTER_OPTIONS: { value: CRMFilter; label: string; Icon?: React.ElementType; iconCls?: string }[] = [
+  { value: 'all',       label: 'Tất cả' },
+  { value: 'hot',       label: 'HOT',  Icon: Flame,          iconCls: 'text-red-500' },
+  { value: 'warm',      label: 'WARM', Icon: ThermometerSun, iconCls: 'text-amber-500' },
+  { value: 'cold',      label: 'COLD', Icon: Snowflake,      iconCls: 'text-sky-500' },
+  { value: 'fb_ads',    label: 'Facebook Ads' },
+  { value: 'web_ads',   label: 'Web / UTM' },
+  { value: 'deposited', label: 'Đã đặt cọc' },
+  { value: 'new',       label: 'Mới nhập' },
 ]
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -75,12 +75,13 @@ export function CustomerTable() {
           <button
             key={opt.value}
             onClick={() => setFilter(opt.value)}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
               filter === opt.value
                 ? 'bg-[#F0F7FF] border-[#005BAA] text-[#005BAA]'
                 : 'bg-gray-50 border-gray-200 text-gray-500 hover:text-gray-700'
             }`}
           >
+            {opt.Icon && <opt.Icon size={11} className={filter === opt.value ? undefined : opt.iconCls} />}
             {opt.label}
           </button>
         ))}
@@ -125,7 +126,8 @@ export function CustomerTable() {
 }
 
 function CustomerRow({ lead, idx, onOpen }: { lead: Lead; idx: number; onOpen: () => void }) {
-  const score = computeScore(lead)
+  const score = lead.lead_score ?? 0
+  const tier  = lead.ai_tier ? TIER_CONFIG[lead.ai_tier] : null
   const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length]
   const status = STATUS_MAP[lead.status]
   const imgCount = (lead.image_attachments ?? []).length
@@ -139,7 +141,7 @@ function CustomerRow({ lead, idx, onOpen }: { lead: Lead; idx: number; onOpen: (
       : { text: lead.lead_source ?? '—', cls: 'bg-gray-50 text-gray-600' }
 
   const scoreColor =
-    score > 80 ? '#0B7A4E' : score > 50 ? '#B45309' : '#B91C1C'
+    score >= 60 ? '#0B7A4E' : score >= 30 ? '#B45309' : '#B91C1C'
 
   return (
     <tr className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors last:border-0">
@@ -153,12 +155,20 @@ function CustomerRow({ lead, idx, onOpen }: { lead: Lead; idx: number; onOpen: (
             {getInitials(lead.full_name)}
           </div>
           <div>
-            <button
-              onClick={onOpen}
-              className="font-semibold text-[#005BAA] hover:underline text-left leading-tight"
-            >
-              {lead.full_name}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={onOpen}
+                className="font-semibold text-[#005BAA] hover:underline text-left leading-tight"
+              >
+                {lead.full_name}
+              </button>
+              {tier && (
+                <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold ${tier.cls}`}>
+                  <tier.Icon size={9} />
+                  {tier.label}
+                </span>
+              )}
+            </div>
             {lead.email && (
               <div className="text-[11px] text-gray-400">{lead.email}</div>
             )}
