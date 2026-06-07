@@ -12,18 +12,22 @@ CREATE TABLE IF NOT EXISTS featured_destinations (
   updated_at   timestamptz NOT NULL DEFAULT now()
 );
 
--- Auto-update updated_at
+-- Auto-update updated_at (function đã tồn tại từ migration trước — bỏ qua nếu có)
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS featured_destinations_updated_at ON featured_destinations;
 CREATE TRIGGER featured_destinations_updated_at
   BEFORE UPDATE ON featured_destinations
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- RLS
 ALTER TABLE featured_destinations ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "public_read_featured_destinations"           ON featured_destinations;
+DROP POLICY IF EXISTS "service_role_all_featured_destinations"      ON featured_destinations;
 
 CREATE POLICY "public_read_featured_destinations"
   ON featured_destinations FOR SELECT USING (is_active = true);
