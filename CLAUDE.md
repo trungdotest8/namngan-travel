@@ -397,13 +397,13 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | CRM | Admin CRM | ✅ v6.0.0 | `crm/page.tsx` + 4 tab files — 7 tabs, MOBILE RESPONSIVE |
 | AUTH | Admin Auth | ✅ v2.0.0 | `src/app/(admin)/login/page.tsx` + `src/middleware.ts` + `/api/admin/auth` |
 | SEARCH | Search Engine | ✅ v2.1.0 | `api/search/route.ts` — OR query name\|destination\|country |
-| DOMAIN | Domain & SEO | ✅ v1.2.0 | `sitemap.ts` dynamic (tours+articles+blog+diem-den); `robots.ts` |
+| DOMAIN | Domain & SEO | ✅ v1.3.0 | `sitemap.ts` dynamic; `robots.ts`; `page.tsx` TravelAgency JSON-LD |
 | UPLOAD | Image Upload API | ✅ v1.0.0 | `/api/admin/upload-image` — base64 → Supabase `tour-galleries` |
 | TIPTAP | WYSIWYG Editor | ✅ v1.0.0 | `src/components/cms/TiptapLiteEditor.tsx` |
 | TIN-TUC | Tin Tức | ✅ v1.2.0 | `TinTucClient.tsx` — pagination 6/trang |
-| BLOG | Blog SEO | ✅ v1.0.0 | `src/app/blog/page.tsx` + `blog/[slug]/page.tsx` + `BlogCtaSection.tsx` |
-| DIEM-DEN | Điểm đến listing | ✅ v1.0.0 | `src/app/diem-den/page.tsx` + `diem-den/[slug]/page.tsx` |
-| TAO-LICH-TRINH | TripGenie Landing | ✅ v1.0.0 | `src/app/tao-lich-trinh/page.tsx` — lead capture landing |
+| BLOG | Blog SEO | ✅ v2.0.0 | `blog/page.tsx` Server Component + metadata ✅; `BlogListClient.tsx` client island; `BlogCtaSection.tsx` |
+| DIEM-DEN | Điểm đến | ✅ v2.0.0 | `diem-den/page.tsx` ✅; `diem-den/[slug]/page.tsx` generateMetadata + Place JSON-LD; `DiemDenDetailClient.tsx` |
+| TAO-LICH-TRINH | TripGenie Landing | ✅ v2.0.0 | `tao-lich-trinh/page.tsx` Server Component + metadata; `TaoLichTrinhClient.tsx` client island |
 | TOURS-LIST | /tours listing | ✅ v2.0.0 | `ToursClient.tsx` — country filter normalizeCountry() |
 | DOMESTIC | /tour-trong-nuoc | ✅ v2.1.0 | `DomesticToursClient.tsx` |
 | INTL | /tour-nuoc-ngoai | ✅ v2.3.0 | `InternationalToursClient.tsx` — normalizeCountry() fix |
@@ -415,7 +415,8 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | MOBILE | Mobile Responsive | ✅ v1.1.0 | ChatWidget + TourDetail + Header mega-menu |
 | COUNTRY | Country Filter Fix | ✅ v1.0.0 | `tour-country.ts` + `mega-menu-data.ts` + `normalizeCountry()` |
 | PAGINATION | Shared Pagination | ✅ v1.0.0 | `src/components/ui/Pagination.tsx` — reuse blog + diem-den |
-| TRIPGENIE | AI Travel Platform | ⏳ v0.2.0 | Landing + Lead Modal ✅ — Phase 1 AI Chat Core chưa build |
+| SEO | Server Component Refactor | ✅ v1.0.0 | blog/tao-lich-trinh → Static; diem-den/[slug] generateMetadata; TravelAgency JSON-LD homepage |
+| TRIPGENIE | AI Travel Platform | ⏳ v0.2.0 | Landing ✅ Lead Modal ✅ — Phase 1 AI Chat Core chưa build |
 
 ### Trạng thái API Routes
 
@@ -459,42 +460,38 @@ useCustomerProfileStore (store/customer-profile.store.ts)  ✅
 useAiChatStore          (store/ai-chat.store.ts)           ❌ TripGenie Phase 1 — chưa tạo
 ```
 
-### Data Contract — Delta phiên #30
+### Data Contract — Delta phiên #31
 
 ```typescript
-// ── TripGenieLeadSchema (phiên #30) — APPEND vào lead.schema.ts ────────────
-// Extend từ LeadFormSchema (không phá schema cũ)
-TripGenieLeadSchema.zalo_number          → string regex VN phone (optional)
-TripGenieLeadSchema.destination_interest → string min(1) (required)
-TripGenieLeadSchema.budget               → enum: 'under-5m'|'5-10m'|'10-20m'|'over-20m'
-TripGenieLeadSchema.travel_date          → string YYYY-MM-DD regex (required)
-// POST /api/leads với lead_source: 'web_ads' + UTM auto-read từ URL
+// ── SEO Metadata (phiên #31) — MỚI ───────────────────────────────────────────
+// page.tsx:            export const metadata + TravelAgency JSON-LD (schema.org)
+// blog/page.tsx:       export const metadata { title, description, openGraph, canonical }
+// tao-lich-trinh:      export const metadata { title, description, openGraph, canonical }
+// diem-den/[slug]:     generateMetadata() async — fetch Supabase server-side per slug
+//                      → title/description/openGraph/canonical per destination
+//                      → Place JSON-LD nhúng server-side (không phụ thuộc client render)
 
-// ── Sitemap (phiên #30) ────────────────────────────────────────────────────
-// Static routes mới: /diem-den (0.8), /blog (0.8), /tao-lich-trinh (0.7)
-// Dynamic: /diem-den/[slugify(name)] từ featured_destinations (0.7)
-//          /blog/[slug] từ articles (0.7) — song song /tin-tuc/[slug]
+// ── Server Component Refactor (phiên #31) — THAY ĐỔI KIẾN TRÚC ──────────────
+// blog/page.tsx:        'use client' → Server Component; fetchArticles() server-side
+//                       pass initialArticles → BlogListClient (client island)
+//                       Build: ○ Static (was ƒ Dynamic)
+// tao-lich-trinh:       'use client' → Server Component; render TaoLichTrinhClient
+//                       Build: ○ Static (was ƒ Dynamic)
+// diem-den/[slug]:      'use client' → Server Component wrapper; render DiemDenDetailClient
+//                       Build: ƒ Dynamic + generateMetadata ✅
 
-// ── /diem-den/[slug] (phiên #30) ──────────────────────────────────────────
-// slug = slugify(destination.name) từ lib/utils.ts
-// Fetch tours: country ILIKE name OR destination ILIKE name (Supabase REST)
-// JSON-LD: Place schema
-
-// ── /blog (phiên #30) ─────────────────────────────────────────────────────
-// Dùng cùng articles table + fetchArticles() từ lib/directus.ts
-// Pagination: PAGE_SIZE=9, client-side filter + search
-// JSON-LD: Article schema trên /blog/[slug]
-
-// ── BlogCtaSection.tsx (phiên #30) ────────────────────────────────────────
-// Tách client component để /blog/[slug]/page.tsx vẫn là Server Component
-// Chứa TripGenieLeadModal state + Zalo CTA
+// ── Client Islands mới (phiên #31) ───────────────────────────────────────────
+// BlogListClient.tsx:        hero search + category filter + grid + Pagination
+// TaoLichTrinhClient.tsx:    modal state + destination shortcuts + all sections
+// DiemDenDetailClient.tsx:   fetch tours client-side + tour grid + CTA modal
+// BlogCtaSection.tsx:        CTA banner cuối blog detail — modal state + Zalo link
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
-GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main)
-Vercel  : namngan-travel — ✅ deployed
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) ✅ pushed
+Vercel  : namngan-travel — ✅ deployed (auto-deploy từ push)
           namngantravel.site alias ✅ | namngantravel.com ⚠️ CẦN THÊM vào Vercel
 Supabase: indjoegnsvcteaozmgrg — 14 migrations local / 13 cloud
           ⚠️ CẦN CHẠY: migration #14 (featured_destinations) trên Supabase Dashboard
@@ -533,9 +530,8 @@ TripGenie: ⏳ Landing ✅ + Lead Modal ✅ — Phase 1 AI Chat cần ANTHROPIC_
 
 # FEATURE TIẾP (non-AI):
 - Gallery ảnh thực 49 tours — bucket ✅ sẵn sàng, upload qua ToursTab CRM
-- /blog: open graph meta per article (đã có trong generateMetadata)
 - DestinationsTab CRM: drag-and-drop sort thực sự
-- /diem-den/[slug]: thêm slug column vào featured_destinations table (migration #15)
+- /diem-den/[slug]: thêm slug column vào featured_destinations (migration #15)
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
@@ -548,6 +544,7 @@ TripGenie: ⏳ Landing ✅ + Lead Modal ✅ — Phase 1 AI Chat cần ANTHROPIC_
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-07 | Handover #31 — SEO Metadata + Server Component Refactor | blog/tao-lich-trinh→Static; diem-den generateMetadata; TravelAgency JSON-LD; 4 client islands |
 | 2026-06-07 | Handover #30 — TripGenie Pages + Lead Modal | /blog, /diem-den, /tao-lich-trinh; TripGenieLeadModal; TripGenieSection; Pagination; TripGenieLeadSchema |
 | 2026-06-07 | Handover #29 — Mobile + Sitemap + TripGenie Plan | ChatWidget/TourDetail/Header mobile; sitemap dynamic; ArticlesTab upload; TripGenie roadmap |
 | 2026-06-06 | Handover #28 — Country Filter Fix | COUNTRY_MAP title case; normalizeCountry(); mega-menu fix; HREF_SUGGESTIONS 19 nước |
@@ -566,6 +563,5 @@ TripGenie: ⏳ Landing ✅ + Lead Modal ✅ — Phase 1 AI Chat cần ANTHROPIC_
 | 2026-06-03 | Handover #16 — CMS Admin + Articles + Thumbnails | ArticlesTab ✅; 6 bài mẫu ✅; Directus fallback ✅ |
 | 2026-06-02 | Handover #15 — Directus CMS + /tours + Blog | /tours ✅; /tour-nuoc-ngoai v2 ✅; /tin-tuc ✅ |
 | 2026-06-02 | Handover #14 — Bug Fixes + Domestic Data | /tours/[slug] ✅; 8 tour trong nước ✅ |
-| 2026-06-01 | Handover #13 — Tour Categories + 2 Listing Pages | /tour-trong-nuoc ✅; /tour-nuoc-ngoai ✅; migration #8 ✅ |
 | 2026-06-01 | Handover #9–12 | Lịch khởi hành; PDF Crawler; Tour Detail; Secrets fix |
 
