@@ -1,13 +1,17 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   Plane, LayoutDashboard, Users, Settings, Newspaper, MapPin,
   Bell, Plus, TrendingUp, TrendingDown, Menu, X,
   CheckCircle2, AlertCircle, Loader2, LogOut, UserCog,
+  Facebook, Globe, MessageCircle, Music2, Phone,
 } from 'lucide-react'
 import { useCustomerProfileStore } from '@/store/customer-profile.store'
+import type { CRMFilter } from '@/store/customer-profile.store'
+import { useNotificationStore } from '@/store/notification.store'
 import { CustomerTable } from '@/components/customer-profile/CustomerTable'
+import { createClient } from '@/lib/supabase/client'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { CustomerProfileDrawer } from '@/components/customer-profile/CustomerProfileDrawer'
 import { ArticlesTab } from './ArticlesTab'
@@ -130,6 +134,126 @@ function PipelineRow({ label, count, cls }: { label: string; count: number; cls:
         {label}
       </span>
       <span className="text-sm font-semibold text-[#1A1A2E]">{count} KH</span>
+    </div>
+  )
+}
+
+// ── Source Summary Cards ──────────────────────────────────────────────────
+const SOURCE_DEFS: {
+  key: CRMFilter; label: string; Icon: React.ElementType
+  color: string; bgCls: string; textCls: string
+  count: (leads: Lead[]) => number
+}[] = [
+  {
+    key: 'fb_ads', label: 'Facebook Ads', Icon: Facebook,
+    color: '#1877F2', bgCls: 'bg-blue-50', textCls: 'text-blue-700',
+    count: (ls) => ls.filter((l) => l.lead_source === 'fb_ads' || l.source_channel === 'facebook').length,
+  },
+  {
+    key: 'popup', label: 'Website / Popup', Icon: Globe,
+    color: '#FF6B00', bgCls: 'bg-orange-50', textCls: 'text-orange-700',
+    count: (ls) => ls.filter((l) => l.lead_source === 'popup' || l.source_channel === 'web_form').length,
+  },
+  {
+    key: 'chat', label: 'Đăng ký tư vấn', Icon: MessageCircle,
+    color: '#005BAA', bgCls: 'bg-[#F0F7FF]', textCls: 'text-[#005BAA]',
+    count: (ls) => ls.filter((l) => l.lead_source === 'chat' || l.source_channel === 'chatbot').length,
+  },
+  {
+    key: 'tiktok', label: 'TikTok', Icon: Music2,
+    color: '#010101', bgCls: 'bg-gray-50', textCls: 'text-gray-700',
+    count: (ls) => ls.filter((l) => l.source_channel === 'tiktok').length,
+  },
+  {
+    key: 'zalo', label: 'Zalo', Icon: Phone,
+    color: '#0068ff', bgCls: 'bg-sky-50', textCls: 'text-sky-700',
+    count: (ls) => ls.filter((l) => l.source_channel === 'zalo' || !!l.zalo_id).length,
+  },
+]
+
+function SourceCards({
+  leads,
+  active,
+  onSelect,
+}: {
+  leads: Lead[]
+  active: CRMFilter
+  onSelect: (f: CRMFilter) => void
+}) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-4">
+      {SOURCE_DEFS.map((s) => {
+        const cnt = s.count(leads)
+        const isActive = active === s.key
+        return (
+          <button
+            key={s.key}
+            onClick={() => onSelect(isActive ? 'all' : s.key)}
+            className={`flex flex-col gap-1 rounded-xl p-3 border transition-all text-left ${
+              isActive
+                ? 'border-current ring-1 ring-current ' + s.bgCls + ' ' + s.textCls
+                : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50 text-[#1A1A2E]'
+            }`}
+            style={isActive ? { '--tw-ring-color': s.color } as React.CSSProperties : undefined}
+          >
+            <div className="flex items-center justify-between">
+              <s.Icon size={14} style={{ color: s.color }} />
+              <span className="text-lg font-bold leading-none">{cnt}</span>
+            </div>
+            <div className="text-[11px] font-medium text-gray-500 leading-tight">{s.label}</div>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Notification Panel ────────────────────────────────────────────────────
+function NotificationPanel({ onClose }: { onClose: () => void }) {
+  const notifications = useNotificationStore((s) => s.notifications)
+  const markAllAsRead = useNotificationStore((s) => s.markAllAsRead)
+  const dismiss       = useNotificationStore((s) => s.dismiss)
+
+  return (
+    <div className="absolute right-0 top-full mt-1 w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <span className="text-[13px] font-semibold text-[#1A1A2E]">Thông báo</span>
+        <div className="flex items-center gap-2">
+          <button onClick={markAllAsRead} className="text-[11px] text-[#005BAA] hover:underline">
+            Đọc hết
+          </button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+      <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
+        {notifications.length === 0 ? (
+          <div className="py-8 text-center text-sm text-gray-400">Không có thông báo mới</div>
+        ) : (
+          notifications.map((n) => (
+            <div
+              key={n.id}
+              className={`flex items-start gap-3 px-4 py-3 ${!n.read ? 'bg-[#F0F7FF]' : ''}`}
+            >
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${
+                n.event === 'new_lead' ? 'bg-green-500' :
+                n.event === 'new_booking' ? 'bg-[#FF6B00]' : 'bg-[#005BAA]'
+              }`} />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-[#1A1A2E] leading-tight">{n.title}</div>
+                <div className="text-[11px] text-gray-500 mt-0.5 leading-tight truncate">{n.body}</div>
+                <div className="text-[10px] text-gray-400 mt-1">
+                  {new Date(n.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+              <button onClick={() => dismiss(n.id)} className="text-gray-300 hover:text-gray-500 flex-shrink-0">
+                <X size={12} />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   )
 }
@@ -402,17 +526,25 @@ const TAB_TITLES: Record<TabId, string> = {
 }
 
 function CRMPage() {
-  const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const [activeTab, setActiveTab]   = useState<TabId>('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
-  const [syncing, setSyncing] = useState(false)
+  const [syncing, setSyncing]       = useState(false)
   const [syncResult, setSyncResult] = useState<{ synced: number; errors: string[] } | null>(null)
   const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null)
-  const setCustomers = useCustomerProfileStore((s) => s.setCustomers)
-  const setLoading   = useCustomerProfileStore((s) => s.setLoading)
-  const leads        = useCustomerProfileStore((s) => s.customers)
-  const isLoading    = useCustomerProfileStore((s) => s.isLoading)
-  const openDrawer   = useCustomerProfileStore((s) => s.openDrawer)
+  const [bellOpen, setBellOpen]     = useState(false)
+  const bellRef = useRef<HTMLDivElement>(null)
+
+  const setCustomers  = useCustomerProfileStore((s) => s.setCustomers)
+  const setLoading    = useCustomerProfileStore((s) => s.setLoading)
+  const leads         = useCustomerProfileStore((s) => s.customers)
+  const isLoading     = useCustomerProfileStore((s) => s.isLoading)
+  const openDrawer    = useCustomerProfileStore((s) => s.openDrawer)
+  const setFilter     = useCustomerProfileStore((s) => s.setFilter)
+  const activeFilter  = useCustomerProfileStore((s) => s.filter)
+
+  const addNotification = useNotificationStore((s) => s.addNotification)
+  const unreadCount     = useNotificationStore((s) => s.unreadCount)
 
   const fetchLeads = useCallback(async () => {
     setLoading(true)
@@ -430,6 +562,46 @@ function CRMPage() {
   }, [setCustomers, setLoading])
 
   useEffect(() => { fetchLeads() }, [fetchLeads])
+
+  // Supabase Realtime — nhận broadcast từ admin-notifications
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('admin-notifications')
+      .on('broadcast', { event: 'new_lead' }, (msg) => {
+        const p = msg.payload as { title?: string; body?: string; created_at?: string }
+        addNotification({
+          event:      'new_lead',
+          title:      p.title ?? 'Khách hàng mới',
+          body:       p.body  ?? '',
+          created_at: p.created_at ?? new Date().toISOString(),
+        })
+        // Tự động tải lại danh sách khách
+        fetchLeads()
+      })
+      .on('broadcast', { event: 'new_booking' }, (msg) => {
+        const p = msg.payload as { title?: string; body?: string; created_at?: string }
+        addNotification({
+          event:      'new_booking',
+          title:      p.title ?? 'Đặt tour mới',
+          body:       p.body  ?? '',
+          created_at: p.created_at ?? new Date().toISOString(),
+        })
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [addNotification, fetchLeads])
+
+  // Click ngoài bell panel → đóng
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setBellOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   useEffect(() => {
     fetch('/api/admin/me')
@@ -551,12 +723,20 @@ function CRMPage() {
             Live
           </span>
 
-          <button className="relative w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors flex-shrink-0">
-            <Bell size={15} className="text-gray-500" />
-            <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#FF6B00] rounded-full text-[9px] font-bold text-white flex items-center justify-center border border-white">
-              4
-            </span>
-          </button>
+          <div ref={bellRef} className="relative flex-shrink-0">
+            <button
+              onClick={() => setBellOpen((v) => !v)}
+              className="relative w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              <Bell size={15} className="text-gray-500" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-0.5 bg-[#FF6B00] rounded-full text-[9px] font-bold text-white flex items-center justify-center border border-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+            {bellOpen && <NotificationPanel onClose={() => setBellOpen(false)} />}
+          </div>
 
           <button
             onClick={() => { setActiveTab('customers'); openDrawer('') }}
@@ -604,12 +784,23 @@ function CRMPage() {
               {activeTab === 'overview'  && <OverviewTab leads={leads} />}
               {activeTab === 'customers' && (
                 <div>
-                  <div className="mb-4">
-                    <div className="font-bold text-xl text-[#1A1A2E]">Danh sách Khách hàng</div>
-                    <div className="text-sm text-gray-400 mt-0.5">
-                      Quản lý toàn bộ hồ sơ khách hàng — bấm vào tên để xem chi tiết &amp; tài liệu đính kèm
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-bold text-xl text-[#1A1A2E]">Danh sách Khách hàng</div>
+                      <div className="text-sm text-gray-400 mt-0.5">
+                        Tổng <strong className="text-[#1A1A2E]">{leads.length}</strong> khách — bấm vào tên để xem chi tiết &amp; tài liệu đính kèm
+                      </div>
                     </div>
+                    {activeFilter !== 'all' && (
+                      <button
+                        onClick={() => setFilter('all')}
+                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white hover:bg-gray-50 transition-colors whitespace-nowrap"
+                      >
+                        <X size={11} /> Bỏ lọc
+                      </button>
+                    )}
                   </div>
+                  <SourceCards leads={leads} active={activeFilter} onSelect={setFilter} />
                   <CustomerTable />
                 </div>
               )}

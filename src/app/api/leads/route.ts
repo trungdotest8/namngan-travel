@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { LeadCaptureSchema, calcLeadScore } from '@/lib/validations/lead-capture.schema'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { triggerNotification } from '@/lib/notifications'
 import { sendEmail } from '@/lib/email'
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
     const d           = parsed.data
     const lead_score  = calcLeadScore(d)
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { data: lead, error } = await supabase
       .from('leads')
       .insert({
@@ -92,6 +91,7 @@ export async function POST(req: NextRequest) {
       lead_id:        lead.id,
       customer_name:  lead.full_name,
       customer_email: lead.email ?? undefined,
+      detail:         lead.phone,
     }).catch((e) => console.error('[Notify] new_lead thất bại:', e))
 
     // AI Classification — fire-and-forget (không block response)

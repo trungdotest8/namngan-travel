@@ -1,7 +1,10 @@
 import { create } from 'zustand'
 import type { Lead } from '@/types/lead.types'
 
-export type CRMFilter = 'all' | 'fb_ads' | 'web_ads' | 'deposited' | 'new' | 'hot' | 'warm' | 'cold'
+export type CRMFilter =
+  | 'all' | 'fb_ads' | 'web_ads' | 'deposited' | 'new'
+  | 'hot' | 'warm' | 'cold'
+  | 'popup' | 'chat' | 'tiktok' | 'zalo'
 export type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
 
 interface CustomerProfileState {
@@ -62,9 +65,13 @@ export const selectFilteredCustomers = (state: CustomerProfileState): Lead[] => 
       (filter === 'web_ads' && (c.lead_source === 'web_ads' || c.lead_source === 'organic')) ||
       (filter === 'deposited' && (c.status === 'deposited' || c.status === 'converted')) ||
       (filter === 'new' && c.status === 'new') ||
-      (filter === 'hot'  && c.ai_tier === 'hot') ||
-      (filter === 'warm' && c.ai_tier === 'warm') ||
-      (filter === 'cold' && c.ai_tier === 'cold')
+      (filter === 'hot'    && c.ai_tier === 'hot') ||
+      (filter === 'warm'   && c.ai_tier === 'warm') ||
+      (filter === 'cold'   && c.ai_tier === 'cold') ||
+      (filter === 'popup'  && (c.lead_source === 'popup'  || c.source_channel === 'web_form')) ||
+      (filter === 'chat'   && (c.lead_source === 'chat'   || c.source_channel === 'chatbot')) ||
+      (filter === 'tiktok' && c.source_channel === 'tiktok') ||
+      (filter === 'zalo'   && (c.source_channel === 'zalo'  || !!c.zalo_id))
     const matchSearch =
       !q ||
       c.full_name.toLowerCase().includes(q) ||
