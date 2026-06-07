@@ -71,6 +71,18 @@ function renderTemplate(
       <h2>Ưu đãi đặc biệt từ Nam Ngân Travel</h2>
       <p>${esc(d.promo_content)}</p>
     `,
+    'welcome-lead': (d) => `
+      <h2 style="color:#005BAA">Cảm ơn bạn đã liên hệ — Nam Ngân Travel</h2>
+      <p>Kính gửi <strong>${esc(d.customer_name)}</strong>,</p>
+      <p>Chúng tôi đã nhận được thông tin của bạn${d.destination ? ` về chuyến đi <strong>${esc(d.destination)}</strong>` : ''}.</p>
+      <p>Chuyên viên TripGenie sẽ gửi lịch trình cá nhân hóa kèm báo giá chi tiết qua <strong>Zalo</strong> trong vòng <strong>30 phút</strong> (giờ hành chính).</p>
+      <p style="margin-top:16px">
+        <a href="https://zalo.me/0774623514" style="background:#005BAA;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">
+          Nhắn Zalo ngay
+        </a>
+      </p>
+      <p style="margin-top:16px;font-size:12px;color:#666">Nam Ngân Travel — namngantravel.com</p>
+    `,
   }
 
   const renderer = templates[templateId]

@@ -27,6 +27,7 @@ export type EmailTemplateId =
   | 'booking-confirmation'
   | 'itinerary-updated'
   | 'promo-notify'
+  | 'welcome-lead'
 
 export interface EmailPayload {
   template: EmailTemplateId
