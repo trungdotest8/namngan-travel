@@ -54,19 +54,23 @@ ALTER TABLE affiliate_links  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE affiliate_clicks ENABLE ROW LEVEL SECURITY;
 
 -- affiliate_links: public read (active only), admin write
+DROP POLICY IF EXISTS "affiliate_links_public_read" ON affiliate_links;
 CREATE POLICY "affiliate_links_public_read"
   ON affiliate_links FOR SELECT
   USING (is_active = true);
 
+DROP POLICY IF EXISTS "affiliate_links_admin_all" ON affiliate_links;
 CREATE POLICY "affiliate_links_admin_all"
   ON affiliate_links FOR ALL
   USING (auth.role() = 'service_role');
 
 -- affiliate_clicks: insert-only for anon (tracking), admin read
+DROP POLICY IF EXISTS "affiliate_clicks_insert_anon" ON affiliate_clicks;
 CREATE POLICY "affiliate_clicks_insert_anon"
   ON affiliate_clicks FOR INSERT
   WITH CHECK (true);
 
+DROP POLICY IF EXISTS "affiliate_clicks_admin_read" ON affiliate_clicks;
 CREATE POLICY "affiliate_clicks_admin_read"
   ON affiliate_clicks FOR SELECT
   USING (auth.role() = 'service_role');
