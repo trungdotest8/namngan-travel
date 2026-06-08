@@ -390,34 +390,38 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | A | Search UI | ✅ v2.1.0 | `src/components/search/TourSearchBar.tsx` + `SearchResults.tsx` |
 | B | Lịch khởi hành + PDF Indexer | ✅ v1.2.0 | `src/lib/integrations/seastar.ts` + migrations #6+#7+#8 |
 | C | Itinerary + PDF Embed | ✅ v2.1.0 | `TourDetail.tsx` + `PdfViewer.tsx` |
-| D | Hồ sơ khách | ✅ v1.1.0 | `CustomerProfileDrawer.tsx` + `CustomerTable.tsx` |
+| D | Hồ sơ khách | ✅ v1.2.0 | `CustomerProfileDrawer.tsx` + `CustomerTable.tsx` — **Export CSV mới** ⚡ |
 | E | Chat & Lead | ✅ v2.2.0 | `ChatWidget.tsx` — 2 tab: "Để lại số" + "Chat AI" |
 | F | CMS / RSS | ✅ v1.3.0 | `ArticleFeed.tsx` — TiptapEditor ✅ |
-| G | DB Schema | ✅ **18 local / 15 cloud** | `supabase/migrations/` — #16+#17+#18 chưa apply cloud ⚠️ |
-| CRM | Admin CRM | ✅ v7.0.0 | `crm/page.tsx` — Source cards + Realtime bell + NotificationPanel ✅ |
+| G | DB Schema | ✅ **19 local / 15 cloud** | `supabase/migrations/` — #16+#17+#18+#19 chưa apply cloud ⚠️ |
+| CRM | Admin CRM | ✅ v8.1.0 | `crm/page.tsx` — 8 tabs; LeadsTab v3.0 ✅; Export CSV ✅ |
 | AUTH | Admin Auth | ✅ v2.0.0 | `login/page.tsx` + `middleware.ts` — cookie: `admin_session` |
 | TRIPGENIE | AI Chat Core | ✅ v1.2.0 | `/api/ai/chat` Node.js runtime; RAG ✅ |
-| TRIPGENIE-LEADS | Lead Capture | ✅ v2.0.0 | `/api/leads` POST+GET ✅ (adminClient — RLS bypassed); `/api/leads/[id]` PATCH ✅ |
+| TRIPGENIE-LEADS | Lead Capture | ✅ v2.1.0 | `/api/leads` POST (adminClient — RLS bypassed); `/api/leads/[id]` PATCH ✅ |
 | TRIPGENIE-CLASSIFY | AI Classification | ✅ v1.0.0 | `src/lib/ai/classify.ts`; `/api/ai/classify-lead`; migration #17 |
 | TRIPGENIE-AFFILIATE | Affiliate Engine | ✅ v1.0.0 | migration #18; `src/lib/affiliate/tracker.ts`; `/api/affiliate/track` |
-| NOTIFY | Notification | ✅ v2.1.0 | Luồng 3: Email + Realtime + Telegram ✅; SĐT trong Telegram ✅ |
+| LEADS-ACTIVITIES | Nhật ký chăm sóc | ✅ v1.0.0 | migration #19; `/api/leads/[id]/activities` GET+POST; `LeadActivity` type |
+| NOTIFY | Notification | ✅ v2.1.0 | Email + Realtime + Telegram ✅; SĐT trong Telegram ✅ |
 | RAG | AI Context | ✅ v1.0.0 | `src/lib/ai/rag.ts` — searchRelevantTours() |
 | AICHAT-PANEL | Full-page AI Chat | ✅ v1.0.0 | `src/components/ai/AiChatPanel.tsx` — embedded /tao-lich-trinh |
+| EXPORT-CSV | Customer Audience Export | ⏳ v1.0.0 — **ĐANG HOÀN THIỆN** | `CustomerTable.tsx` — helpers đã viết, cần verify TypeScript |
 
 ### Trạng thái API Routes
 
 | Route | Method | Trạng thái | Ghi chú |
 |-------|--------|-----------|---------|
-| `/api/leads` | POST | ✅ v2.1.0 | **createAdminClient** (bypass RLS) + honeypot + lead_score + Telegram SĐT |
+| `/api/leads` | POST | ✅ v2.1.0 | createAdminClient (bypass RLS) + honeypot + lead_score + Telegram SĐT |
 | `/api/leads` | GET | ✅ v1.0.0 | Auth + filter ?channel= ?status= ?page= ?limit= |
 | `/api/leads/[id]` | PATCH | ✅ v1.0.0 | LeadStatusUpdateSchema + auth |
+| `/api/leads/[id]/activities` | GET | ✅ v1.0.0 | Lịch sử tương tác, sort created_at DESC |
+| `/api/leads/[id]/activities` | POST | ✅ v1.0.0 | ActivityInsertSchema + Realtime broadcast `lead_activity` |
 | `/api/ai/chat` | POST | ✅ v1.2.0 | Node.js runtime + RAG + SSE streaming |
 | `/api/ai/classify-lead` | POST | ✅ v1.0.0 | classifyLead() → UPDATE ai_tier + ai_tags |
 | `/api/affiliate/track` | GET | ✅ v1.0.0 | record click → 302 redirect; IP hash SHA-256 |
 | `/api/search` | POST | ✅ | OR query name\|destination\|country |
 | `/api/cms` | GET/POST | ✅ | pagination + new_article notification |
 | `/api/tours` | GET/POST | ✅ | filter category/country/is_active |
-| `/api/featured-destinations` | GET/POST/PATCH/DELETE | ✅ | auth fix ✅ |
+| `/api/featured-destinations` | ALL | ✅ | auth fix ✅ |
 | `/api/admin/upload-image` | POST | ✅ | base64 → `tour-galleries` |
 | `/api/notifications` | POST | ✅ | x-webhook-secret |
 | `/api/departures` | GET/POST | ✅ | |
@@ -427,6 +431,7 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | `/api/webhooks/n8n` | POST | ✅ | |
 | `/api/webhooks/moda` | POST | ✅ | |
 | `/api/webhooks/zalo` | POST | ❌ | Phase 4 — chưa build |
+| `/api/webhooks/fb-leads` | POST | ❌ | Phase 4 — chưa build |
 
 ### Zustand Stores
 
@@ -437,33 +442,33 @@ useSearchStore          (store/search.store.ts)            ✅
 useCalendarStore        (store/calendar.store.ts)          ✅
 useChatStore            (store/chat.store.ts)              ✅
 useCmsStore             (store/cms.store.ts)               ✅
-useCustomerProfileStore (store/customer-profile.store.ts)  ✅ — CRMFilter mở rộng
-useAiChatStore          (store/ai-chat.store.ts)           ✅ — ChatWidget + AiChatPanel
+useCustomerProfileStore (store/customer-profile.store.ts)  ✅
+useAiChatStore          (store/ai-chat.store.ts)           ✅
 ```
 
-### Data Contract — Delta phiên #35
+### Data Contract — Delta phiên #37
 
 ```typescript
-// ── CRMFilter (phiên #35) — MỞ RỘNG ──────────────────────────────────────
-// 'all' | 'fb_ads' | 'web_ads' | 'deposited' | 'new'
-// + 'hot' | 'warm' | 'cold'          (AI tier — phiên #34)
-// + 'popup' | 'chat' | 'tiktok' | 'zalo'  (source channel — phiên #35)
+// ── CustomerTable Export CSV (phiên #37 — MỚI) ───────────────────────────
+// Không thêm type mới — dùng Lead[] hiện có
+// 3 format export từ filtered list (client-side, không cần API):
+//   buildFacebookCSV(leads)  → headers: email, phone, fn, ln, country
+//   buildTikTokCSV(leads)    → headers: Email, Phone Number
+//   buildFullCSV(leads)      → tất cả trường + UTF-8 BOM
+// normalizePhone: "09x..." → "+849x..." (Vietnam E.164)
+// downloadCSV: Blob + URL.createObjectURL + auto-click <a>
 
-// ── /api/leads POST (phiên #35) — FIX ────────────────────────────────────
-// Đổi createClient() → createAdminClient() → bypass RLS hoàn toàn
-// triggerNotification: thêm detail: lead.phone → Telegram hiển thị SĐT
+// ── LeadsTab v3.0 (phiên #37 — REWRITE) ──────────────────────────────────
+// Rewrite hoàn toàn từ skeleton user cung cấp
+// Fixed: lead.status (không phải lead_status), result.leads, result.activities
+// Filter: searchTerm + filterSource + filterStatus + filterTemp (client-side)
+// Layout: filter bar 5 cột + grid 2/3+1/3 + pagination 8/trang
+// Detail panel: ai_tier badge, destination_interest, note #FF6B00, timeline
 
-// ── CRM page (phiên #35) — MỚI ────────────────────────────────────────────
-// SourceCards: 5 card (Facebook / Website·Popup / Tư vấn / TikTok / Zalo)
-//   count thực từ leads store; click → setFilter; click lại → 'all'
-// NotificationPanel: dropdown từ bell — dismiss / đọc hết (dùng useNotificationStore)
-// Realtime subscription: channel 'admin-notifications' → new_lead + new_booking
-//   → addNotification() + fetchLeads() auto-refresh
-
-// ── affiliate_links / affiliate_clicks (phiên #34) — migration #18 ────────
-// GET /api/affiliate/track?link_id=&lead_id=&session_id=
-//   → recordClick() fire-and-forget → 302 redirect tracking_url
-// tracker.ts: getActiveLinks(), getLinkById(), recordClick() (IP sha256)
+// ── LeadsTab vs Customers tab — phân tích phiên #37 ──────────────────────
+// Leads: pipeline (new→lost) + activity timeline — mục tiêu CHĂM SÓC
+// Customers: đã chốt (deposited/converted) + import ngoài — mục tiêu REMARKETING
+// TODO: Customers tab cần filter cứng status IN (deposited, converted) + Import Excel
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
@@ -471,8 +476,8 @@ useAiChatStore          (store/ai-chat.store.ts)           ✅ — ChatWidget + 
 ```
 GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main)
 Vercel  : namngan-travel — cần redeploy để nhận migrations cloud
-Supabase: indjoegnsvcteaozmgrg — 18 migrations local / 15 cloud
-          ⚠️ Migration #16 + #17 + #18 chưa apply cloud
+Supabase: indjoegnsvcteaozmgrg — 19 migrations local / 15 cloud
+          ⚠️ Migration #16 + #17 + #18 + #19 chưa apply cloud
           ✅ bucket 'tour-galleries' | ✅ ai_conversations | ✅ featured_destinations
 Resend  : Domain namngantravel.com — PENDING DNS
 SeaStar : ✅ 49 tours | Vercel Cron: "0 2 * * *" /api/cron/crawl-pdf ✅
@@ -480,42 +485,50 @@ ANTHROPIC_API_KEY: ✅ .env.local | ⚠️ cần add Vercel Env Vars + redeploy
 TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID: ✅ Vercel đã set
 ```
 
-### Files ưu tiên cao chưa hoàn chỉnh
+### Files ưu tiên cao chưa tồn tại / chưa hoàn thiện
 
 ```
+# VERIFY NGAY (phiên #37 còn dở):
+1. pnpm tsc --noEmit → verify CustomerTable.tsx export CSV clean
+2. Test UI: CRM → Hồ sơ khách → nút Export → dropdown 3 options → download file
+
 # APPLY NGAY (không cần code):
-1. Supabase Dashboard → SQL Editor → paste migration #16 → Run
-2. Supabase Dashboard → SQL Editor → paste migration #17 → Run
-3. Supabase Dashboard → SQL Editor → paste migration #18 → Run
-4. Vercel → Redeploy production (nhận ANTHROPIC_API_KEY)
+3. Supabase Dashboard → SQL Editor → migration #16 → Run
+4. Supabase Dashboard → SQL Editor → migration #17 → Run
+5. Supabase Dashboard → SQL Editor → migration #18 → Run
+6. Supabase Dashboard → SQL Editor → migration #19 → Run
+7. Vercel → Redeploy production (nhận ANTHROPIC_API_KEY)
 
-# TRIPGENIE Phase 4 (Zalo OA + FB Lead Ads):
-5. /api/webhooks/zalo — nhận OA webhook, insert lead với source_channel='zalo'
-6. /api/webhooks/fb-leads — nhận FB Lead Ads, insert lead với lead_source='fb_ads'
+# Customers tab — tiếp tục mở rộng:
+8. Filter cứng: Customers chỉ show status IN (deposited, converted)
+9. Import Excel/CSV → bulk insert leads với source='imported'
+10. Export đã có — cần test thực tế với file thật
 
-# TRIPGENIE Phase 5 (Itinerary Builder AI):
-7. /api/ai/itinerary — streaming, nhúng affiliate links
-8. src/components/ai/ItineraryBuilder.tsx
+# TRIPGENIE Phase 4:
+11. /api/webhooks/zalo — nhận OA webhook, insert lead source_channel='zalo'
+12. /api/webhooks/fb-leads — nhận FB Lead Ads, insert lead lead_source='fb_ads'
 
-# CRM enhancement:
-9. CRM LeadsTab: filter theo ai_tier (HOT/WARM/COLD) đã có chip — cần test production
-10. Affiliate links nhúng vào tour pages (Phase 3 backend ✅, frontend còn thiếu)
+# TRIPGENIE Phase 5:
+13. /api/ai/itinerary — streaming + nhúng affiliate links
+14. src/components/ai/ItineraryBuilder.tsx
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Apply migration #16 + #17 + #18 lên Supabase cloud** — SQL Editor → paste lần lượt → Run → `vercel --prod`
-2. **TripGenie Phase 4 — Zalo & FB Webhook** — `/api/webhooks/zalo` + `/api/webhooks/fb-leads`; insert lead với đúng source_channel; test trigger Telegram
-3. **Nhúng affiliate links vào tour detail pages** — dùng `getActiveLinks({ destination })` từ `tracker.ts`; render card bên dưới tour description
+1. **Verify + test Export CSV** — `pnpm tsc --noEmit` → mở CRM → tab Hồ sơ → click Export → test 3 format download
+2. **Customers tab filter cứng** — default show `status IN (deposited, converted)` trong `selectFilteredCustomers` hoặc thêm prop; add filter chip "Đã chốt" as default
+3. **Import Excel/CSV vào Customers** — UI upload file → parse CSV/XLSX → bulk insert leads với `lead_source='organic'`, `status='converted'`, `source_channel='other'`
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
-| 2026-06-08 | Handover #35 — CRM Source Tabs + Fix 500 leads | Fix /api/leads createAdminClient; Source cards 5 kênh; Realtime bell; NotificationPanel |
-| 2026-06-08 | Handover #34 — TripGenie Phase 2+3 + Build Fix | Phase 2 classify ✅; Affiliate Engine ✅; CRM HOT/WARM/COLD filter ✅; Edge→Node fix ✅ |
-| 2026-06-08 | Handover #33 — TripGenie Leads WIP + RAG + Env Vercel | Migration #16 ✅; lead-capture.schema ✅; Edge+RAG ✅; Telegram Vercel ✅ |
-| 2026-06-07 | Handover #32 — TripGenie Phase 1 + Notification v2 | AI Chat ✅; Telegram ✅; 8 events; auth cookie fix; ISR |
+| 2026-06-09 | Handover #37 — LeadsTab v3.0 + Export CSV | LeadsTab rewrite (type-safe); CustomerTable export FB/TikTok/Excel |
+| 2026-06-09 | Handover #36 — LeadsTab v2.0 + lead_activities | Migration #19; LeadActivity type+schema; /api/leads/[id]/activities; LeadsTab 2-col |
+| 2026-06-08 | Handover #35 — CRM Source Tabs + Fix 500 leads | Fix /api/leads createAdminClient; Source cards 5 kênh; Realtime bell |
+| 2026-06-08 | Handover #34 — TripGenie Phase 2+3 | classify ✅; Affiliate Engine ✅; CRM HOT/WARM/COLD filter ✅ |
+| 2026-06-08 | Handover #33 — TripGenie Leads WIP + RAG | Migration #16; lead-capture.schema; Telegram Vercel |
+| 2026-06-07 | Handover #32 — TripGenie Phase 1 + Notification v2 | AI Chat; Telegram; auth cookie fix |
 | 2026-06-07 | Handover #31 — SEO + Server Component | blog/tao-lich-trinh Static; generateMetadata; JSON-LD |
 | 2026-06-07 | Handover #30 — TripGenie Pages + Lead Modal | /blog /diem-den /tao-lich-trinh; TripGenieLeadModal |
 | 2026-06-07 | Handover #29 — Mobile + Sitemap | ChatWidget/TourDetail/Header mobile; sitemap dynamic |

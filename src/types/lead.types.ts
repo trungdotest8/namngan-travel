@@ -60,3 +60,13 @@ export interface LeadFormData {
   tour_id?:    string
   lead_source: LeadSource
 }
+
+// Migration #19 — nhật ký chăm sóc lead
+export interface LeadActivity {
+  id:          string
+  lead_id:     string
+  staff_name:  string
+  action_type: 'note' | 'call' | 'email' | 'status_change' | 'other'
+  content:     string
+  created_at:  string
+}

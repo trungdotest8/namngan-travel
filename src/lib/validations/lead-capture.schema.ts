@@ -46,8 +46,19 @@ export const LeadStatusUpdateSchema = z.object({
   lead_score:  z.number().int().min(0).max(100).optional(),
 })
 
-export type LeadCaptureInput     = z.infer<typeof LeadCaptureSchema>
+export type LeadCaptureInput      = z.infer<typeof LeadCaptureSchema>
 export type LeadStatusUpdateInput = z.infer<typeof LeadStatusUpdateSchema>
+
+// Schema cho ghi nhật ký chăm sóc lead (migration #19)
+export const ActivityActionEnum = z.enum(['note', 'call', 'email', 'other'])
+
+export const ActivityInsertSchema = z.object({
+  staff_name:  z.string().max(100).optional(),
+  action_type: ActivityActionEnum,
+  content:     z.string().min(1, 'Vui lòng nhập nội dung').max(2000),
+})
+
+export type ActivityInsertInput = z.infer<typeof ActivityInsertSchema>
 
 // Tính lead_score tự động: +20 mỗi field ngoài required (full_name, phone)
 export function calcLeadScore(data: LeadCaptureInput): number {

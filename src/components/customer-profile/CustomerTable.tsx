@@ -1,8 +1,10 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
+import Papa from 'papaparse'
 import { useCustomerProfileStore, selectFilteredCustomers, type CRMFilter } from '@/store/customer-profile.store'
 import type { Lead, LeadStatus } from '@/types/lead.types'
-import { Search, Globe, ExternalLink, Eye, FolderX, Flame, ThermometerSun, Snowflake } from 'lucide-react'
+import { Search, Globe, ExternalLink, Eye, FolderX, Flame, ThermometerSun, Snowflake, Download, Upload, X, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import type { LeadTier } from '@/types/lead.types'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -42,12 +44,125 @@ const FILTER_OPTIONS: { value: CRMFilter; label: string; Icon?: React.ElementTyp
   { value: 'cold',      label: 'COLD', Icon: Snowflake,      iconCls: 'text-sky-500' },
   { value: 'fb_ads',    label: 'Facebook Ads' },
   { value: 'web_ads',   label: 'Web / UTM' },
-  { value: 'deposited', label: 'Đã đặt cọc' },
+  { value: 'deposited', label: 'Đã chốt' },
   { value: 'new',       label: 'Mới nhập' },
 ]
 
+// ── Export helpers ─────────────────────────────────────────────────────────
+
+function normalizePhone(raw: string): string {
+  const d = raw.replace(/\D/g, '')
+  if (d.startsWith('84') && d.length >= 11) return `+${d}`
+  if (d.startsWith('0') && d.length >= 9)   return `+84${d.slice(1)}`
+  return d ? `+${d}` : ''
+}
+
+function toCSV(rows: string[][]): string {
+  return rows
+    .map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(','))
+    .join('\n')
+}
+
+function buildFacebookCSV(leads: Lead[]): string {
+  const header = ['email', 'phone', 'fn', 'ln', 'country']
+  const data = leads.map(l => {
+    const parts = l.full_name.trim().split(' ')
+    return [
+      (l.email ?? '').toLowerCase(),
+      l.phone ? normalizePhone(l.phone) : '',
+      parts[0] ?? '',
+      parts.slice(1).join(' ') || (parts[0] ?? ''),
+      'VN',
+    ]
+  })
+  return toCSV([header, ...data])
+}
+
+function buildTikTokCSV(leads: Lead[]): string {
+  const header = ['Email', 'Phone Number']
+  const data = leads.map(l => [
+    (l.email ?? '').toLowerCase(),
+    l.phone ? normalizePhone(l.phone) : '',
+  ])
+  return toCSV([header, ...data])
+}
+
+function buildFullCSV(leads: Lead[]): string {
+  const header = ['Họ tên', 'Điện thoại', 'Email', 'Nguồn', 'Kênh', 'Trạng thái', 'Điểm', 'Điểm đến', 'Ngày tạo']
+  const data = leads.map(l => [
+    l.full_name,
+    l.phone,
+    l.email ?? '',
+    l.lead_source ?? '',
+    l.source_channel ?? '',
+    l.status,
+    String(l.lead_score ?? 0),
+    l.destination_interest ?? '',
+    new Date(l.created_at).toLocaleDateString('vi-VN'),
+  ])
+  return toCSV([header, ...data])
+}
+
+function downloadCSV(csv: string, filename: string) {
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// ── Import helpers ─────────────────────────────────────────────────────────
+
+type ImportRow = { full_name: string; phone: string; email?: string; note?: string; destination_interest?: string }
+
+function normalizeHeader(h: string): string {
+  return h
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim()
+    .replace(/\s+/g, '_')
+}
+
+const COLUMN_MAP: Record<string, keyof ImportRow> = {
+  full_name: 'full_name', ho_ten: 'full_name', ten: 'full_name',
+  name: 'full_name', ho_va_ten: 'full_name', kh: 'full_name',
+  phone: 'phone', sdt: 'phone', so_dien_thoai: 'phone',
+  dien_thoai: 'phone', phone_number: 'phone', so_dt: 'phone',
+  email: 'email', e_mail: 'email',
+  note: 'note', ghi_chu: 'note', ghi_chú: 'note',
+  destination_interest: 'destination_interest', diem_den: 'destination_interest',
+}
+
+function parseCSVRows(raw: Record<string, string>[]): { rows: ImportRow[]; skipped: number } {
+  const rows: ImportRow[] = []
+  let skipped = 0
+  raw.forEach((r) => {
+    const mapped: Partial<ImportRow> = {}
+    Object.entries(r).forEach(([k, v]) => {
+      const field = COLUMN_MAP[normalizeHeader(k)]
+      if (field) mapped[field] = v?.trim() ?? ''
+    })
+    // first_name + last_name → full_name
+    if (!mapped.full_name) {
+      const rawKeys = Object.keys(r)
+      const fn = rawKeys.find((k) => normalizeHeader(k) === 'first_name')
+      const ln = rawKeys.find((k) => normalizeHeader(k) === 'last_name')
+      if (fn || ln) mapped.full_name = [r[fn ?? ''], r[ln ?? '']].filter(Boolean).join(' ')
+    }
+    if (mapped.full_name && mapped.phone) {
+      rows.push(mapped as ImportRow)
+    } else {
+      skipped++
+    }
+  })
+  return { rows, skipped }
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
-export function CustomerTable() {
+export function CustomerTable({ onRefresh }: { onRefresh?: () => void }) {
   const filter       = useCustomerProfileStore((s) => s.filter)
   const search       = useCustomerProfileStore((s) => s.search)
   const setFilter    = useCustomerProfileStore((s) => s.setFilter)
@@ -55,19 +170,232 @@ export function CustomerTable() {
   const openDrawer   = useCustomerProfileStore((s) => s.openDrawer)
   const filtered     = useCustomerProfileStore(selectFilteredCustomers)
 
+  const [exportOpen, setExportOpen] = useState(false)
+  const exportRef = useRef<HTMLDivElement>(null)
+
+  const [importRows, setImportRows]     = useState<ImportRow[] | null>(null)
+  const [importSkipped, setImportSkipped] = useState(0)
+  const [importFileName, setImportFileName] = useState('')
+  const [importing, setImporting]       = useState(false)
+  const [importResult, setImportResult] = useState<{ inserted: number } | null>(null)
+  const [importError, setImportError]   = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setExportOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImportResult(null)
+    setImportError(null)
+    setImportFileName(file.name)
+    Papa.parse<Record<string, string>>(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (result) => {
+        const { rows, skipped } = parseCSVRows(result.data)
+        setImportRows(rows)
+        setImportSkipped(skipped)
+      },
+      error: () => setImportError('Không thể đọc file CSV. Vui lòng kiểm tra định dạng.'),
+    })
+    e.target.value = ''
+  }
+
+  async function handleImport() {
+    if (!importRows?.length) return
+    setImporting(true)
+    setImportError(null)
+    try {
+      const res = await fetch('/api/leads/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows: importRows }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
+      setImportResult({ inserted: json.inserted })
+      setImportRows(null)
+      onRefresh?.()
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Lỗi không xác định')
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const stamp = new Date().toISOString().slice(0, 10)
+
+  const EXPORT_OPTIONS = [
+    {
+      label: '📘 Facebook Ads',
+      desc:  'email, phone (+84), fn, ln, country',
+      action: () => {
+        downloadCSV(buildFacebookCSV(filtered), `facebook-audience-${stamp}.csv`)
+        setExportOpen(false)
+      },
+    },
+    {
+      label: '🎵 TikTok Ads',
+      desc:  'Email, Phone Number',
+      action: () => {
+        downloadCSV(buildTikTokCSV(filtered), `tiktok-audience-${stamp}.csv`)
+        setExportOpen(false)
+      },
+    },
+    {
+      label: '📊 Excel (đầy đủ)',
+      desc:  'Tất cả trường, UTF-8 BOM',
+      action: () => {
+        downloadCSV(buildFullCSV(filtered), `customers-${stamp}.csv`)
+        setExportOpen(false)
+      },
+    },
+  ]
+
   return (
     <div>
-      {/* Search */}
-      <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 mb-3">
-        <Search size={14} className="text-gray-400 flex-shrink-0" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tìm kiếm theo tên, SĐT, email..."
-          className="flex-1 bg-transparent py-2 text-sm outline-none text-[#1A1A2E] placeholder:text-gray-400"
-        />
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
+
+      {/* Search + Import + Export */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3">
+          <Search size={14} className="text-gray-400 flex-shrink-0" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm kiếm theo tên, SĐT, email..."
+            className="flex-1 bg-transparent py-2 text-sm outline-none text-[#1A1A2E] placeholder:text-gray-400"
+          />
+        </div>
+
+        {/* Import CSV button */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          title="Nhập khách từ file CSV"
+          className="flex items-center gap-1.5 h-9 px-3 text-sm rounded-lg border border-gray-200
+                     bg-white text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap"
+        >
+          <Upload size={14} />
+          <span className="hidden sm:inline">Nhập CSV</span>
+        </button>
+
+        {/* Export dropdown */}
+        <div className="relative" ref={exportRef}>
+          <button
+            onClick={() => setExportOpen(o => !o)}
+            title={`Export ${filtered.length} khách`}
+            className="flex items-center gap-1.5 h-9 px-3 text-sm rounded-lg border border-gray-200
+                       bg-white text-[#005BAA] hover:bg-[#F0F7FF] transition-colors whitespace-nowrap"
+          >
+            <Download size={14} />
+            Export
+            <span className="ml-0.5 text-xs font-semibold text-[#FF6B00]">{filtered.length}</span>
+          </button>
+
+          {exportOpen && (
+            <div className="absolute right-0 top-10 z-50 w-56 bg-white rounded-xl border border-gray-100
+                            shadow-lg overflow-hidden">
+              <p className="px-3 pt-2.5 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
+                Chọn định dạng
+              </p>
+              {EXPORT_OPTIONS.map(opt => (
+                <button
+                  key={opt.label}
+                  onClick={opt.action}
+                  className="w-full text-left px-3 py-2.5 hover:bg-[#F0F7FF] transition-colors"
+                >
+                  <p className="text-sm font-medium text-[#1A1A2E]">{opt.label}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{opt.desc}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Import preview panel */}
+      {importRows && (
+        <div className="mb-3 border border-[#005BAA]/20 bg-[#F0F7FF] rounded-xl p-3">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div>
+              <p className="text-sm font-semibold text-[#1A1A2E]">
+                📁 {importFileName} — <span className="text-[#005BAA]">{importRows.length} hàng</span> sẽ được nhập
+                {importSkipped > 0 && (
+                  <span className="text-amber-600 ml-1">({importSkipped} hàng thiếu tên/SĐT bị bỏ qua)</span>
+                )}
+              </p>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                Xem trước: {importRows.slice(0, 3).map((r) => `${r.full_name} · ${r.phone}`).join(' | ')}
+                {importRows.length > 3 && ' ...'}
+              </p>
+            </div>
+            <button onClick={() => setImportRows(null)} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+              <X size={14} />
+            </button>
+          </div>
+          {importError && (
+            <p className="text-xs text-red-600 mb-2 flex items-center gap-1">
+              <AlertCircle size={12} /> {importError}
+            </p>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={handleImport}
+              disabled={importing}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#005BAA] text-white text-xs font-medium rounded-lg hover:bg-[#0078D7] disabled:opacity-50 transition-colors"
+            >
+              {importing ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+              {importing ? 'Đang nhập...' : `Xác nhận nhập ${importRows.length} khách`}
+            </button>
+            <button
+              onClick={() => setImportRows(null)}
+              className="px-3 py-1.5 border border-gray-200 text-xs text-gray-600 rounded-lg hover:bg-white transition-colors"
+            >
+              Hủy
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Import result toast */}
+      {importResult && (
+        <div className="mb-3 flex items-center gap-2 p-2.5 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">
+          <CheckCircle2 size={14} className="flex-shrink-0" />
+          Đã nhập thành công <strong>{importResult.inserted}</strong> khách hàng.
+          <button onClick={() => setImportResult(null)} className="ml-auto text-green-500 hover:text-green-700">
+            <X size={12} />
+          </button>
+        </div>
+      )}
+
+      {/* Import error (global) */}
+      {importError && !importRows && (
+        <div className="mb-3 flex items-center gap-2 p-2.5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          <AlertCircle size={14} className="flex-shrink-0" />
+          {importError}
+          <button onClick={() => setImportError(null)} className="ml-auto text-red-400 hover:text-red-600">
+            <X size={12} />
+          </button>
+        </div>
+      )}
 
       {/* Filter chips */}
       <div className="flex gap-2 flex-wrap mb-3">

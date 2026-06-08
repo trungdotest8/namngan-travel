@@ -18,11 +18,12 @@ import { ArticlesTab } from './ArticlesTab'
 import { ToursTab } from './ToursTab'
 import { StaffTab } from './StaffTab'
 import { DestinationsTab } from './DestinationsTab'
+import { LeadsTab } from './LeadsTab'
 import type { Lead } from '@/types/lead.types'
 import type { AdminUser } from '@/types/admin.types'
 
 // ── Types ─────────────────────────────────────────────────────────────────
-type TabId = 'overview' | 'customers' | 'articles' | 'tours' | 'destinations' | 'staff' | 'config'
+type TabId = 'overview' | 'leads' | 'customers' | 'articles' | 'tours' | 'destinations' | 'staff' | 'config'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function computeMetrics(leads: Lead[]) {
@@ -506,23 +507,25 @@ function ConfigField({ label, value, mono }: { label: string; value: string; mon
 
 // ── Main CRM Page ─────────────────────────────────────────────────────────
 const NAV = [
-  { id: 'overview'  as TabId, label: 'Chiến dịch & Thông báo', icon: LayoutDashboard },
-  { id: 'customers' as TabId, label: 'Danh sách Khách hàng',   icon: Users },
-  { id: 'articles'  as TabId, label: 'Bài viết / Tin tức',     icon: Newspaper },
-  { id: 'tours'        as TabId, label: 'Quản lý Tour',         icon: MapPin },
-  { id: 'destinations' as TabId, label: 'Điểm đến nổi bật',    icon: Plane },
-  { id: 'staff'        as TabId, label: 'Nhân Viên',            icon: UserCog },
-  { id: 'config'    as TabId, label: 'Webhook & Email',         icon: Settings },
+  { id: 'overview'     as TabId, label: 'Chiến dịch & Thông báo', icon: LayoutDashboard },
+  { id: 'leads'        as TabId, label: 'Quản lý Leads',          icon: Phone },
+  { id: 'customers'    as TabId, label: 'Hồ sơ Khách hàng',       icon: Users },
+  { id: 'articles'     as TabId, label: 'Bài viết / Tin tức',     icon: Newspaper },
+  { id: 'tours'        as TabId, label: 'Quản lý Tour',           icon: MapPin },
+  { id: 'destinations' as TabId, label: 'Điểm đến nổi bật',      icon: Plane },
+  { id: 'staff'        as TabId, label: 'Nhân Viên',              icon: UserCog },
+  { id: 'config'       as TabId, label: 'Webhook & Email',        icon: Settings },
 ]
 
 const TAB_TITLES: Record<TabId, string> = {
-  overview:  'Tổng quan Chiến dịch',
-  customers: 'Danh sách Khách hàng',
-  articles:  'Quản lý Bài viết',
+  overview:     'Tổng quan Chiến dịch',
+  leads:        'Quản lý Leads & Chăm sóc',
+  customers:    'Hồ sơ Khách hàng',
+  articles:     'Quản lý Bài viết',
   tours:        'Quản lý Tour — Hình ảnh & Hashtags',
   destinations: 'Điểm đến nổi bật — Trang chủ',
   staff:        'Quản lý Nhân Viên',
-  config:    'Cấu hình Webhook & Email',
+  config:       'Cấu hình Webhook & Email',
 }
 
 function CRMPage() {
@@ -667,7 +670,11 @@ function CRMPage() {
           {NAV.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => { setActiveTab(id); setSidebarOpen(false) }}
+              onClick={() => {
+              setActiveTab(id)
+              if (id === 'customers') setFilter('deposited')
+              setSidebarOpen(false)
+            }}
               className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-[12.5px] font-medium border-l-3 transition-all ${
                 activeTab === id
                   ? 'bg-white/14 text-white border-l-[3px] border-l-[#FF6B00]'
@@ -801,8 +808,13 @@ function CRMPage() {
                     )}
                   </div>
                   <SourceCards leads={leads} active={activeFilter} onSelect={setFilter} />
-                  <CustomerTable />
+                  <CustomerTable onRefresh={fetchLeads} />
                 </div>
+              )}
+              {activeTab === 'leads' && (
+                <ErrorBoundary moduleName="LeadsTab">
+                  <LeadsTab />
+                </ErrorBoundary>
               )}
               {activeTab === 'articles' && (
                 <ErrorBoundary moduleName="ArticlesTab">
