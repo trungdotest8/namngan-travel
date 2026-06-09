@@ -34,7 +34,8 @@ export interface TrieuHaoSyncResult {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const API_URL = 'https://trieuhaotravel.vn/DieuHanhTour/DatCho/Lists'
+const API_URL      = 'https://trieuhaotravel.vn/DieuHanhTour/DatCho/Lists'
+const SESSION_URL  = 'https://trieuhaotravel.vn/DieuHanhTour/DatCho'
 
 // Date range: từ đầu tháng hiện tại → +6 tháng
 function getDateRange(): string {
@@ -44,6 +45,27 @@ function getDateRange(): string {
   const fmt   = (d: Date) =>
     `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
   return `${fmt(start)} - ${fmt(end)}`
+}
+
+// GET trang DatCho trước để lấy session cookie (giả lập browser)
+async function getSessionCookie(): Promise<string> {
+  const res = await fetch(SESSION_URL, {
+    method:  'GET',
+    headers: {
+      'User-Agent':      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'vi-VN,vi;q=0.9,en;q=0.8',
+    },
+    redirect: 'follow',
+  })
+  // Gộp tất cả Set-Cookie headers thành một chuỗi Cookie
+  const setCookie = res.headers.getSetCookie?.() ?? []
+  if (setCookie.length > 0) {
+    return setCookie.map(c => c.split(';')[0]).join('; ')
+  }
+  // Fallback: parse từ header string nếu getSetCookie không available
+  const raw = res.headers.get('set-cookie') ?? ''
+  return raw.split(',').map(c => c.trim().split(';')[0]).join('; ')
 }
 
 // "DD/MM/YYYY" → "YYYY-MM-DD"
@@ -73,7 +95,7 @@ function parsePrice(val: string | number): number {
   return digits ? parseInt(digits, 10) : 0
 }
 
-async function fetchPage(dateRange: string, start: number): Promise<TrieuHaoResponse> {
+async function fetchPage(dateRange: string, start: number, cookie: string): Promise<TrieuHaoResponse> {
   const body = new URLSearchParams({
     Ngay:            dateRange,
     NoiXuatPhatId:   '1',
@@ -84,31 +106,34 @@ async function fetchPage(dateRange: string, start: number): Promise<TrieuHaoResp
     sEcho:           '1',
   })
 
-  const res = await fetch(API_URL, {
-    method:  'POST',
-    headers: {
-      'Content-Type':     'application/x-www-form-urlencoded; charset=UTF-8',
-      'X-Requested-With': 'XMLHttpRequest',
-      'User-Agent':       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Referer':          'https://trieuhaotravel.vn/DieuHanhTour/DatCho',
-      'Origin':           'https://trieuhaotravel.vn',
-      'Accept':           'application/json, text/javascript, */*; q=0.01',
-      'Accept-Language':  'vi-VN,vi;q=0.9,en;q=0.8',
-    },
-    body: body.toString(),
-  })
+  const headers: Record<string, string> = {
+    'Content-Type':     'application/x-www-form-urlencoded; charset=UTF-8',
+    'X-Requested-With': 'XMLHttpRequest',
+    'User-Agent':       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Referer':          SESSION_URL,
+    'Origin':           'https://trieuhaotravel.vn',
+    'Accept':           'application/json, text/javascript, */*; q=0.01',
+    'Accept-Language':  'vi-VN,vi;q=0.9,en;q=0.8',
+  }
+  if (cookie) headers['Cookie'] = cookie
+
+  const res = await fetch(API_URL, { method: 'POST', headers, body: body.toString() })
 
   if (!res.ok) {
     let detail = ''
     try { detail = await res.text() } catch (_) { /* ignore */ }
-    throw new Error(`TrieuHao API ${res.status}: ${API_URL}${detail ? ` — ${detail.slice(0, 200)}` : ''}`)
+    throw new Error(`TrieuHao API ${res.status}${detail ? ` — ${detail.slice(0, 300)}` : ''}`)
   }
 
   const text = await res.text()
+  // Nếu server trả về HTML (redirect về trang chủ) thay vì JSON
+  if (text.trimStart().startsWith('<')) {
+    throw new Error(`TrieuHao trả về HTML (session hết hạn hoặc endpoint thay đổi): ${text.slice(0, 200)}`)
+  }
   try {
     return JSON.parse(text) as TrieuHaoResponse
   } catch (_) {
-    throw new Error(`TrieuHao trả về không phải JSON: ${text.slice(0, 200)}`)
+    throw new Error(`TrieuHao không phải JSON: ${text.slice(0, 200)}`)
   }
 }
 
@@ -138,15 +163,22 @@ export async function syncTrieuHaoSchedules(): Promise<TrieuHaoSyncResult> {
 
   const dateRange = getDateRange()
 
+  // Bước 0 — lấy session cookie
+  let cookie = ''
+  try {
+    cookie = await getSessionCookie()
+  } catch (_) { /* tiếp tục không có cookie */ }
+
   // Bước 1 — trang đầu để lấy total (retry 1 lần nếu 500)
   let first: TrieuHaoResponse
   try {
-    first = await fetchPage(dateRange, 0)
+    first = await fetchPage(dateRange, 0, cookie)
   } catch (err) {
-    // Retry sau 2 giây
+    // Retry: lấy lại session mới rồi thử lần 2
     await new Promise(r => setTimeout(r, 2000))
     try {
-      first = await fetchPage(dateRange, 0)
+      cookie = await getSessionCookie()
+      first = await fetchPage(dateRange, 0, cookie)
     } catch (err2) {
       return { synced: 0, skipped: 0, errors: [`TrieuHao API lỗi: ${err2}`] }
     }
@@ -161,7 +193,7 @@ export async function syncTrieuHaoSchedules(): Promise<TrieuHaoSyncResult> {
   if (pageCount > 1) {
     const rest = await Promise.allSettled(
       Array.from({ length: pageCount - 1 }, (_, i) =>
-        fetchPage(dateRange, (i + 1) * pageSize)
+        fetchPage(dateRange, (i + 1) * pageSize, cookie)
       )
     )
     for (const r of rest) {
