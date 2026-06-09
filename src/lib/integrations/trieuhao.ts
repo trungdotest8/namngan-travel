@@ -87,16 +87,29 @@ async function fetchPage(dateRange: string, start: number): Promise<TrieuHaoResp
   const res = await fetch(API_URL, {
     method:  'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent':   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      'Referer':      'https://trieuhaotravel.vn/',
-      'Accept':       'application/json, text/javascript, */*; q=0.01',
+      'Content-Type':     'application/x-www-form-urlencoded; charset=UTF-8',
+      'X-Requested-With': 'XMLHttpRequest',
+      'User-Agent':       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer':          'https://trieuhaotravel.vn/DieuHanhTour/DatCho',
+      'Origin':           'https://trieuhaotravel.vn',
+      'Accept':           'application/json, text/javascript, */*; q=0.01',
+      'Accept-Language':  'vi-VN,vi;q=0.9,en;q=0.8',
     },
     body: body.toString(),
   })
 
-  if (!res.ok) throw new Error(`TrieuHao API ${res.status}: ${API_URL}`)
-  return res.json() as Promise<TrieuHaoResponse>
+  if (!res.ok) {
+    let detail = ''
+    try { detail = await res.text() } catch (_) { /* ignore */ }
+    throw new Error(`TrieuHao API ${res.status}: ${API_URL}${detail ? ` — ${detail.slice(0, 200)}` : ''}`)
+  }
+
+  const text = await res.text()
+  try {
+    return JSON.parse(text) as TrieuHaoResponse
+  } catch (_) {
+    throw new Error(`TrieuHao trả về không phải JSON: ${text.slice(0, 200)}`)
+  }
 }
 
 // ── Normalized row ────────────────────────────────────────────────────────────
@@ -125,12 +138,18 @@ export async function syncTrieuHaoSchedules(): Promise<TrieuHaoSyncResult> {
 
   const dateRange = getDateRange()
 
-  // Bước 1 — trang đầu để lấy total
+  // Bước 1 — trang đầu để lấy total (retry 1 lần nếu 500)
   let first: TrieuHaoResponse
   try {
     first = await fetchPage(dateRange, 0)
   } catch (err) {
-    return { synced: 0, skipped: 0, errors: [`TrieuHao API lỗi: ${err}`] }
+    // Retry sau 2 giây
+    await new Promise(r => setTimeout(r, 2000))
+    try {
+      first = await fetchPage(dateRange, 0)
+    } catch (err2) {
+      return { synced: 0, skipped: 0, errors: [`TrieuHao API lỗi: ${err2}`] }
+    }
   }
 
   const allRaw: TrieuHaoRecord[] = [...first.aaData]
