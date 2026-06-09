@@ -41,7 +41,7 @@ export default function LichKhoiHanhPage() {
 
   // Fetch lần đầu
   useEffect(() => {
-    fetchSchedules({ limit: 200 })
+    fetchSchedules({ limit: 1000 })
   }, [fetchSchedules])
 
   // Lắng nghe event sync từ CRM → tự refetch
@@ -50,7 +50,7 @@ export default function LichKhoiHanhPage() {
     const channel = supabase
       .channel('schedule-sync')
       .on('broadcast', { event: 'updated' }, (payload) => {
-        fetchSchedules({ limit: 200 })
+        fetchSchedules({ limit: 1000 })
         const count = (payload.payload as { synced?: number })?.synced
         setSyncToast(count ? `Đã cập nhật ${count} lịch khởi hành mới` : 'Đã cập nhật lịch khởi hành')
         setTimeout(() => setSyncToast(null), 5000)
@@ -147,7 +147,7 @@ export default function LichKhoiHanhPage() {
               <AlertCircle size={18} className="shrink-0" />
               <span className="text-sm">{error}</span>
               <button
-                onClick={() => fetchSchedules({ limit: 200 })}
+                onClick={() => fetchSchedules({ limit: 1000 })}
                 className="ml-auto flex items-center gap-1 text-sm font-medium hover:underline"
               >
                 <RefreshCw size={14} /> Thử lại
@@ -227,7 +227,7 @@ export default function LichKhoiHanhPage() {
                 )}
               </div>
               <button
-                onClick={() => fetchSchedules({ limit: 200 })}
+                onClick={() => fetchSchedules({ limit: 1000 })}
                 className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-brand-blue transition-colors"
               >
                 <RefreshCw size={13} /> Làm mới

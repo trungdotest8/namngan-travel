@@ -10,7 +10,7 @@ const GetQuerySchema = z.object({
   destination: z.string().optional(),
   month:       z.string().regex(/^\d{4}-\d{2}$/).optional(),
   status:      z.enum(['open', 'full', 'cancelled', 'completed']).optional(),
-  limit:       z.coerce.number().int().min(1).max(200).default(50),
+  limit:       z.coerce.number().int().min(1).max(1000).default(50),
   tour_id:     z.string().uuid().optional(),
   category:    z.string().optional(),
   country:     z.string().optional(),
