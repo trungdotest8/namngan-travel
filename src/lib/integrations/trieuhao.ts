@@ -53,13 +53,10 @@ function getDateRange(): string {
 }
 
 // Lấy session cookie từ env TRIEUHAO_SESSION_COOKIE
-// (đăng nhập thủ công bằng Google OAuth, copy cookie từ DevTools)
 function getSessionCookie(): string {
   const cookie = process.env.TRIEUHAO_SESSION_COOKIE ?? ''
   if (!cookie) throw new Error(
-    'Thiếu TRIEUHAO_SESSION_COOKIE trong env. ' +
-    'Đăng nhập vào trieuhaotravel.vn/DieuHanhTour/DatCho bằng Google, ' +
-    'mở DevTools → Application → Cookies → copy .ASPXAUTH và ASP.NET_SessionId'
+    'Thiếu TRIEUHAO_SESSION_COOKIE trong env — chưa set trên Vercel hoặc chưa redeploy'
   )
   return cookie
 }
@@ -222,7 +219,9 @@ export async function syncTrieuHaoSchedules(): Promise<TrieuHaoSyncResult> {
   try {
     first = await fetchPage(dateRange, 0, cookie)
   } catch (err) {
-    return { synced: 0, skipped: 0, errors: [`TrieuHao API lỗi: ${err}`] }
+    // Include cookie diagnostics (length + prefix only, not full value)
+    const diag = `cookie_len=${cookie.length} starts_with="${cookie.slice(0, 15)}..."`
+    return { synced: 0, skipped: 0, errors: [`TrieuHao API lỗi: ${err} [${diag}]`] }
   }
 
   const allRaw: TrieuHaoRecord[] = [...first.aaData]
