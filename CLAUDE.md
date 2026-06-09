@@ -394,48 +394,50 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | E | Chat & Lead | ✅ v2.2.0 | `ChatWidget.tsx` — 2 tab: "Để lại số" + "Chat AI" |
 | F | CMS / RSS | ✅ v1.3.0 | `ArticleFeed.tsx` — TiptapEditor ✅ |
 | G | DB Schema | ✅ **19 local / ~15-18 cloud** | `supabase/migrations/` — apply_cloud_migrations_16_to_19.sql ✅ sẵn |
-| CRM | Admin CRM | ✅ v8.2.0 | `crm/page.tsx` — 8 tabs; LeadsTab v3.0 ✅; Export+Import CSV ✅ |
+| CRM | Admin CRM | ✅ v8.3.0 | `crm/page.tsx` — 8 tabs; 2-column sync SeaStar+TrieuHao ✅ |
 | AUTH | Admin Auth | ✅ v2.0.0 | `login/page.tsx` + `middleware.ts` — cookie: `admin_session` |
 | TRIPGENIE | AI Chat Core | ✅ v1.2.0 | `/api/ai/chat` Node.js runtime; RAG ✅ |
 | TRIPGENIE-LEADS | Lead Capture | ✅ v2.1.0 | `/api/leads` POST (adminClient — RLS bypassed); `/api/leads/[id]` PATCH ✅ |
 | TRIPGENIE-CLASSIFY | AI Classification | ✅ v1.0.0 | `src/lib/ai/classify.ts`; `/api/ai/classify-lead`; migration #17 |
-| TRIPGENIE-AFFILIATE | Affiliate Engine | ✅ v1.0.0 | migration #18 (fix policy ✅); `src/lib/affiliate/tracker.ts`; `/api/affiliate/track` |
-| LEADS-ACTIVITIES | Nhật ký chăm sóc | ✅ v1.0.0 | migration #19; `/api/leads/[id]/activities` GET+POST; `LeadActivity` type |
-| LEADS-IMPORT | Bulk Import CSV | ✅ v1.0.0 | `/api/leads/import` POST max 500; `papaparse` client-side parse |
+| TRIPGENIE-AFFILIATE | Affiliate Engine | ✅ v1.0.0 | migration #18; `src/lib/affiliate/tracker.ts`; `/api/affiliate/track` |
+| TRIPGENIE-ITINERARY | Itinerary Builder AI | ✅ v1.0.0 | `/api/ai/itinerary` 4096 tokens SSE; `ItineraryBuilder.tsx` markdown render + affiliate |
+| LEADS-ACTIVITIES | Nhật ký chăm sóc | ✅ v1.0.0 | migration #19; `/api/leads/[id]/activities` GET+POST |
+| LEADS-IMPORT | Bulk Import CSV | ✅ v1.0.0 | `/api/leads/import` POST max 500 |
 | NOTIFY | Notification | ✅ v2.1.0 | Email + Realtime + Telegram ✅; `src/lib/notifications/index.ts` |
 | RAG | AI Context | ✅ v1.0.0 | `src/lib/ai/rag.ts` — searchRelevantTours() |
-| AICHAT-PANEL | Full-page AI Chat | ✅ v1.0.0 | `src/components/ai/AiChatPanel.tsx` — embedded /tao-lich-trinh |
 | ZALO-WEBHOOK | Phase 4 Zalo OA | ✅ v1.0.0 | `/api/webhooks/zalo/route.ts` + `src/lib/zalo/client.ts` |
 | FB-LEADS-WEBHOOK | Phase 4 FB Lead Ads | ✅ v1.0.0 | `/api/webhooks/fb-leads/route.ts` — hub.challenge + Graph API |
-| TRIEUHAO-SYNC | Lịch TrieuHao | ⏳ WIP | `src/lib/integrations/trieuhao.ts` — API đã phân tích, chưa viết code |
+| TRIEUHAO-SYNC | Lịch TrieuHao | ✅ v1.0.0 | `src/lib/integrations/trieuhao.ts` — paginate 500, upsert tours+schedules prefix TH- |
 
 ### Trạng thái API Routes
 
 | Route | Method | Trạng thái | Ghi chú |
 |-------|--------|-----------|---------|
-| `/api/leads` | POST | ✅ v2.1.0 | createAdminClient + honeypot + lead_score + Telegram SĐT |
+| `/api/leads` | POST | ✅ v2.1.0 | createAdminClient + honeypot + lead_score + Telegram |
 | `/api/leads` | GET | ✅ v1.0.0 | Auth + filter ?channel= ?status= ?page= ?limit= |
-| `/api/leads/[id]` | PATCH | ✅ v1.0.0 | LeadStatusUpdateSchema + auth |
-| `/api/leads/[id]/activities` | GET+POST | ✅ v1.0.0 | ActivityInsertSchema + Realtime broadcast |
-| `/api/leads/import` | POST | ✅ v1.0.0 | Bulk insert max 500, default status=converted |
+| `/api/leads/[id]` | PATCH | ✅ | LeadStatusUpdateSchema + auth |
+| `/api/leads/[id]/activities` | GET+POST | ✅ | ActivityInsertSchema + Realtime broadcast |
+| `/api/leads/import` | POST | ✅ | Bulk insert max 500 |
 | `/api/ai/chat` | POST | ✅ v1.2.0 | Node.js runtime + RAG + SSE streaming |
-| `/api/ai/classify-lead` | POST | ✅ v1.0.0 | classifyLead() → UPDATE ai_tier + ai_tags |
-| `/api/affiliate/track` | GET | ✅ v1.0.0 | record click → 302 redirect; IP hash SHA-256 |
-| `/api/customer-profile` | GET+PATCH | ✅ v1.0.0 | Auth + limit 200; google_drive_url + image_attachments |
+| `/api/ai/classify-lead` | POST | ✅ | classifyLead() → UPDATE ai_tier + ai_tags |
+| `/api/ai/itinerary` | POST | ✅ v1.0.0 | Node.js; 4096 tokens; affiliate_links event + text stream + [DONE] |
+| `/api/affiliate/track` | GET | ✅ | record click → 302 redirect; IP hash SHA-256 |
+| `/api/customer-profile` | GET+PATCH | ✅ | Auth + limit 200 |
 | `/api/search` | POST | ✅ | OR query name\|destination\|country |
 | `/api/cms` | GET/POST | ✅ | pagination + new_article notification |
 | `/api/tours` | GET/POST | ✅ | filter category/country/is_active |
-| `/api/featured-destinations` | ALL | ✅ | auth fix ✅ |
+| `/api/featured-destinations` | ALL | ✅ | |
 | `/api/admin/upload-image` | POST | ✅ | base64 → `tour-galleries` |
 | `/api/notifications` | POST | ✅ | x-webhook-secret |
-| `/api/departures` | GET/POST | ✅ | POST chỉ sync SeaStar; cần thêm source=trieuhao |
+| `/api/departures` | GET | ✅ | filter destination/month/status/country |
+| `/api/departures` | POST | ✅ v2.0.0 | source='seastar'\|'trieuhao'\|'all'; broadcast Realtime sau sync |
 | `/api/itinerary/[tourId]` | GET | ✅ | |
 | `/api/pdf-index` | GET | ✅ | FTS RPC |
 | `/api/cron/crawl-pdf` | GET | ✅ | |
 | `/api/webhooks/n8n` | POST | ✅ | |
 | `/api/webhooks/moda` | POST | ✅ | |
-| `/api/webhooks/zalo` | POST | ✅ v1.0.0 | HMAC SHA256 + form/text/follow + auto-reply Zalo OA |
-| `/api/webhooks/fb-leads` | POST | ✅ v1.0.0 | hub.challenge GET + Graph API fetch + insert lead |
+| `/api/webhooks/zalo` | POST+GET | ✅ v1.0.0 | HMAC SHA256 + upsert lead + auto-reply |
+| `/api/webhooks/fb-leads` | POST+GET | ✅ v1.0.0 | hub.challenge + Graph API + dedup fb_lead_id |
 
 ### Zustand Stores
 
@@ -450,90 +452,87 @@ useCustomerProfileStore (store/customer-profile.store.ts)  ✅ — default filte
 useAiChatStore          (store/ai-chat.store.ts)           ✅
 ```
 
-### Data Contract — Delta phiên #39
+### Data Contract — Delta phiên #40
 
 ```typescript
-// ── Zalo Webhook (phiên #39 — MỚI) ────────────────────────────────────────
-// POST /api/webhooks/zalo — verify header: x-zalo-signature (HMAC SHA256)
-// Events: user_submit_form → upsert lead (zalo_id|phone) + triggerNotification
-//         user_send_text   → ghi lead_activity nếu lead có zalo_id
-//         follow           → sendZaloWithButtons() chào mừng
-// Auto-reply: sendZaloText() / sendZaloWithButtons() dùng ZALO_OA_ACCESS_TOKEN
-// src/lib/zalo/client.ts: sendZaloText(userId, text) + sendZaloWithButtons(userId, text, buttons[])
+// ── TrieuHao Sync (phiên #40 — MỚI) ──────────────────────────────────────
+// src/lib/integrations/trieuhao.ts: syncTrieuHaoSchedules() → TrieuHaoSyncResult
+// POST https://trieuhaotravel.vn/DieuHanhTour/DatCho/Lists (form-urlencoded)
+// Params: Ngay="DD/MM/YYYY - DD/MM/YYYY", NoiXuatPhatId=1, IsNgay=true, iDisplayLength=500
+// Response: { iTotalDisplayRecords, aaData: [{ Id, TourId, TourShow, SoCho, ThoiGian, HangBay, ConLai, MaLichTour }] }
+// externalId tour: "trieuhao:{TourId}" | schedule: "TH-{MaLichTour}"
+// price_child = price_adult * 0.75 | seatsTotal = SoCho | transport = HangBay
 
-// ── FB Leads Webhook (phiên #39 — MỚI) ───────────────────────────────────
-// GET /api/webhooks/fb-leads — hub.challenge verify (FB_VERIFY_TOKEN || WEBHOOK_SECRET)
-// POST /api/webhooks/fb-leads — HMAC verify (FB_APP_SECRET optional)
-// Graph API: GET /{leadgen_id}?fields=field_data → full_name, phone, email
-// Dedup: check fb_lead_id tồn tại trước INSERT
-// lead_score: 60 nếu có phone+email, 40 nếu chỉ phone, 10 nếu chỉ leadgen_id
+// ── /api/departures POST v2 (phiên #40) ──────────────────────────────────
+// body: { source?: 'seastar' | 'trieuhao' | 'all'; force?: boolean }
+// 'all' chạy cả hai song song (Promise.allSettled), merge results
 
-// ── TrieuHao API (phân tích xong, chưa implement) ────────────────────────
-// Endpoint: POST https://trieuhaotravel.vn/DieuHanhTour/DatCho/Lists
-// Params: Ngay="DD/MM/YYYY - DD/MM/YYYY", NoiXuatPhatId=1, IsNgay=true, IsConCho=false
-//         iDisplayStart, iDisplayLength, sEcho=1
-// Response: { iTotalDisplayRecords: 705, aaData: [{Id, TourId, TourShow, SoCho, ThoiGian, HangBay, ConLai, MaLichTour, Tool}] }
-// Parse: TourShow→name+country, ThoiGian→dates, SoCho→seats, ConLai→price, MaLichTour→scheduleCode
-// externalId tour: "trieuhao:{TourId}" | schedule: "TH-{MaLichTour code}"
+// ── /api/ai/itinerary SSE protocol (phiên #40 — MỚI) ─────────────────────
+// POST /api/ai/itinerary: { destination, days, budget?, travelers, preferences? }
+// SSE event 1: data: {"affiliate_links": AffiliateLink[]}   ← trước khi stream text
+// SSE event N: data: {"content": "..."}                     ← text delta
+// SSE final:   data: [DONE]
+// max_tokens: 4096 | model: claude-haiku-4-5-20251001 | runtime: nodejs
+
+// ── ItineraryBuilder (phiên #40 — MỚI) ───────────────────────────────────
+// Component: src/components/ai/ItineraryBuilder.tsx (local state, no store)
+// Form: destination (required), days (select), budget (button group), travelers, preferences
+// Streaming: plain <pre> during stream → dangerouslySetInnerHTML(renderMarkdown) after done
+// renderMarkdown: H2/H3/ul/bold/**links** → HTML (affiliate links → <a> clickable)
+// Affiliate cards + Zalo CTA hiện sau isDone=true
+
+// ── /lich-khoi-hanh source badge (phiên #40) ─────────────────────────────
+// s.sheets_row_id?.startsWith('TH-') → badge "TrieuHao" (purple)
+// s.sheets_row_id?.startsWith('SS-') → badge "SeaStar" (blue)
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
-GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main)
-Vercel  : namngan-travel — cần redeploy để nhận ANTHROPIC_API_KEY
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) — commit 12cd6c9 ✅
+Vercel  : namngan-travel — ⚠️ Cần redeploy sau khi thêm env vars mới
 Supabase: indjoegnsvcteaozmgrg — 19 migrations local
-          ⚠️ Cần verify cloud: apply supabase/apply_cloud_migrations_16_to_19.sql
+          ⚠️ Cần apply cloud: supabase/apply_cloud_migrations_16_to_19.sql
           ✅ bucket 'tour-galleries' | ✅ ai_conversations | ✅ featured_destinations
 Resend  : Domain namngantravel.com — PENDING DNS
-SeaStar : ✅ 49 tours | Vercel Cron: "0 2 * * *" /api/cron/crawl-pdf ✅
-ANTHROPIC_API_KEY: ✅ .env.local | ⚠️ cần add Vercel Env Vars + redeploy
+SeaStar : ✅ 49 tours synced | Vercel Cron: "0 2 * * *" /api/cron/crawl-pdf ✅
+ANTHROPIC_API_KEY: ✅ .env.local | ⚠️ Cần add Vercel Env Vars + redeploy
 TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID: ✅ Vercel đã set
-Env vars mới cần thêm Vercel: ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
+Env vars CẦN THÊM Vercel: ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
 ```
 
 ### Files ưu tiên cao chưa tồn tại
 
 ```
-# TRIEUHAO SYNC — ƯU TIÊN #1:
-1. src/lib/integrations/trieuhao.ts
-   ↳ POST https://trieuhaotravel.vn/DieuHanhTour/DatCho/Lists
-   ↳ Paginate iDisplayLength=500, parse HTML fields (TourShow, ThoiGian, SoCho, ConLai, MaLichTour)
-   ↳ externalId tour: "trieuhao:{TourId}" | schedule: "TH-{MaLichTour}"
-   ↳ price_child = price_adult * 0.75 (không có field riêng)
-   ↳ Pattern: clone seastar.ts, thay fetch/parse logic
+# APPLY CLOUD — ƯU TIÊN #1 (manual step):
+1. Supabase Dashboard → SQL Editor → chạy apply_cloud_migrations_16_to_19.sql
+2. Vercel Dashboard → Environment Variables → thêm 4 vars + ANTHROPIC_API_KEY → Redeploy
 
-2. Cập nhật /api/departures POST — thêm source param:
-   ↳ body: { source?: 'seastar' | 'trieuhao' | 'all' }
-   ↳ gọi syncSeaStarSchedules() hoặc syncTrieuHaoSchedules() hoặc cả hai
+# PHASE 6 — Content Automation + Programmatic SEO:
+3. src/app/du-lich/[country]/page.tsx — programmatic SEO page per country
+   ↳ generateStaticParams() từ COUNTRY_MAP
+   ↳ SSR: fetch tours by country + affiliate links + featured schedule
+   ↳ JSON-LD schema, canonical URL, OG tags
+4. src/app/du-lich/[country]/[city]/page.tsx — sub-pages per city (optional)
+5. src/app/api/content/generate/route.ts — auto-generate article from tour data
 
-3. Cập nhật CRM config tab (crm/page.tsx):
-   ↳ Thêm nút "Đồng bộ TrieuHao" bên cạnh nút "Đồng bộ SeaStar"
-   ↳ handleSyncTrieuHao() → POST /api/departures { source: 'trieuhao' }
-
-4. Cập nhật /lich-khoi-hanh/page.tsx:
-   ↳ Thêm badge nguồn (SeaStar / TrieuHao) vào mỗi row dựa vào sheets_row_id prefix
-   ↳ "SS-" → SeaStar | "TH-" → TrieuHao
-
-# PHASE 5 — SAU TRIEUHAO:
-5. src/app/api/ai/itinerary/route.ts — streaming + nhúng affiliate links
-6. src/components/ai/ItineraryBuilder.tsx
-
-# APPLY CLOUD (nếu chưa xong):
-7. Supabase SQL Editor → chạy supabase/apply_cloud_migrations_16_to_19.sql
-8. Vercel → Redeploy production (nhận ANTHROPIC_API_KEY + Zalo/FB env vars)
+# TEST THỰC TẾ (sau khi Vercel redeploy):
+6. Test TrieuHao sync: POST /api/departures { source: 'trieuhao' } → kiểm tra DB
+7. Test ItineraryBuilder: /tao-lich-trinh → nhập "Nhật Bản 7 ngày" → verify affiliate links render
+8. Test Zalo webhook: send test event → verify lead upsert + auto-reply
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Tạo `src/lib/integrations/trieuhao.ts`** — API endpoint + response format đã phân tích xong; clone pattern từ seastar.ts; parse TourShow/ThoiGian/SoCho/ConLai/MaLichTour
-2. **Cập nhật `/api/departures` POST + CRM sync button** — thêm `source` param; thêm nút "Đồng bộ TrieuHao" cạnh nút SeaStar trong CRM config tab
-3. **Apply Supabase cloud migrations** — chạy `supabase/apply_cloud_migrations_16_to_19.sql` trong Dashboard → verify 4 bảng tồn tại
+1. **Apply Supabase cloud migrations** — Supabase Dashboard → SQL Editor → chạy `supabase/apply_cloud_migrations_16_to_19.sql` → verify 4 bảng: `affiliate_links`, `affiliate_clicks`, `lead_activities`, `ai_conversations`
+2. **Add Vercel env vars + redeploy** — `ZALO_OA_SECRET`, `ZALO_OA_ACCESS_TOKEN`, `FB_VERIFY_TOKEN`, `FB_APP_SECRET`, `ANTHROPIC_API_KEY` → Redeploy production để active Phase 4+5
+3. **Phase 6 — Programmatic SEO** — `src/app/du-lich/[country]/page.tsx`: generateStaticParams từ COUNTRY_MAP, SSR fetch tours+affiliate per country, JSON-LD schema
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-09 | Handover #40 — TrieuHao ✅ + Phase 5 ✅ + push | TrieuHao sync; source param departures; CRM 2-col sync; ItineraryBuilder AI streaming+markdown |
 | 2026-06-09 | Handover #39 — Phase 4 hoàn thành + TrieuHao WIP | Zalo webhook ✅; FB webhook ✅; Zalo client ✅; TrieuHao API phân tích xong |
 | 2026-06-09 | Handover #38 — Import CSV + Zalo Phase 4 WIP + migration #18 fix | Import CSV bulk; default filter Đã chốt; migration #18 fix policy |
 | 2026-06-09 | Handover #37 — LeadsTab v3.0 + Export CSV | LeadsTab rewrite (type-safe); CustomerTable export FB/TikTok/Excel |
@@ -553,4 +552,3 @@ Env vars mới cần thêm Vercel: ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERI
 | 2026-06-05 | Handover #23 — CRM Upload + Tiptap + Pagination | upload-image; TiptapEditor; /api/cms pagination |
 | 2026-06-04 | Handover #20–22 | Mega-menu; animations; hashtags; booking; bug fixes |
 | 2026-06-03 | Handover #16–19 | Auth; Gallery; StaffTab; ToursTab; CMS |
-| 2026-06-02 | Handover #14–15 | /tours/[slug]; 8 tour trong nước; Directus CMS |
