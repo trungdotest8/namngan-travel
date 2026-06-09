@@ -407,7 +407,7 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | RAG | AI Context | ✅ v1.0.0 | `src/lib/ai/rag.ts` — searchRelevantTours() |
 | ZALO-WEBHOOK | Phase 4 Zalo OA | ✅ v1.0.0 | `/api/webhooks/zalo/route.ts` + `src/lib/zalo/client.ts` |
 | FB-LEADS-WEBHOOK | Phase 4 FB Lead Ads | ✅ v1.0.0 | `/api/webhooks/fb-leads/route.ts` — hub.challenge + Graph API |
-| TRIEUHAO-SYNC | Lịch TrieuHao | ✅ v1.0.0 | `src/lib/integrations/trieuhao.ts` — paginate 500, upsert tours+schedules prefix TH- |
+| TRIEUHAO-SYNC | Lịch TrieuHao | ⚠️ v2.0.0 WIP | `src/lib/integrations/trieuhao.ts` + `scripts/sync-trieuhao.mjs` + `/api/departures/ingest` |
 
 ### Trạng thái API Routes
 
@@ -431,6 +431,7 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | `/api/notifications` | POST | ✅ | x-webhook-secret |
 | `/api/departures` | GET | ✅ | filter destination/month/status/country |
 | `/api/departures` | POST | ✅ v2.0.0 | source='seastar'\|'trieuhao'\|'all'; broadcast Realtime sau sync |
+| `/api/departures/ingest` | POST | ✅ v1.0.0 | Nhận normalized records từ local script; x-webhook-secret |
 | `/api/itinerary/[tourId]` | GET | ✅ | |
 | `/api/pdf-index` | GET | ✅ | FTS RPC |
 | `/api/cron/crawl-pdf` | GET | ✅ | |
@@ -452,86 +453,91 @@ useCustomerProfileStore (store/customer-profile.store.ts)  ✅ — default filte
 useAiChatStore          (store/ai-chat.store.ts)           ✅
 ```
 
-### Data Contract — Delta phiên #40
+### Data Contract — Delta phiên #41
 
 ```typescript
-// ── TrieuHao Sync (phiên #40 — MỚI) ──────────────────────────────────────
-// src/lib/integrations/trieuhao.ts: syncTrieuHaoSchedules() → TrieuHaoSyncResult
-// POST https://trieuhaotravel.vn/DieuHanhTour/DatCho/Lists (form-urlencoded)
-// Params: Ngay="DD/MM/YYYY - DD/MM/YYYY", NoiXuatPhatId=1, IsNgay=true, iDisplayLength=500
-// Response: { iTotalDisplayRecords, aaData: [{ Id, TourId, TourShow, SoCho, ThoiGian, HangBay, ConLai, MaLichTour }] }
-// externalId tour: "trieuhao:{TourId}" | schedule: "TH-{MaLichTour}"
-// price_child = price_adult * 0.75 | seatsTotal = SoCho | transport = HangBay
+// ── TrieuHao API — QUAN TRỌNG (phiên #41) ────────────────────────────────
+// ⚠️ TẤT CẢ fields từ API đều là HTML markup, không phải plain text
+// TourShow  → data-original-title="Tên tour đầy đủ"
+// ThoiGian  → <b>DD/MM/YYYY</b> × 2 (đi/về)
+// ConLai    → <span ...>18,990,000</span>  (giá VND có dấu phẩy)
+// SoCho     → "Số chỗ: <b>N</b>" + "Còn: <b>N</b> chỗ"
+// MaLichTour → "Mã Lich: <strong>CODE</strong>"  (e.g. TQ090626LG5)
+// HangBay   → first <b>flight string</b>
+//
+// ⚠️ IP BINDING: Server TrieuHao bind session theo IP
+// → Vercel (US IP) bị reject, chỉ local VN IP hoạt động
+// Giải pháp: scripts/sync-trieuhao.mjs chạy trên máy local
+//   → fetch TrieuHao (IP VN ✅) → normalize → POST /api/departures/ingest
+//
+// TRIEUHAO_SESSION_COOKIE = ".HOIANEXPRESS=...; HoiAnS=...; vantrung=..."
+// Session expire ~20 phút khi không dùng browser → cần lấy lại khi sync
+// Cách lấy: trieuhaotravel.vn/DieuHanhTour/DatCho → Google login
+//           → DevTools F12 → Application → Cookies → copy 3 cookies
+//
+// ⚠️ BUG CHƯA FIX: scripts/sync-trieuhao.mjs trả về 500 khi chạy
+// Nhưng inline Node.js test cùng cookie → 200/890 records
+// Nghi ngờ: URLSearchParams encode khác manual body string
+// Cần debug: thử dùng manual body string trong fetchPage() của script
 
-// ── /api/departures POST v2 (phiên #40) ──────────────────────────────────
-// body: { source?: 'seastar' | 'trieuhao' | 'all'; force?: boolean }
-// 'all' chạy cả hai song song (Promise.allSettled), merge results
+// ── /api/departures/ingest (phiên #41 — MỚI) ─────────────────────────────
+// POST body: { records: NormalizedRow[] }  (max 2000)
+// Auth: x-webhook-secret header
+// Logic: upsert tours (by sheets_row_id/name) + upsert schedules (by sheets_row_id)
+// Broadcast Realtime 'schedule-sync' sau khi xong
 
-// ── /api/ai/itinerary SSE protocol (phiên #40 — MỚI) ─────────────────────
-// POST /api/ai/itinerary: { destination, days, budget?, travelers, preferences? }
-// SSE event 1: data: {"affiliate_links": AffiliateLink[]}   ← trước khi stream text
-// SSE event N: data: {"content": "..."}                     ← text delta
-// SSE final:   data: [DONE]
-// max_tokens: 4096 | model: claude-haiku-4-5-20251001 | runtime: nodejs
-
-// ── ItineraryBuilder (phiên #40 — MỚI) ───────────────────────────────────
-// Component: src/components/ai/ItineraryBuilder.tsx (local state, no store)
-// Form: destination (required), days (select), budget (button group), travelers, preferences
-// Streaming: plain <pre> during stream → dangerouslySetInnerHTML(renderMarkdown) after done
-// renderMarkdown: H2/H3/ul/bold/**links** → HTML (affiliate links → <a> clickable)
-// Affiliate cards + Zalo CTA hiện sau isDone=true
-
-// ── /lich-khoi-hanh source badge (phiên #40) ─────────────────────────────
-// s.sheets_row_id?.startsWith('TH-') → badge "TrieuHao" (purple)
-// s.sheets_row_id?.startsWith('SS-') → badge "SeaStar" (blue)
+// ── TrieuHao NormalizedRow ────────────────────────────────────────────────
+// tourExternalId: "trieuhao:{TourId}"
+// externalId (schedule): "TH-{MaLichTour}" | "TH-ID{Id}" (fallback)
+// priceChild = priceAdult * 0.75
+// seatsTotal từ "Số chỗ: <b>N</b>" trong SoCho HTML
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
-GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) — commit 12cd6c9 ✅
-Vercel  : namngan-travel — ⚠️ Cần redeploy sau khi thêm env vars mới
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) — commit 83eaa69 ✅
+Vercel  : namngan-travel — ⚠️ Cần add TRIEUHAO_SESSION_COOKIE + redeploy
 Supabase: indjoegnsvcteaozmgrg — 19 migrations local
           ⚠️ Cần apply cloud: supabase/apply_cloud_migrations_16_to_19.sql
           ✅ bucket 'tour-galleries' | ✅ ai_conversations | ✅ featured_destinations
 Resend  : Domain namngantravel.com — PENDING DNS
 SeaStar : ✅ 49 tours synced | Vercel Cron: "0 2 * * *" /api/cron/crawl-pdf ✅
-ANTHROPIC_API_KEY: ✅ .env.local | ⚠️ Cần add Vercel Env Vars + redeploy
+ANTHROPIC_API_KEY: ✅ .env.local + ✅ Vercel
 TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID: ✅ Vercel đã set
+TRIEUHAO_SESSION_COOKIE: ✅ .env.local (fresh) | ⚠️ chưa set Vercel (không cần vì IP binding)
 Env vars CẦN THÊM Vercel: ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
 ```
 
-### Files ưu tiên cao chưa tồn tại
+### Files ưu tiên cao chưa tồn tại / cần fix
 
 ```
-# APPLY CLOUD — ƯU TIÊN #1 (manual step):
-1. Supabase Dashboard → SQL Editor → chạy apply_cloud_migrations_16_to_19.sql
-2. Vercel Dashboard → Environment Variables → thêm 4 vars + ANTHROPIC_API_KEY → Redeploy
+# BUG CẦN FIX NGAY — ƯU TIÊN #1:
+1. scripts/sync-trieuhao.mjs — fetchPage() dùng URLSearchParams bị 500
+   FIX: thay URLSearchParams bằng manual body string giống inline test:
+   body = `Ngay=${encodeURIComponent(dateRange)}&NoiXuatPhatId=1&IsNgay=true&IsConCho=false&iDisplayStart=${start}&iDisplayLength=500&sEcho=1`
+   Sau fix: chạy `node scripts/sync-trieuhao.mjs --url http://localhost:3000`
+
+# APPLY CLOUD — ƯU TIÊN #2 (manual step):
+2. Supabase Dashboard → SQL Editor → chạy apply_cloud_migrations_16_to_19.sql
+3. Vercel Dashboard → thêm ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET → Redeploy
 
 # PHASE 6 — Content Automation + Programmatic SEO:
-3. src/app/du-lich/[country]/page.tsx — programmatic SEO page per country
-   ↳ generateStaticParams() từ COUNTRY_MAP
-   ↳ SSR: fetch tours by country + affiliate links + featured schedule
-   ↳ JSON-LD schema, canonical URL, OG tags
-4. src/app/du-lich/[country]/[city]/page.tsx — sub-pages per city (optional)
-5. src/app/api/content/generate/route.ts — auto-generate article from tour data
-
-# TEST THỰC TẾ (sau khi Vercel redeploy):
-6. Test TrieuHao sync: POST /api/departures { source: 'trieuhao' } → kiểm tra DB
-7. Test ItineraryBuilder: /tao-lich-trinh → nhập "Nhật Bản 7 ngày" → verify affiliate links render
-8. Test Zalo webhook: send test event → verify lead upsert + auto-reply
+4. src/app/du-lich/[country]/page.tsx — generateStaticParams từ COUNTRY_MAP; SSR tours+affiliate
+5. src/app/api/content/generate/route.ts — auto-generate article từ tour data
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Apply Supabase cloud migrations** — Supabase Dashboard → SQL Editor → chạy `supabase/apply_cloud_migrations_16_to_19.sql` → verify 4 bảng: `affiliate_links`, `affiliate_clicks`, `lead_activities`, `ai_conversations`
-2. **Add Vercel env vars + redeploy** — `ZALO_OA_SECRET`, `ZALO_OA_ACCESS_TOKEN`, `FB_VERIFY_TOKEN`, `FB_APP_SECRET`, `ANTHROPIC_API_KEY` → Redeploy production để active Phase 4+5
-3. **Phase 6 — Programmatic SEO** — `src/app/du-lich/[country]/page.tsx`: generateStaticParams từ COUNTRY_MAP, SSR fetch tours+affiliate per country, JSON-LD schema
+1. **Fix scripts/sync-trieuhao.mjs** — Thay `URLSearchParams.toString()` bằng manual body string trong `fetchPage()`: `body = \`Ngay=${encodeURIComponent(dateRange)}&NoiXuatPhatId=1&IsNgay=true&IsConCho=false&iDisplayStart=${start}&iDisplayLength=500&sEcho=1\`` → test ngay `node scripts/sync-trieuhao.mjs --url http://localhost:3000`
+2. **Apply Supabase cloud migrations** — Dashboard → SQL Editor → `apply_cloud_migrations_16_to_19.sql` → verify 4 bảng
+3. **Phase 6 Programmatic SEO** — `src/app/du-lich/[country]/page.tsx`: generateStaticParams từ COUNTRY_MAP, SSR fetch tours+affiliate per country, JSON-LD schema
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-09 | Handover #41 — TrieuHao debug + ingest endpoint | HTML parsers rewrite; IP binding workaround; scripts/sync-trieuhao.mjs; /api/departures/ingest; TRIEUHAO_SESSION_COOKIE |
 | 2026-06-09 | Handover #40 — TrieuHao ✅ + Phase 5 ✅ + push | TrieuHao sync; source param departures; CRM 2-col sync; ItineraryBuilder AI streaming+markdown |
 | 2026-06-09 | Handover #39 — Phase 4 hoàn thành + TrieuHao WIP | Zalo webhook ✅; FB webhook ✅; Zalo client ✅; TrieuHao API phân tích xong |
 | 2026-06-09 | Handover #38 — Import CSV + Zalo Phase 4 WIP + migration #18 fix | Import CSV bulk; default filter Đã chốt; migration #18 fix policy |
@@ -551,4 +557,3 @@ Env vars CẦN THÊM Vercel: ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOK
 | 2026-06-05 | Handover #24 — Domain SEO + Search Fix | middleware .site→.com; robots+sitemap; OR query |
 | 2026-06-05 | Handover #23 — CRM Upload + Tiptap + Pagination | upload-image; TiptapEditor; /api/cms pagination |
 | 2026-06-04 | Handover #20–22 | Mega-menu; animations; hashtags; booking; bug fixes |
-| 2026-06-03 | Handover #16–19 | Auth; Gallery; StaffTab; ToursTab; CMS |
