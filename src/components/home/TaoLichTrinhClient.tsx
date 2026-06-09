@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { TripGenieLeadModal } from '@/components/booking/TripGenieLeadModal'
 import { AiChatPanel } from '@/components/ai/AiChatPanel'
+import { ItineraryBuilder } from '@/components/ai/ItineraryBuilder'
 
 const HOW_IT_WORKS = [
   {
@@ -127,6 +128,22 @@ export function TaoLichTrinhClient() {
                 )
               })}
             </div>
+          </div>
+        </section>
+
+        {/* ── ItineraryBuilder ── */}
+        <section className="py-10 sm:py-14 bg-[#F8FAFC]">
+          <div className="max-w-5xl mx-auto px-4">
+            <div className="text-center mb-8">
+              <p className="text-[#FF6B00] text-xs font-bold uppercase tracking-widest mb-2">TripGenie AI</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#1A1A2E]">
+                Tạo lịch trình ngay — miễn phí
+              </h2>
+              <p className="text-[#666666] text-sm mt-2 max-w-xl mx-auto">
+                Nhập điểm đến và số ngày — AI tạo lịch trình chi tiết theo ngày trong vài giây.
+              </p>
+            </div>
+            <ItineraryBuilder />
           </div>
         </section>
 

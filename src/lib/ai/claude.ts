@@ -18,6 +18,7 @@ export interface StreamMessage {
 export function streamChatResponse(
   systemPrompt: string,
   messages: StreamMessage[],
+  maxTokens = 1024,
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder()
 
@@ -26,7 +27,7 @@ export function streamChatResponse(
       try {
         const stream = anthropic.messages.stream({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1024,
+          max_tokens: maxTokens,
           system: systemPrompt,
           messages,
         })

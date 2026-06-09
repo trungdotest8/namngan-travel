@@ -278,11 +278,22 @@ export default function LichKhoiHanhPage() {
                         <tr key={s.id} className="hover:bg-brand-bg transition-colors">
                           {/* Tên tour */}
                           <td className="px-4 py-3">
-                            <div className="font-semibold text-text-primary leading-snug">
-                              {s.tour?.name ?? '—'}
+                            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                              <span className="font-semibold text-text-primary leading-snug">
+                                {s.tour?.name ?? '—'}
+                              </span>
+                              {s.sheets_row_id?.startsWith('TH-') ? (
+                                <span className="inline-block px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-semibold rounded">
+                                  TrieuHao
+                                </span>
+                              ) : s.sheets_row_id?.startsWith('SS-') ? (
+                                <span className="inline-block px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-semibold rounded">
+                                  SeaStar
+                                </span>
+                              ) : null}
                             </div>
                             {s.tour?.destination && (
-                              <div className="text-xs text-gray-500 mt-0.5">{s.tour.destination}</div>
+                              <div className="text-xs text-gray-500">{s.tour.destination}</div>
                             )}
                           </td>
 

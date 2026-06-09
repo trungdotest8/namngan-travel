@@ -532,8 +532,10 @@ function CRMPage() {
   const [activeTab, setActiveTab]   = useState<TabId>('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
-  const [syncing, setSyncing]       = useState(false)
-  const [syncResult, setSyncResult] = useState<{ synced: number; errors: string[] } | null>(null)
+  const [syncing, setSyncing]           = useState(false)
+  const [syncResult, setSyncResult]     = useState<{ synced: number; errors: string[] } | null>(null)
+  const [syncingTH, setSyncingTH]       = useState(false)
+  const [syncResultTH, setSyncResultTH] = useState<{ synced: number; errors: string[] } | null>(null)
   const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null)
   const [bellOpen, setBellOpen]     = useState(false)
   const bellRef = useRef<HTMLDivElement>(null)
@@ -620,7 +622,7 @@ function CRMPage() {
       const res = await fetch('/api/departures', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force: false }),
+        body: JSON.stringify({ force: false, source: 'seastar' }),
       })
       const json = await res.json()
       setSyncResult(json.result ?? { synced: 0, errors: ['Không có kết quả trả về'] })
@@ -628,6 +630,24 @@ function CRMPage() {
       setSyncResult({ synced: 0, errors: ['Không thể kết nối server'] })
     } finally {
       setSyncing(false)
+    }
+  }
+
+  async function handleSyncTrieuHao() {
+    setSyncingTH(true)
+    setSyncResultTH(null)
+    try {
+      const res = await fetch('/api/departures', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: false, source: 'trieuhao' }),
+      })
+      const json = await res.json()
+      setSyncResultTH(json.result ?? { synced: 0, errors: ['Không có kết quả trả về'] })
+    } catch {
+      setSyncResultTH({ synced: 0, errors: ['Không thể kết nối server'] })
+    } finally {
+      setSyncingTH(false)
     }
   }
 
@@ -847,34 +867,68 @@ function CRMPage() {
                   <ConfigTab />
 
                   {/* ── Đồng bộ dữ liệu ── */}
-                  <div className="mt-6 bg-white rounded-xl border border-gray-200 p-5">
-                    <div className="font-semibold text-[#1A1A2E] mb-1">Đồng bộ lịch SeaStar</div>
-                    <div className="text-sm text-gray-400 mb-4">
-                      Cào dữ liệu lịch trình mới nhất từ lich.seastartravel.vn và lưu vào database.
-                    </div>
-                    <button
-                      onClick={handleSyncSeastar}
-                      disabled={syncing}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#005BAA] text-white text-sm font-medium rounded-lg hover:bg-[#0078D7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {syncing && <Loader2 size={14} className="animate-spin" />}
-                      {syncing ? 'Đang đồng bộ...' : 'Đồng bộ lịch SeaStar'}
-                    </button>
-                    {syncResult && (
-                      <div className="mt-3 flex items-start gap-2 text-sm">
-                        {syncResult.errors.length === 0 ? (
-                          <CheckCircle2 size={15} className="text-green-500 mt-0.5 flex-shrink-0" />
-                        ) : (
-                          <AlertCircle size={15} className="text-amber-500 mt-0.5 flex-shrink-0" />
-                        )}
-                        <span className="text-gray-700">
-                          Đã sync <strong>{syncResult.synced}</strong> lịch trình
-                          {syncResult.errors.length > 0 && (
-                            <span className="text-amber-600"> · {syncResult.errors.length} lỗi: {syncResult.errors[0]}</span>
-                          )}
-                        </span>
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* SeaStar */}
+                    <div className="bg-white rounded-xl border border-gray-200 p-5">
+                      <div className="font-semibold text-[#1A1A2E] mb-1">Đồng bộ lịch SeaStar</div>
+                      <div className="text-sm text-gray-400 mb-4">
+                        Cào dữ liệu lịch trình mới nhất từ lich.seastartravel.vn và lưu vào database.
                       </div>
-                    )}
+                      <button
+                        onClick={handleSyncSeastar}
+                        disabled={syncing}
+                        className="flex items-center gap-2 px-4 py-2 bg-[#005BAA] text-white text-sm font-medium rounded-lg hover:bg-[#0078D7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {syncing && <Loader2 size={14} className="animate-spin" />}
+                        {syncing ? 'Đang đồng bộ...' : 'Đồng bộ lịch SeaStar'}
+                      </button>
+                      {syncResult && (
+                        <div className="mt-3 flex items-start gap-2 text-sm">
+                          {syncResult.errors.length === 0 ? (
+                            <CheckCircle2 size={15} className="text-green-500 mt-0.5 flex-shrink-0" />
+                          ) : (
+                            <AlertCircle size={15} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                          )}
+                          <span className="text-gray-700">
+                            Đã sync <strong>{syncResult.synced}</strong> lịch trình
+                            {syncResult.errors.length > 0 && (
+                              <span className="text-amber-600"> · {syncResult.errors.length} lỗi: {syncResult.errors[0]}</span>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* TrieuHao */}
+                    <div className="bg-white rounded-xl border border-gray-200 p-5">
+                      <div className="font-semibold text-[#1A1A2E] mb-1">Đồng bộ lịch TrieuHao</div>
+                      <div className="text-sm text-gray-400 mb-4">
+                        Cào dữ liệu lịch trình mới nhất từ trieuhaotravel.vn và lưu vào database.
+                      </div>
+                      <button
+                        onClick={handleSyncTrieuHao}
+                        disabled={syncingTH}
+                        className="flex items-center gap-2 px-4 py-2 bg-[#005BAA] text-white text-sm font-medium rounded-lg hover:bg-[#0078D7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {syncingTH && <Loader2 size={14} className="animate-spin" />}
+                        {syncingTH ? 'Đang đồng bộ...' : 'Đồng bộ lịch TrieuHao'}
+                      </button>
+                      {syncResultTH && (
+                        <div className="mt-3 flex items-start gap-2 text-sm">
+                          {syncResultTH.errors.length === 0 ? (
+                            <CheckCircle2 size={15} className="text-green-500 mt-0.5 flex-shrink-0" />
+                          ) : (
+                            <AlertCircle size={15} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                          )}
+                          <span className="text-gray-700">
+                            Đã sync <strong>{syncResultTH.synced}</strong> lịch trình
+                            {syncResultTH.errors.length > 0 && (
+                              <span className="text-amber-600"> · {syncResultTH.errors.length} lỗi: {syncResultTH.errors[0]}</span>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
