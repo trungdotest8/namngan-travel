@@ -31,8 +31,9 @@ function loadEnv() {
 const env      = loadEnv()
 const COOKIE   = env.TRIEUHAO_SESSION_COOKIE ?? process.env.TRIEUHAO_SESSION_COOKIE ?? ''
 const SECRET   = env.WEBHOOK_SECRET ?? process.env.WEBHOOK_SECRET ?? ''
+const urlFlagIdx = process.argv.indexOf('--url')
 const BASE_URL = process.argv.find(a => a.startsWith('--url='))?.slice(6)
-              ?? process.argv[process.argv.indexOf('--url') + 1]
+              ?? (urlFlagIdx >= 0 ? process.argv[urlFlagIdx + 1] : undefined)
               ?? env.NEXT_PUBLIC_SITE_URL
               ?? 'http://localhost:3000'
 
@@ -71,9 +72,10 @@ async function fetchPage(dateRange, start) {
     },
     body: body.toString(),
   })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const text = await res.text()
-  if (text.trimStart().startsWith('<')) throw new Error('Server trả về HTML — session hết hạn, cần lấy cookie mới')
+  if (!res.ok || text.trimStart().startsWith('<')) {
+    throw new Error(`Session hết hạn hoặc cookie không hợp lệ (HTTP ${res.status}). Vào trieuhaotravel.vn, đăng nhập lại, copy cookie mới vào TRIEUHAO_SESSION_COOKIE trong .env.local`)
+  }
   return JSON.parse(text)
 }
 
