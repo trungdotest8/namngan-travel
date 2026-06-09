@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { syncSeaStarSchedules } from '@/lib/integrations/seastar'
-import { syncTrieuHaoSchedules } from '@/lib/integrations/trieuhao'
 import { isAdminRequest } from '@/lib/admin-auth'
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
@@ -19,7 +18,7 @@ const GetQuerySchema = z.object({
 
 const SyncTriggerSchema = z.object({
   force:  z.boolean().default(false),
-  source: z.enum(['seastar', 'trieuhao', 'all']).default('seastar'),
+  source: z.enum(['seastar']).default('seastar'),
 })
 
 // ── GET /api/departures ────────────────────────────────────────────────────────
@@ -96,27 +95,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { source } = parsed.data
-
-    let result: { synced: number; skipped: number; errors: string[] }
-
-    if (source === 'trieuhao') {
-      result = await syncTrieuHaoSchedules()
-    } else if (source === 'all') {
-      const [ss, th] = await Promise.allSettled([
-        syncSeaStarSchedules(),
-        syncTrieuHaoSchedules(),
-      ])
-      const ssRes = ss.status === 'fulfilled' ? ss.value : { synced: 0, skipped: 0, errors: [`SeaStar: ${ss.reason}`] }
-      const thRes = th.status === 'fulfilled' ? th.value : { synced: 0, skipped: 0, errors: [`TrieuHao: ${th.reason}`] }
-      result = {
-        synced:  ssRes.synced + thRes.synced,
-        skipped: ssRes.skipped + thRes.skipped,
-        errors:  [...ssRes.errors, ...thRes.errors],
-      }
-    } else {
-      result = await syncSeaStarSchedules()
-    }
+    const result = await syncSeaStarSchedules()
 
     // Broadcast realtime để trang /lich-khoi-hanh tự refetch
     try {

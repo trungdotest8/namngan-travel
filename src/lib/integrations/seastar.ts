@@ -144,8 +144,8 @@ export async function syncSeaStarSchedules(): Promise<SyncResult> {
     return { items: [], synced: 0, skipped: 0, errors: [`filter API thất bại: ${err}`] }
   }
 
-  // Bước 2 — Fetch departures song song cho tất cả dest × 3 tháng
-  const months = getMonths(3)
+  // Bước 2 — Fetch departures song song cho tất cả dest × 6 tháng (tháng hiện tại → +5)
+  const months = getMonths(6)
   type Task = { dest: SeaStarDestination; month: string }
   const tasks: Task[] = destinations.flatMap(dest =>
     months.map(month => ({ dest, month }))

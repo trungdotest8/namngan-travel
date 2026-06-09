@@ -282,15 +282,11 @@ export default function LichKhoiHanhPage() {
                               <span className="font-semibold text-text-primary leading-snug">
                                 {s.tour?.name ?? '—'}
                               </span>
-                              {s.sheets_row_id?.startsWith('TH-') ? (
-                                <span className="inline-block px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-semibold rounded">
-                                  TrieuHao
-                                </span>
-                              ) : s.sheets_row_id?.startsWith('SS-') ? (
+                              {s.sheets_row_id?.startsWith('SS-') && (
                                 <span className="inline-block px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-semibold rounded">
                                   SeaStar
                                 </span>
-                              ) : null}
+                              )}
                             </div>
                             {s.tour?.destination && (
                               <div className="text-xs text-gray-500">{s.tour.destination}</div>
