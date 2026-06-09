@@ -34,8 +34,11 @@ export interface TrieuHaoSyncResult {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const API_URL      = 'https://trieuhaotravel.vn/DieuHanhTour/DatCho/Lists'
-const SESSION_URL  = 'https://trieuhaotravel.vn/DieuHanhTour/DatCho'
+const BASE_URL   = 'https://trieuhaotravel.vn'
+const API_URL    = `${BASE_URL}/DieuHanhTour/DatCho/Lists`
+const PORTAL_URL = `${BASE_URL}/DieuHanhTour/DatCho`
+
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
 // Date range: từ đầu tháng hiện tại → +6 tháng
 function getDateRange(): string {
@@ -47,25 +50,16 @@ function getDateRange(): string {
   return `${fmt(start)} - ${fmt(end)}`
 }
 
-// GET trang DatCho trước để lấy session cookie (giả lập browser)
-async function getSessionCookie(): Promise<string> {
-  const res = await fetch(SESSION_URL, {
-    method:  'GET',
-    headers: {
-      'User-Agent':      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'vi-VN,vi;q=0.9,en;q=0.8',
-    },
-    redirect: 'follow',
-  })
-  // Gộp tất cả Set-Cookie headers thành một chuỗi Cookie
-  const setCookie = res.headers.getSetCookie?.() ?? []
-  if (setCookie.length > 0) {
-    return setCookie.map(c => c.split(';')[0]).join('; ')
-  }
-  // Fallback: parse từ header string nếu getSetCookie không available
-  const raw = res.headers.get('set-cookie') ?? ''
-  return raw.split(',').map(c => c.trim().split(';')[0]).join('; ')
+// Lấy session cookie từ env TRIEUHAO_SESSION_COOKIE
+// (đăng nhập thủ công bằng Google OAuth, copy cookie từ DevTools)
+function getSessionCookie(): string {
+  const cookie = process.env.TRIEUHAO_SESSION_COOKIE ?? ''
+  if (!cookie) throw new Error(
+    'Thiếu TRIEUHAO_SESSION_COOKIE trong env. ' +
+    'Đăng nhập vào trieuhaotravel.vn/DieuHanhTour/DatCho bằng Google, ' +
+    'mở DevTools → Application → Cookies → copy .ASPXAUTH và ASP.NET_SessionId'
+  )
+  return cookie
 }
 
 // "DD/MM/YYYY" → "YYYY-MM-DD"
@@ -110,8 +104,8 @@ async function fetchPage(dateRange: string, start: number, cookie: string): Prom
     'Content-Type':     'application/x-www-form-urlencoded; charset=UTF-8',
     'X-Requested-With': 'XMLHttpRequest',
     'User-Agent':       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Referer':          SESSION_URL,
-    'Origin':           'https://trieuhaotravel.vn',
+    'Referer':          PORTAL_URL,
+    'Origin':           BASE_URL,
     'Accept':           'application/json, text/javascript, */*; q=0.01',
     'Accept-Language':  'vi-VN,vi;q=0.9,en;q=0.8',
   }
@@ -163,25 +157,20 @@ export async function syncTrieuHaoSchedules(): Promise<TrieuHaoSyncResult> {
 
   const dateRange = getDateRange()
 
-  // Bước 0 — lấy session cookie
-  let cookie = ''
+  // Bước 0 — lấy session cookie từ env
+  let cookie: string
   try {
-    cookie = await getSessionCookie()
-  } catch (_) { /* tiếp tục không có cookie */ }
+    cookie = getSessionCookie()
+  } catch (err) {
+    return { synced: 0, skipped: 0, errors: [`${err}`] }
+  }
 
-  // Bước 1 — trang đầu để lấy total (retry 1 lần nếu 500)
+  // Bước 1 — trang đầu để lấy total
   let first: TrieuHaoResponse
   try {
     first = await fetchPage(dateRange, 0, cookie)
   } catch (err) {
-    // Retry: lấy lại session mới rồi thử lần 2
-    await new Promise(r => setTimeout(r, 2000))
-    try {
-      cookie = await getSessionCookie()
-      first = await fetchPage(dateRange, 0, cookie)
-    } catch (err2) {
-      return { synced: 0, skipped: 0, errors: [`TrieuHao API lỗi: ${err2}`] }
-    }
+    return { synced: 0, skipped: 0, errors: [`TrieuHao API lỗi: ${err}`] }
   }
 
   const allRaw: TrieuHaoRecord[] = [...first.aaData]
