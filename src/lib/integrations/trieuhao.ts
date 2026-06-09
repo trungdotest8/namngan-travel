@@ -4,17 +4,19 @@ import { deriveCountry } from '@/lib/tour-country'
 import type { TourScheduleStatus } from '@/types'
 
 // ── Internal types ────────────────────────────────────────────────────────────
+// Note: ALL fields from the API are HTML strings, not plain text
 
 interface TrieuHaoRecord {
   Id: number
   TourId: number
-  TourShow: string
-  SoCho: number
-  ThoiGian: string
-  HangBay: string | null
-  ConLai: string | number
-  MaLichTour: string
+  TourShow: string    // HTML — tour name in data-original-title
+  SoCho: string       // HTML — seat counts in <b> tags
+  ThoiGian: string    // HTML — dates in <b> tags
+  HangBay: string | null // HTML — airline/flight info
+  ConLai: string      // HTML — price in <span>
+  MaLichTour: string  // HTML — tour code in <strong>
   Tool?: string
+  IsYeuThich?: boolean
 }
 
 interface TrieuHaoResponse {
@@ -64,29 +66,79 @@ function getSessionCookie(): string {
 
 // "DD/MM/YYYY" → "YYYY-MM-DD"
 function parseDMY(s: string): string {
-  const m = s.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/)
+  const m = s.trim().match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/)
   if (!m) throw new Error(`Cannot parse date: ${s}`)
   return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`
 }
 
-// ThoiGian: "DD/MM/YYYY - DD/MM/YYYY" (or single date)
-function parseThoiGian(raw: string): { departureDate: string; returnDate: string } {
-  const parts = raw.split(/\s+-\s+/).map(s => s.trim()).filter(Boolean)
-  if (parts.length >= 2) {
-    return { departureDate: parseDMY(parts[0]), returnDate: parseDMY(parts[parts.length - 1]) }
-  }
-  if (parts.length === 1) {
-    const d = parseDMY(parts[0])
-    return { departureDate: d, returnDate: d }
-  }
-  throw new Error(`Cannot parse ThoiGian: ${raw}`)
+// Strip HTML tags, decode basic HTML entities
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#(\d+);/g, (_, c) => String.fromCharCode(Number(c)))
+    .replace(/\s+/g, ' ').trim()
 }
 
-// ConLai có thể là chuỗi "1.500.000" hoặc number
-function parsePrice(val: string | number): number {
-  if (typeof val === 'number') return val
-  const digits = String(val).replace(/\D/g, '')
-  return digits ? parseInt(digits, 10) : 0
+// TourShow HTML → tour name (from data-original-title attribute)
+function parseTourName(html: string): string {
+  const m = html.match(/data-original-title="([^"]+)"/)
+  if (m) return m[1].trim()
+  // fallback: strip HTML and take first meaningful segment
+  return stripHtml(html).split(/\s{2,}/)[0] ?? 'Unknown'
+}
+
+// ThoiGian HTML → departure + return dates
+// Format: <b>09/06/2026</b> ... <b>13/06/2026</b>
+function parseThoiGian(html: string): { departureDate: string; returnDate: string } {
+  const dates = [...html.matchAll(/<b>(\d{2}\/\d{2}\/\d{4})<\/b>/g)].map(m => parseDMY(m[1]))
+  if (dates.length >= 2) return { departureDate: dates[0], returnDate: dates[dates.length - 1] }
+  if (dates.length === 1) return { departureDate: dates[0], returnDate: dates[0] }
+  // fallback: try data-original-title="DD/MM/YYYY HH:mm"
+  const titles = [...html.matchAll(/data-original-title="(\d{2}\/\d{2}\/\d{4})/g)].map(m => parseDMY(m[1]))
+  if (titles.length >= 2) return { departureDate: titles[0], returnDate: titles[titles.length - 1] }
+  if (titles.length === 1) return { departureDate: titles[0], returnDate: titles[0] }
+  throw new Error(`Cannot parse ThoiGian: ${html.slice(0, 100)}`)
+}
+
+// ConLai HTML → price number
+// Format: <span ...>18,990,000</span>
+function parsePrice(html: string): number {
+  const m = html.match(/<span[^>]*>([\d,\.]+)<\/span>/)
+  if (m) {
+    const digits = m[1].replace(/[,\.]/g, '')
+    return digits ? parseInt(digits, 10) : 0
+  }
+  // fallback: extract any number sequence
+  const digits = stripHtml(html).replace(/[,\.]/g, '').match(/\d+/)
+  return digits ? parseInt(digits[0], 10) : 0
+}
+
+// SoCho HTML → { total, remaining }
+// "Số chỗ: <b>20</b>" / "Còn: <b>0</b> chỗ"
+function parseSeats(html: string): { total: number; remaining: number } {
+  const totalM  = html.match(/Số chỗ[^<]*<b>(\d+)<\/b>/)
+  const remainM = html.match(/Còn[^<]*<b>(\d+)<\/b>/)
+  return {
+    total:     totalM  ? parseInt(totalM[1],  10) : 0,
+    remaining: remainM ? parseInt(remainM[1], 10) : 0,
+  }
+}
+
+// MaLichTour HTML → tour code string (e.g. "TQ090626LG5")
+function parseMaLichTour(html: string): string {
+  const m = html.match(/Mã Lich[^<]*<strong>([^<]+)<\/strong>/)
+            ?? html.match(/Mã Lịch[^<]*<strong>([^<]+)<\/strong>/)
+            ?? html.match(/<strong>([A-Z0-9]+)<\/strong>/)
+  return m?.[1]?.trim() ?? ''
+}
+
+// HangBay HTML → flight summary string
+function parseHangBay(html: string | null): string | null {
+  if (!html) return null
+  // Extract first flight code from <b> tag, e.g. "DR5052 SGN-LJG 1405 - 1835"
+  const m = html.match(/<b>([^<]+)<\/b>/)
+  return m ? m[1].trim() : null
 }
 
 async function fetchPage(dateRange: string, start: number, cookie: string): Promise<TrieuHaoResponse> {
@@ -195,18 +247,23 @@ export async function syncTrieuHaoSchedules(): Promise<TrieuHaoSyncResult> {
     return { synced: 0, skipped: 0, errors: ['Không có dữ liệu từ TrieuHao API'] }
   }
 
-  // Bước 3 — normalize
+  // Bước 3 — normalize (all fields are HTML, use dedicated parsers)
   const normalized: NormalizedRow[] = []
   for (const r of allRaw) {
     try {
       const { departureDate, returnDate } = parseThoiGian(r.ThoiGian)
       const priceAdult  = parsePrice(r.ConLai)
       const priceChild  = Math.round(priceAdult * 0.75)
-      const tourName    = r.TourShow.trim()
+      const { total: seatsTotal } = parseSeats(r.SoCho)
+      const tourName    = parseTourName(r.TourShow)
+      const maLichTour  = parseMaLichTour(r.MaLichTour)
+      const transport   = parseHangBay(r.HangBay ?? null)
       const derived     = deriveCountry(tourName)
       const country     = derived !== 'Khác' ? derived : null
       const tourSlug    = slugify(tourName)
-      const transport   = r.HangBay?.trim() || null
+
+      // Dùng MaLichTour từ HTML nếu có, fallback về Id
+      const externalId = maLichTour ? `TH-${maLichTour}` : `TH-ID${r.Id}`
 
       normalized.push({
         tourId:         r.TourId,
@@ -218,9 +275,9 @@ export async function syncTrieuHaoSchedules(): Promise<TrieuHaoSyncResult> {
         returnDate,
         priceAdult,
         priceChild,
-        seatsTotal:     r.SoCho ?? 0,
+        seatsTotal,
         transport,
-        externalId:     `TH-${r.MaLichTour}`,
+        externalId,
       })
     } catch (err) {
       errors.push(`normalize TourId=${r.TourId}: ${err}`)
