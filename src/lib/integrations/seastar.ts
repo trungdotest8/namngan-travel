@@ -257,11 +257,13 @@ export async function syncSeaStarSchedules(): Promise<SyncResult> {
         continue
       }
 
-      // Tạo mới
+      // Tạo mới — code unique per (destId + tourSlugBase) để tránh UNIQUE conflict
+      // khi một dest có nhiều tên tour khác nhau
+      const tourCode = `SS-${r.destId}-${nameHash(r.tourName)}`
       await supabase.from('tours').insert({
-        code: `SS-${r.destId}`,
+        code: tourCode,
         name: r.tourName,
-        slug: `${r.tourSlug}-ss-${r.destId}`,
+        slug: `${r.tourSlug}-ss-${r.destId}-${nameHash(r.tourName)}`,
         destination: r.destName,
         category: 'nước ngoài',
         country: countryValue,

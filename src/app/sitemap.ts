@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next'
 import { createClient } from '@supabase/supabase-js'
 import { slugify } from '@/lib/utils'
+import { COUNTRY_MAP, countryToSlug } from '@/lib/tour-country'
 
 const BASE = 'https://namngantravel.com'
 
@@ -72,7 +73,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }))
 
-    return [...STATIC_ROUTES, ...tourRoutes, ...articleRoutes, ...blogRoutes, ...destRoutes]
+    // /du-lich/[country] — programmatic SEO pages (static, high priority)
+    const countryRoutes: MetadataRoute.Sitemap = Object.keys(COUNTRY_MAP).map(name => ({
+      url: `${BASE}/du-lich/${countryToSlug(name)}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    }))
+
+    return [...STATIC_ROUTES, ...countryRoutes, ...tourRoutes, ...articleRoutes, ...blogRoutes, ...destRoutes]
   } catch {
     return STATIC_ROUTES
   }

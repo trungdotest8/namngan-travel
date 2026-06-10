@@ -41,3 +41,24 @@ export function deriveCountry(destination: string | null): string {
   }
   return 'Khác'
 }
+
+function _slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+}
+
+// slug → canonical country name (e.g. 'nhat-ban' → 'Nhật Bản')
+export const SLUG_TO_COUNTRY: Record<string, string> = Object.fromEntries(
+  Object.keys(COUNTRY_MAP).map(name => [_slugify(name), name])
+)
+
+// canonical country name → slug (e.g. 'Nhật Bản' → 'nhat-ban')
+export function countryToSlug(country: string): string {
+  return _slugify(country)
+}
