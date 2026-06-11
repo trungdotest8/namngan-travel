@@ -36,3 +36,7 @@ trieuhao-tours-tq/
 data/sms-log.xlsx
 data/sms-log.*.xlsx
 data/invalid-phones.txt
+
+# SeaStar crawler cache — PDF + JSON lớn, không commit
+data/seastar-pdfs/
+data/seastar-json/
