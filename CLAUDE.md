@@ -393,24 +393,26 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | D | Hồ sơ khách | ✅ v1.3.0 | `CustomerProfileDrawer.tsx` + `CustomerTable.tsx` — Export+Import CSV ✅ |
 | E | Chat & Lead | ✅ v2.2.0 | `ChatWidget.tsx` — 2 tab: "Để lại số" + "Chat AI" |
 | F | CMS / RSS | ✅ v1.3.0 | `ArticleFeed.tsx` — TiptapEditor ✅ |
-| G | DB Schema | ✅ **20 local / ~15-18 cloud** | `supabase/migrations/` — cần apply #16-20 lên cloud |
+| G | DB Schema | ✅ **21 local / 21 cloud** | `supabase/migrations/` — #16-21 đã apply cloud ✅ |
 | CRM | Admin CRM | ✅ v8.4.0 | `crm/page.tsx` — 8 tabs; SeaStar-only sync ✅ |
 | AUTH | Admin Auth | ✅ v2.0.0 | `login/page.tsx` + `middleware.ts` — cookie: `admin_session` |
-| TRIPGENIE | AI Chat Core | ✅ v1.2.0 | `/api/ai/chat` Node.js runtime; RAG ✅ |
+| TRIPGENIE | AI Chat Core | ✅ v1.2.0 | `/api/ai/chat` Node.js runtime; RAG ✅ — claude-sonnet-4-6 |
 | TRIPGENIE-LEADS | Lead Capture | ✅ v2.1.0 | `/api/leads` POST (adminClient); `/api/leads/[id]` PATCH ✅ |
-| TRIPGENIE-CLASSIFY | AI Classification | ✅ v1.0.0 | `src/lib/ai/classify.ts`; `/api/ai/classify-lead` — claude-opus-4-8 |
+| TRIPGENIE-CLASSIFY | AI Classification | ✅ v1.0.0 | `src/lib/ai/classify.ts`; `/api/ai/classify-lead` — claude-haiku-4-5 |
 | TRIPGENIE-AFFILIATE | Affiliate Engine | ✅ v1.0.0 | migration #18; `src/lib/affiliate/tracker.ts` |
-| TRIPGENIE-ITINERARY | Itinerary Builder AI | ✅ v1.0.0 | `/api/ai/itinerary` 4096 tokens SSE — claude-opus-4-8 |
+| TRIPGENIE-ITINERARY | Itinerary Builder AI | ✅ v1.0.0 | `/api/ai/itinerary` 4096 tokens SSE — claude-sonnet-4-6 |
 | LEADS-ACTIVITIES | Nhật ký chăm sóc | ✅ v1.0.0 | migration #19; `/api/leads/[id]/activities` |
 | LEADS-IMPORT | Bulk Import CSV | ✅ v1.0.0 | `/api/leads/import` POST max 500 |
 | NOTIFY | Notification | ✅ v2.1.0 | Email + Realtime + Telegram; `src/lib/notifications/index.ts` |
 | RAG | AI Context | ✅ v1.0.0 | `src/lib/ai/rag.ts` — searchRelevantTours() |
 | ZALO-WEBHOOK | Phase 4 Zalo OA | ✅ v1.0.0 | `/api/webhooks/zalo/route.ts` + `src/lib/zalo/client.ts` |
 | FB-LEADS-WEBHOOK | Phase 4 FB Lead Ads | ✅ v1.0.0 | `/api/webhooks/fb-leads/route.ts` |
+| GSHEET-SYNC | Google Sheets Sync | ✅ v1.1.0 | `scripts/sheets-sync/Code.gs` — LIVE ✅; URL: www.namngantravel.com |
 | PHASE6-SEO | Programmatic SEO | ✅ v1.0.0 | `src/app/du-lich/[country]/page.tsx` + `CountryToursClient.tsx` |
 | PHASE6-CONTENT | Content Generate AI | ✅ v1.0.1 | `src/app/api/content/generate/route.ts` — claude-opus-4-8 |
 | REMOTE-DEV | Tailscale + code-server | ✅ v1.0.0 | LaunchAgents; Mac 100.117.250.21; Xiaomi 100.119.4.16; port 8080 |
 | SCRAPER-TQ | TrieuHao TQ Downloader | ✅ v1.0.0 | `scripts/download-trieuhao-tq.mjs` — 30 tours; 69 files; 128MB |
+| AUDIENCE-CONTACTS | SMS Audience Import | ⏳ PENDING | migration #22 + import script + export API + CRM button — chưa code |
 
 ### Trạng thái API Routes
 
@@ -421,9 +423,9 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | `/api/leads/[id]` | PATCH | ✅ | LeadStatusUpdateSchema + auth |
 | `/api/leads/[id]/activities` | GET+POST | ✅ | ActivityInsertSchema + Realtime broadcast |
 | `/api/leads/import` | POST | ✅ | Bulk insert max 500 |
-| `/api/ai/chat` | POST | ✅ v1.2.0 | Node.js runtime + RAG + SSE streaming — claude-opus-4-8 |
-| `/api/ai/classify-lead` | POST | ✅ | classifyLead() → UPDATE ai_tier + ai_tags — claude-opus-4-8 |
-| `/api/ai/itinerary` | POST | ✅ v1.0.0 | Node.js; 4096 tokens; SSE stream — claude-opus-4-8 |
+| `/api/ai/chat` | POST | ✅ v1.2.0 | Node.js runtime + RAG + SSE streaming — claude-sonnet-4-6 |
+| `/api/ai/classify-lead` | POST | ✅ | classifyLead() → UPDATE ai_tier + ai_tags — claude-haiku-4-5 |
+| `/api/ai/itinerary` | POST | ✅ v1.0.0 | Node.js; 4096 tokens; SSE stream — claude-sonnet-4-6 |
 | `/api/affiliate/track` | GET | ✅ | record click → 302 redirect; IP hash SHA-256 |
 | `/api/customer-profile` | GET+PATCH | ✅ | Auth + limit 200 |
 | `/api/search` | POST | ✅ | OR query name\|destination\|country |
@@ -434,6 +436,7 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | `/api/notifications` | POST | ✅ | x-webhook-secret |
 | `/api/departures` | GET | ✅ | filter destination/month/status/country; max 1000 |
 | `/api/departures` | POST | ✅ v2.2.0 | SeaStar-only; 6 tháng; broadcast Realtime |
+| `/api/departures/sync` | POST | ✅ v1.0.0 | Apps Script UPSERT; SYNC_API_URL=www.namngantravel.com ⚠️ |
 | `/api/itinerary/[tourId]` | GET | ✅ | |
 | `/api/pdf-index` | GET | ✅ | FTS RPC |
 | `/api/cron/crawl-pdf` | GET | ✅ | |
@@ -442,6 +445,7 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | `/api/webhooks/zalo` | POST+GET | ✅ v1.0.0 | HMAC SHA256 + upsert lead + auto-reply |
 | `/api/webhooks/fb-leads` | POST+GET | ✅ v1.0.0 | hub.challenge + Graph API + dedup fb_lead_id |
 | `/api/content/generate` | POST | ✅ v1.0.1 | Admin auth; claude-opus-4-8; style seo/blog/social; INSERT articles draft |
+| `/api/admin/audiences/export` | GET | ⏳ PENDING | ?platform=facebook\|tiktok; SHA-256 hash; phân trang 1000/query |
 
 ### Zustand Stores
 
@@ -459,10 +463,10 @@ useAiChatStore          (store/ai-chat.store.ts)           ✅
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
-GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main)
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) — commit 36514a4
 Vercel  : namngan-travel
-Supabase: indjoegnsvcteaozmgrg — 20 migrations local
-          ⚠️ Cần apply cloud: apply_cloud_migrations_16_to_19.sql + migration #20 (seed_japan_tours)
+Supabase: indjoegnsvcteaozmgrg — 21 migrations local + cloud
+          ✅ #16-21 đã apply cloud thành công (xác nhận qua Sheets sync hoạt động)
           ✅ bucket 'tour-galleries' | ✅ ai_conversations | ✅ featured_destinations
           ✅ SeaStar 476 lịch synced tháng 6–11/2026
 Resend  : Domain namngantravel.com — PENDING DNS
@@ -473,43 +477,65 @@ Env vars CẦN THÊM Vercel: ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOK
 Remote Dev: Tailscale ✅ | code-server ✅ | Mac 100.117.250.21:8080 | pw: 074f49a444ee24314c07bda0
 TQ Scraper: ./trieuhao-tours-tq/ — 30 tour; 69 file PDF/DOCX/DOC; 128MB (cần upload Drive)
 
-Claude models (tất cả 4 files AI đã update):
-  src/lib/ai/claude.ts              → claude-opus-4-8
-  src/lib/ai/classify.ts            → claude-opus-4-8
-  src/app/api/ai/itinerary/route.ts → claude-opus-4-8
-  src/app/api/content/generate/route.ts → claude-opus-4-8
+Claude models:
+  src/lib/ai/claude.ts              → claude-sonnet-4-6   (B2C chat, volume cao)
+  src/lib/ai/classify.ts            → claude-haiku-4-5-20251001 (classification)
+  src/app/api/ai/itinerary/route.ts → claude-sonnet-4-6   (4096 tokens, quality)
+  src/app/api/content/generate/route.ts → claude-opus-4-8 (low volume, SEO)
+
+Google Sheets Sync — LIVE ✅:
+  scripts/sheets-sync/Code.gs — Apps Script
+  ⚠️ SYNC_API_URL phải dùng https://www.namngantravel.com/api/departures/sync
+     (namngantravel.com không có www → Vercel 308 redirect → Apps Script fail POST)
+  Trigger: 2h sáng hàng ngày (Asia/Ho_Chi_Minh)
+  Tab sheet: "tour_schedules" | Template: scripts/sheets-sync/tour_schedules_template.csv
+  Kiến trúc: Sheets → /api/departures/sync → Supabase → Telegram
 ```
 
 ### Files ưu tiên cao chưa tồn tại / cần fix
 
 ```
-# ƯU TIÊN #1 — APPLY CLOUD (manual):
-1. Supabase Dashboard → SQL Editor → apply_cloud_migrations_16_to_19.sql
-2. Supabase Dashboard → SQL Editor → 20260609000020_seed_japan_tours.sql
-3. Vercel Dashboard → thêm ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET → Redeploy
+# ƯU TIÊN #1 — AUDIENCE CONTACTS (code ngay phiên mới):
+1. supabase/migrations/20260611000022_audience_contacts.sql
+   → CREATE TABLE audience_contacts (phone UNIQUE, source, first_seen, last_seen)
+   → RLS bật, chỉ service_role; index trên source
+2. scripts/import-sms-audience.ts (npx tsx)
+   → Đọc ./data/sms-log.xlsx (thư viện xlsx devDep)
+   → normalizePhone: 0xxx→84xxx, dedup Map<phone,{first/last_seen}>
+   → UPSERT chunk 500, onConflict phone, source='sms_log'
+   → TUYỆT ĐỐI không log SĐT thô
+3. src/app/api/admin/audiences/export/route.ts
+   → GET ?platform=facebook|tiktok; admin_session cookie auth
+   → Phân trang .range(offset, offset+999) — Supabase max 1000/query
+   → SHA-256: facebook dùng "84..." | tiktok dùng "+84..."
+   → Response CSV với Content-Disposition
+4. src/components/crm/AudienceExportButtons.tsx
+   → 2 nút "⬇ CSV Facebook" / "⬇ CSV TikTok"; style #005BAA; disable 5s
 
-# ƯU TIÊN #2 — UPLOAD DRIVE (manual):
-4. Kéo thả ./trieuhao-tours-tq/ vào Google Drive (hoặc rclone)
-   30 tour TQ | 69 file PDF/DOCX/DOC | 128MB
+# ƯU TIÊN #2 — VERCEL ENV VARS (manual):
+5. Vercel Dashboard → ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET → Redeploy
 
-# CODE — ✅ TẤT CẢ DONE. Không còn gì pending.
+# ƯU TIÊN #3 — UPLOAD DRIVE (manual):
+6. Kéo thả ./trieuhao-tours-tq/ vào Google Drive | 30 tour | 69 file | 128MB
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Apply Supabase cloud migrations** — SQL Editor → `apply_cloud_migrations_16_to_19.sql` rồi `seed_japan_tours.sql` → verify `/du-lich/nhat-ban`
-2. **Upload TQ tours lên Drive** — `./trieuhao-tours-tq/` (128MB, 30 folder, 69 file)
-3. **Vercel env vars** — ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET → Redeploy
+1. **Audience Contacts** — migration #22 + import script + export API + CRM button (4 files, spec đầy đủ trong CLAUDE.md trên)
+2. **Vercel env vars** — ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET → Redeploy
+3. **Upload TQ Drive** — kéo thả `./trieuhao-tours-tq/` (128MB) vào Google Drive
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-11 | Handover #50 — Sheets Sync LIVE + Audience spec | Sheets sync live ✅; URL fix www.; migrations #16-21 cloud ✅; Audience spec pending |
+| 2026-06-10 | Handover #49 — Sheets Sync + Model Tune | Code.gs Apps Script thay n8n; /api/departures/sync; migration #21; model tune |
 | 2026-06-10 | Handover #48 — Model update claude-opus-4-8 | 4 files AI → claude-opus-4-8; TS CLEAN |
-| 2026-06-09 | Handover #47 — Remote dev + TQ Scraper | Tailscale+code-server ✅; /api/content/generate ✅; 30 TQ tours 69 files scraped |
-| 2026-06-09 | Handover #46 — Phase 6 DONE: /api/content/generate | claude-sonnet-4-6; style seo/blog/social; Zod+auth; INSERT articles draft; TS clean |
-| 2026-06-09 | Handover #45 — Phase 6 SEO + Japan seed + SeaStar fix | /du-lich/[country] ✅; migration #20 Japan/KR/TH; SeaStar code fix; SLUG_TO_COUNTRY |
-| 2026-06-09 | Handover #44 — SeaStar 6 tháng + fix limit + xóa TrieuHao | getMonths(3→6); limit 200→1000; TrieuHao removed hoàn toàn; 476 lịch synced |
+| 2026-06-09 | Handover #47 — Remote dev + TQ Scraper | Tailscale+code-server ✅; /api/content/generate ✅; 30 TQ tours scraped |
+| 2026-06-09 | Handover #46 — Phase 6 DONE: /api/content/generate | claude-sonnet-4-6; style seo/blog/social; INSERT articles draft; TS clean |
+| 2026-06-09 | Handover #45 — Phase 6 SEO + Japan seed + SeaStar fix | /du-lich/[country] ✅; migration #20; SeaStar code fix |
+| 2026-06-09 | Handover #44 — SeaStar 6 tháng + fix limit + xóa TrieuHao | getMonths(3→6); limit 200→1000; TrieuHao removed; 476 lịch synced |
 | 2026-06-09 | Handover #43 — Xóa TrieuHao sync hoàn toàn | Removed: sync-trieuhao.mjs, trieuhao.ts, /api/departures/ingest |
 | 2026-06-09 | Handover #40 — Phase 5 ✅ + push | CRM; ItineraryBuilder AI streaming+markdown |
 | 2026-06-09 | Handover #39 — Phase 4 hoàn thành | Zalo webhook ✅; FB webhook ✅; Zalo client ✅ |
@@ -521,7 +547,5 @@ Claude models (tất cả 4 files AI đã update):
 | 2026-06-08 | Handover #33 — TripGenie Leads WIP + RAG | Migration #16; lead-capture.schema; Telegram Vercel |
 | 2026-06-07 | Handover #32 — TripGenie Phase 1 + Notification v2 | AI Chat; Telegram; auth cookie fix |
 | 2026-06-07 | Handover #31 — SEO + Server Component | blog/tao-lich-trinh Static; generateMetadata; JSON-LD |
-| 2026-06-07 | Handover #30 — TripGenie Pages + Lead Modal | /blog /diem-den /tao-lich-trinh; TripGenieLeadModal |
-| 2026-06-07 | Handover #29 — Mobile + Sitemap | ChatWidget/TourDetail/Header mobile; sitemap dynamic |
 | 2026-06-06 | Handover #28 — Country Filter Fix | COUNTRY_MAP title case; normalizeCountry(); mega-menu |
 | 2026-06-05 | Handover #25–26 — Mixed Content + Điểm đến | CSP fix; migration #14; DestinationsTab |

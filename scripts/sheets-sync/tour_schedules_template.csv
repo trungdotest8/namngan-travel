@@ -1,0 +1,2 @@
+code,departure_date,return_date,price_adult,price_child,slots_total,slots_booked,flight_code_departure,flight_code_return,status
+NN-TQ-001,15/07/2026,22/07/2026,14990000,9990000,30,0,VJ123,,open

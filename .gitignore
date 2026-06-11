@@ -28,3 +28,11 @@ dist/
 build/
 .vercel
 .env*
+
+# Tour PDF/DOCX scraped data — upload lên Google Drive thay vì git
+trieuhao-tours-tq/
+
+# Audience data — dữ liệu nhạy cảm, không commit
+data/sms-log.xlsx
+data/sms-log.*.xlsx
+data/invalid-phones.txt
