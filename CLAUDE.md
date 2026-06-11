@@ -393,7 +393,7 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | D | Hồ sơ khách | ✅ v1.3.0 | `CustomerProfileDrawer.tsx` + `CustomerTable.tsx` — Export+Import CSV ✅ |
 | E | Chat & Lead | ✅ v2.2.0 | `ChatWidget.tsx` — 2 tab: "Để lại số" + "Chat AI" |
 | F | CMS / RSS | ✅ v1.3.0 | `ArticleFeed.tsx` — TiptapEditor ✅ |
-| G | DB Schema | ✅ **21 local / 21 cloud** | `supabase/migrations/` — #16-21 đã apply cloud ✅ |
+| G | DB Schema | ✅ **22 local / 21 cloud** | `supabase/migrations/` — #22 IF NOT EXISTS fix ✅; sẵn sàng `supabase db push` |
 | CRM | Admin CRM | ✅ v8.4.0 | `crm/page.tsx` — 8 tabs; SeaStar-only sync ✅ |
 | AUTH | Admin Auth | ✅ v2.0.0 | `login/page.tsx` + `middleware.ts` — cookie: `admin_session` |
 | TRIPGENIE | AI Chat Core | ✅ v1.2.0 | `/api/ai/chat` Node.js runtime; RAG ✅ — claude-sonnet-4-6 |
@@ -412,7 +412,8 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | PHASE6-CONTENT | Content Generate AI | ✅ v1.0.1 | `src/app/api/content/generate/route.ts` — claude-opus-4-8 |
 | REMOTE-DEV | Tailscale + code-server | ✅ v1.0.0 | LaunchAgents; Mac 100.117.250.21; Xiaomi 100.119.4.16; port 8080 |
 | SCRAPER-TQ | TrieuHao TQ Downloader | ✅ v1.0.0 | `scripts/download-trieuhao-tq.mjs` — 30 tours; 69 files; 128MB |
-| AUDIENCE-CONTACTS | SMS Audience Import | ⏳ PENDING | migration #22 + import script + export API + CRM button — chưa code |
+| AUDIENCE-CONTACTS | SMS Audience Import | ✅ v1.0.0 | migration #22 ✅; `scripts/import-sms-audience.ts` ✅; `/api/admin/audiences/export` ✅; `AudienceExportButtons.tsx` ✅ |
+| SEASTAR-CRAWLER | SeaStar Tour Detail Crawler v3 | ✅ v1.0.0 | `scripts/crawl-seastar-tours.ts` — 5 phases; Claude doc block; Zod; Sheets upsert |
 
 ### Trạng thái API Routes
 
@@ -445,7 +446,7 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | `/api/webhooks/zalo` | POST+GET | ✅ v1.0.0 | HMAC SHA256 + upsert lead + auto-reply |
 | `/api/webhooks/fb-leads` | POST+GET | ✅ v1.0.0 | hub.challenge + Graph API + dedup fb_lead_id |
 | `/api/content/generate` | POST | ✅ v1.0.1 | Admin auth; claude-opus-4-8; style seo/blog/social; INSERT articles draft |
-| `/api/admin/audiences/export` | GET | ⏳ PENDING | ?platform=facebook\|tiktok; SHA-256 hash; phân trang 1000/query |
+| `/api/admin/audiences/export` | GET | ✅ v1.0.0 | ?platform=facebook\|tiktok&source=; SHA-256; paginate .range(offset,offset+999) |
 
 ### Zustand Stores
 
@@ -463,10 +464,10 @@ useAiChatStore          (store/ai-chat.store.ts)           ✅
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
-GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) — commit 36514a4
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) — commit 884eca8
 Vercel  : namngan-travel
-Supabase: indjoegnsvcteaozmgrg — 21 migrations local + cloud
-          ✅ #16-21 đã apply cloud thành công (xác nhận qua Sheets sync hoạt động)
+Supabase: indjoegnsvcteaozmgrg — 22 migrations local / 21 cloud
+          ⚠️ migration #22 sẵn sàng push (IF NOT EXISTS fix ✅) — chạy: supabase db push
           ✅ bucket 'tour-galleries' | ✅ ai_conversations | ✅ featured_destinations
           ✅ SeaStar 476 lịch synced tháng 6–11/2026
 Resend  : Domain namngantravel.com — PENDING DNS
@@ -489,46 +490,47 @@ Google Sheets Sync — LIVE ✅:
      (namngantravel.com không có www → Vercel 308 redirect → Apps Script fail POST)
   Trigger: 2h sáng hàng ngày (Asia/Ho_Chi_Minh)
   Tab sheet: "tour_schedules" | Template: scripts/sheets-sync/tour_schedules_template.csv
-  Kiến trúc: Sheets → /api/departures/sync → Supabase → Telegram
+
+SeaStar Crawler v3 — ✅ DONE (commit 28cdb91):
+  scripts/crawl-seastar-tours.ts
+  Flags: --limit=N | --force-ai | --dry-run
+  Env cần thêm: SEASTAR_COOKIE (lấy từ Chrome DevTools khi đăng nhập lich.seastartravel.vn)
+  Cache: data/seastar-pdfs/ + data/seastar-json/ (trong .gitignore ✅)
+  Sheets tab: "tours_master" | 14 cột
+  Chạy test: npx tsx scripts/crawl-seastar-tours.ts --limit=3 --dry-run
 ```
 
 ### Files ưu tiên cao chưa tồn tại / cần fix
 
 ```
-# ƯU TIÊN #1 — AUDIENCE CONTACTS (code ngay phiên mới):
-1. supabase/migrations/20260611000022_audience_contacts.sql
-   → CREATE TABLE audience_contacts (phone UNIQUE, source, first_seen, last_seen)
-   → RLS bật, chỉ service_role; index trên source
-2. scripts/import-sms-audience.ts (npx tsx)
-   → Đọc ./data/sms-log.xlsx (thư viện xlsx devDep)
-   → normalizePhone: 0xxx→84xxx, dedup Map<phone,{first/last_seen}>
-   → UPSERT chunk 500, onConflict phone, source='sms_log'
-   → TUYỆT ĐỐI không log SĐT thô
-3. src/app/api/admin/audiences/export/route.ts
-   → GET ?platform=facebook|tiktok; admin_session cookie auth
-   → Phân trang .range(offset, offset+999) — Supabase max 1000/query
-   → SHA-256: facebook dùng "84..." | tiktok dùng "+84..."
-   → Response CSV với Content-Disposition
-4. src/components/crm/AudienceExportButtons.tsx
-   → 2 nút "⬇ CSV Facebook" / "⬇ CSV TikTok"; style #005BAA; disable 5s
+# ƯU TIÊN #1 — CHẠY CRAWLER (cần SEASTAR_COOKIE):
+1. Lấy SEASTAR_COOKIE từ Chrome DevTools → thêm vào .env.local
+2. Test: npx tsx scripts/crawl-seastar-tours.ts --limit=3 --dry-run
+3. Full run: npx tsx scripts/crawl-seastar-tours.ts
 
-# ƯU TIÊN #2 — VERCEL ENV VARS (manual):
+# ƯU TIÊN #2 — APPLY MIGRATION #22 (manual):
+4. supabase db push   ← IF NOT EXISTS fix đã merge, giờ an toàn
+   Sau đó: npx tsx scripts/import-sms-audience.ts --dry-run để test
+
+# ƯU TIÊN #3 — VERCEL ENV VARS (manual):
 5. Vercel Dashboard → ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET → Redeploy
 
-# ƯU TIÊN #3 — UPLOAD DRIVE (manual):
+# ƯU TIÊN #4 — UPLOAD DRIVE (manual):
 6. Kéo thả ./trieuhao-tours-tq/ vào Google Drive | 30 tour | 69 file | 128MB
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Audience Contacts** — migration #22 + import script + export API + CRM button (4 files, spec đầy đủ trong CLAUDE.md trên)
-2. **Vercel env vars** — ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET → Redeploy
-3. **Upload TQ Drive** — kéo thả `./trieuhao-tours-tq/` (128MB) vào Google Drive
+1. **Chạy SeaStar Crawler** — set `SEASTAR_COOKIE` trong `.env.local` → `npx tsx scripts/crawl-seastar-tours.ts --limit=3 --dry-run`
+2. **Apply migration #22** — `supabase db push` (IF NOT EXISTS fix đã merge, an toàn)
+3. **Vercel env vars** — ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET → Redeploy
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-11 | Handover #52 — Crawler DONE + migration fix | crawl-seastar-tours.ts ✅ commit 28cdb91; migration #22 IF NOT EXISTS fix commit 884eca8 |
+| 2026-06-11 | Handover #51 — Audience Contacts DONE + Crawler plan | Audience pipeline ✅ commit 072fb4f; Crawler v3 plan approved; deps axios/cheerio/googleapis cài |
 | 2026-06-11 | Handover #50 — Sheets Sync LIVE + Audience spec | Sheets sync live ✅; URL fix www.; migrations #16-21 cloud ✅; Audience spec pending |
 | 2026-06-10 | Handover #49 — Sheets Sync + Model Tune | Code.gs Apps Script thay n8n; /api/departures/sync; migration #21; model tune |
 | 2026-06-10 | Handover #48 — Model update claude-opus-4-8 | 4 files AI → claude-opus-4-8; TS CLEAN |
@@ -547,5 +549,3 @@ Google Sheets Sync — LIVE ✅:
 | 2026-06-08 | Handover #33 — TripGenie Leads WIP + RAG | Migration #16; lead-capture.schema; Telegram Vercel |
 | 2026-06-07 | Handover #32 — TripGenie Phase 1 + Notification v2 | AI Chat; Telegram; auth cookie fix |
 | 2026-06-07 | Handover #31 — SEO + Server Component | blog/tao-lich-trinh Static; generateMetadata; JSON-LD |
-| 2026-06-06 | Handover #28 — Country Filter Fix | COUNTRY_MAP title case; normalizeCountry(); mega-menu |
-| 2026-06-05 | Handover #25–26 — Mixed Content + Điểm đến | CSP fix; migration #14; DestinationsTab |
