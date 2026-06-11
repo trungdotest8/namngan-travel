@@ -2,7 +2,7 @@
 -- Lưu SĐT đã chuẩn hóa E.164 (không dấu +) từ nhiều nguồn
 -- RLS: chỉ service_role được đọc/ghi — KHÔNG expose ra anon/user
 
-CREATE TABLE public.audience_contacts (
+CREATE TABLE IF NOT EXISTS public.audience_contacts (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     phone       TEXT        NOT NULL UNIQUE,   -- E.164 no-plus: "84973168492"
     source      TEXT        NOT NULL,          -- 'sms_log'|'lead'|'booking'|'facebook_ads'
@@ -11,7 +11,7 @@ CREATE TABLE public.audience_contacts (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_audience_contacts_source ON public.audience_contacts(source);
+CREATE INDEX IF NOT EXISTS idx_audience_contacts_source ON public.audience_contacts(source);
 
 ALTER TABLE public.audience_contacts ENABLE ROW LEVEL SECURITY;
 
