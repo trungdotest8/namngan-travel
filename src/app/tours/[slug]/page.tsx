@@ -1,21 +1,11 @@
-import { redirect, notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 
 interface Props {
   params: { slug: string }
 }
 
-export default async function TourBySlugPage({ params }: Props) {
-  const supabase = await createClient()
-
-  const { data } = await supabase
-    .from('tours')
-    .select('id')
-    .eq('slug', params.slug)
-    .eq('is_active', true)
-    .single()
-
-  if (!data) notFound()
-
-  redirect(`/tour/${data.id}`)
+// /tours/{slug} → /tour/{slug} (canonical URL)
+// Không cần DB query — /tour/{slug} sẽ tự handle notFound nếu slug không tồn tại
+export default function TourBySlugPage({ params }: Props) {
+  redirect(`/tour/${params.slug}`)
 }

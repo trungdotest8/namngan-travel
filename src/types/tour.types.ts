@@ -20,6 +20,13 @@ export interface Tour {
   synced_at:     string | null    // ISO 8601
   created_at:    string
   updated_at:    string
+  // Detail columns — migration #24 (null cho đến khi import-tours-from-sheet.ts chạy)
+  summary:          string | null
+  inclusions:       string[] | null  // JSONB — khác với includes TEXT[]
+  exclusions:       string[] | null  // JSONB — khác với excludes TEXT[]
+  policies:         string | null
+  pdf_url:          string | null
+  detail_synced_at: string | null
 }
 
 export interface TourItineraryDay {

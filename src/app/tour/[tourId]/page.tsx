@@ -1,193 +1,160 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Phone, CalendarCheck } from 'lucide-react'
-import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
+import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import TourDetail from '@/components/itinerary/TourDetail'
-import PdfViewer from '@/components/itinerary/PdfViewer'
-import BookingModal from '@/components/booking/BookingModal'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
-import type { ItineraryResponse } from '@/types/pdf-index.types'
-import type { TourSchedule } from '@/types/tour.types'
+import TourDetailClient from './TourDetailClient'
+import type { Tour, TourSchedule } from '@/types/tour.types'
 
-export default function TourItineraryPage() {
-  const { tourId } = useParams<{ tourId: string }>()
-  const searchParams = useSearchParams()
-  const scheduleId = searchParams.get('schedule')
+export const revalidate = 3600
 
-  const [itinerary,      setItinerary]      = useState<ItineraryResponse | null>(null)
-  const [schedule,       setSchedule]       = useState<TourSchedule | null>(null)
-  const [allSchedules,   setAllSchedules]   = useState<TourSchedule[]>([])
-  const [loading,        setLoading]        = useState(true)
-  const [error,          setError]          = useState<string | null>(null)
-  const [showBooking,    setShowBooking]    = useState(false)
+// UUID v4 pattern — dùng để backward-compat với URLs cũ dạng /tour/{UUID}
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-  useEffect(() => {
-    if (!tourId) return
+// ── Static params ──────────────────────────────────────────────────────────────
 
-    async function load() {
-      setLoading(true)
-      setError(null)
+export async function generateStaticParams(): Promise<{ tourId: string }[]> {
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('tours')
+      .select('slug')
+      .not('slug', 'is', null)
+      .eq('is_active', true)
+    return (data ?? [])
+      .filter((t): t is { slug: string } => typeof t.slug === 'string')
+      .map(t => ({ tourId: t.slug }))
+  } catch {
+    return []
+  }
+}
 
-      try {
-        // Fetch itinerary và tất cả schedules song song
-        const [itiRes, schRes] = await Promise.all([
-          fetch(`/api/itinerary/${tourId}`),
-          fetch(`/api/departures?tour_id=${tourId}&status=open&limit=20`),
-        ])
+// ── Metadata ───────────────────────────────────────────────────────────────────
 
-        if (!itiRes.ok) {
-          if (itiRes.status === 404) {
-            setError('Lịch trình đang được cập nhật. Vui lòng liên hệ tư vấn để biết thêm chi tiết.')
-          } else {
-            setError('Không thể tải lịch trình. Vui lòng thử lại sau.')
-          }
-          return
-        }
+export async function generateMetadata(
+  { params }: { params: { tourId: string } }
+): Promise<Metadata> {
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('tours')
+      .select('name, summary, description, thumbnail_url')
+      .eq('slug', params.tourId)
+      .eq('is_active', true)
+      .maybeSingle()
 
-        const itiData: ItineraryResponse = await itiRes.json()
-        setItinerary(itiData)
+    if (!data) return { title: 'Tour | Nam Ngân Travel' }
 
-        if (schRes.ok) {
-          const schData: { schedules: TourSchedule[] } = await schRes.json()
-          const list = schData.schedules ?? []
-          setAllSchedules(list)
-          const match = scheduleId
-            ? list.find((s) => s.id === scheduleId)
-            : list[0]
-          if (match) setSchedule(match)
-        }
-      } catch {
-        setError('Lỗi kết nối. Vui lòng thử lại sau.')
-      } finally {
-        setLoading(false)
-      }
+    const rawDesc = ((data.summary ?? data.description ?? '') as string).slice(0, 160)
+
+    return {
+      title: `${data.name as string} | Nam Ngân Travel`,
+      description: rawDesc,
+      openGraph: {
+        title: `${data.name as string} | Nam Ngân Travel`,
+        description: rawDesc,
+        type: 'website',
+        ...(data.thumbnail_url
+          ? { images: [{ url: data.thumbnail_url as string }] }
+          : {}),
+      },
     }
+  } catch {
+    return { title: 'Tour | Nam Ngân Travel' }
+  }
+}
 
-    load()
-  }, [tourId, scheduleId])
+// ── JSON-LD ────────────────────────────────────────────────────────────────────
+
+function buildJsonLd(tour: Tour, schedules: TourSchedule[]): Record<string, unknown> {
+  const description = tour.summary ?? tour.description ?? undefined
+
+  const itineraryBlock =
+    Array.isArray(tour.itinerary) && tour.itinerary.length > 0
+      ? {
+          '@type': 'ItemList',
+          itemListElement: tour.itinerary.map((day, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            name: `Ngày ${day.day}: ${day.title ?? ''}`,
+            description: day.description ?? '',
+          })),
+        }
+      : undefined
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'TouristTrip',
+    name: tour.name,
+    ...(description ? { description } : {}),
+    ...(itineraryBlock ? { itinerary: itineraryBlock } : {}),
+    ...(tour.thumbnail_url ? { image: tour.thumbnail_url } : {}),
+    ...(schedules[0] ? { startDate: schedules[0].departure_date } : {}),
+    provider: {
+      '@type': 'TravelAgency',
+      name: 'Nam Ngân Travel',
+      url: 'https://www.namngantravel.com',
+    },
+  }
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────────
+
+export default async function TourDetailPage(
+  { params }: { params: { tourId: string } }
+) {
+  const supabase = await createClient()
+
+  // Primary: query by slug (canonical URL)
+  let { data: raw } = await supabase
+    .from('tours')
+    .select('*')
+    .eq('slug', params.tourId)
+    .eq('is_active', true)
+    .maybeSingle()
+
+  // Backward-compat: if slug lookup fails and value is a UUID, try by id
+  if (!raw && UUID_RE.test(params.tourId)) {
+    const { data: byId } = await supabase
+      .from('tours')
+      .select('*')
+      .eq('id', params.tourId)
+      .eq('is_active', true)
+      .maybeSingle()
+    raw = byId
+  }
+
+  if (!raw) notFound()
+
+  const tour = raw as unknown as Tour
+
+  // Open schedules from today onward
+  const today = new Date().toISOString().split('T')[0]
+  const { data: schData } = await supabase
+    .from('tour_schedules')
+    .select('*')
+    .eq('tour_id', tour.id)
+    .eq('status', 'open')
+    .gte('departure_date', today)
+    .order('departure_date', { ascending: true })
+    .limit(10)
+
+  const schedules = (schData ?? []) as unknown as TourSchedule[]
+  const jsonLd    = buildJsonLd(tour, schedules)
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        // JSON.stringify ensures safe serialization — không đặt raw data trực tiếp
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Header />
-      <main className="bg-gray-50 min-h-screen">
-
-        {/* Back nav */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="container-main py-3 flex items-center justify-between">
-            <Link
-              href="/lich-khoi-hanh"
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-brand-blue transition-colors"
-            >
-              <ArrowLeft size={16} />
-              Quay lại Lịch Khởi Hành
-            </Link>
-            <a
-              href="tel:0932611933"
-              className="flex items-center gap-2 text-sm font-semibold text-white bg-brand-blue px-4 py-1.5 rounded-full hover:bg-light-blue transition-colors"
-            >
-              <Phone size={14} />
-              Giữ chỗ ngay
-            </a>
-          </div>
-        </div>
-
-        {/* Floating booking CTA — hiện sau khi load xong */}
-        {!loading && !error && itinerary && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 sm:left-auto sm:translate-x-0 sm:right-6">
-            <button
-              onClick={() => setShowBooking(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-[#FF6B00] text-white font-bold rounded-full shadow-lg
-                         hover:bg-orange-600 active:scale-95 transition-all text-sm"
-            >
-              <CalendarCheck size={18} />
-              Đặt tour ngay
-            </button>
-          </div>
-        )}
-
-        {/* Booking modal */}
-        {showBooking && itinerary && (
-          <ErrorBoundary moduleName="BookingModal">
-            <BookingModal
-              tourId={tourId}
-              tourName={itinerary.tour_name ?? ''}
-              schedules={allSchedules}
-              onClose={() => setShowBooking(false)}
-            />
-          </ErrorBoundary>
-        )}
-
-        <div className="container-main py-6 max-w-3xl mx-auto">
-
-          {/* Loading skeleton */}
-          {loading && (
-            <div className="space-y-4 animate-pulse">
-              <div className="h-48 bg-gray-200 rounded-xl" />
-              <div className="h-6 bg-gray-200 rounded w-3/4" />
-              <div className="h-4 bg-gray-200 rounded w-1/2" />
-              <div className="h-4 bg-gray-200 rounded w-2/3" />
-            </div>
-          )}
-
-          {/* Error */}
-          {!loading && error && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center space-y-3">
-              <p className="text-amber-800 font-medium">{error}</p>
-              <a
-                href="tel:0932611933"
-                className="inline-flex items-center gap-2 bg-brand-blue text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-light-blue transition-colors"
-              >
-                <Phone size={16} />
-                Gọi tư vấn: 0932 611 933
-              </a>
-            </div>
-          )}
-
-          {/* Nội dung chính */}
-          {!loading && !error && itinerary && (
-            <div className="space-y-6">
-
-              {/* TourDetail — structured itinerary */}
-              <ErrorBoundary moduleName="TourDetail">
-                <TourDetail
-                  name={itinerary.tour_name}
-                  destination={itinerary.destination}
-                  durationDays={itinerary.duration_days}
-                  thumbnailUrl={itinerary.thumbnail_url}
-                  galleryUrls={itinerary.gallery_urls}
-                  hashtags={itinerary.hashtags}
-                  includes={itinerary.includes}
-                  excludes={itinerary.excludes}
-                  itinerary={itinerary.structured ?? undefined}
-                  departureDate={schedule?.departure_date ?? new Date().toISOString().slice(0, 10)}
-                  returnDate={schedule?.return_date ?? new Date().toISOString().slice(0, 10)}
-                  priceAdult={schedule?.price_adult ?? 0}
-                  priceChild={schedule?.price_child ?? 0}
-                  seatsTotal={schedule?.seats_total ?? 0}
-                  seatsBooked={schedule?.seats_booked ?? 0}
-                  transport={schedule?.transport ?? null}
-                  scheduleStatus={schedule?.status ?? 'open'}
-                />
-              </ErrorBoundary>
-
-              {/* PdfViewer — nếu có PDF trên Drive */}
-              {itinerary.pdf && (
-                <div>
-                  <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-2">
-                    📄 Lịch trình PDF đầy đủ
-                  </p>
-                  <PdfViewer pdf={itinerary.pdf} />
-                </div>
-              )}
-
-            </div>
-          )}
-
-        </div>
+      <main className="min-h-screen bg-[#F5F7FA]">
+        <ErrorBoundary moduleName="TourDetailPage">
+          <TourDetailClient tour={tour} schedules={schedules} />
+        </ErrorBoundary>
       </main>
       <Footer />
     </>
