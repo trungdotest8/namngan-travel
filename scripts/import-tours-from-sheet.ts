@@ -9,8 +9,9 @@
  *   --dry-run  : Validate toàn bộ, in báo cáo, KHÔNG ghi Supabase
  *
  * Env cần thiết (.env.local):
- *   GOOGLE_SERVICE_ACCOUNT_EMAIL   ← email service account
- *   GOOGLE_PRIVATE_KEY             ← private key (\\n được chuyển thành \n tự động)
+ *   GOOGLE_SERVICE_ACCOUNT_JSON    ← JSON stringify của service account (ưu tiên)
+ *   GOOGLE_SERVICE_ACCOUNT_EMAIL   ← hoặc email riêng (nếu không có JSON)
+ *   GOOGLE_PRIVATE_KEY             ← hoặc private key riêng (nếu không có JSON)
  *   GOOGLE_SHEETS_SPREADSHEET_ID   ← ID spreadsheet
  *   NEXT_PUBLIC_SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY
@@ -52,8 +53,25 @@ const isDry = argv.includes('--dry-run')
 
 // ─── Env vars ─────────────────────────────────────────────────────────────────
 
-const SA_EMAIL     = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? ''
-const SA_KEY       = (process.env.GOOGLE_PRIVATE_KEY ?? '').replace(/\\n/g, '\n')
+// Support GOOGLE_SERVICE_ACCOUNT_JSON (same as SeaStar crawler) OR separate vars
+function extractSACredentials(): { email: string; key: string } {
+  const json = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+  if (json) {
+    try {
+      const parsed = JSON.parse(json) as { client_email?: string; private_key?: string }
+      return {
+        email: parsed.client_email ?? '',
+        key:   (parsed.private_key ?? '').replace(/\\n/g, '\n'),
+      }
+    } catch { /* fall through to separate vars */ }
+  }
+  return {
+    email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? '',
+    key:   (process.env.GOOGLE_PRIVATE_KEY ?? '').replace(/\\n/g, '\n'),
+  }
+}
+
+const { email: SA_EMAIL, key: SA_KEY } = extractSACredentials()
 const SHEET_ID     = process.env.GOOGLE_SHEETS_SPREADSHEET_ID ?? ''
 const SUPA_URL     = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const SUPA_SVC_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
@@ -331,8 +349,8 @@ async function main(): Promise<void> {
 
   // 1. Kiểm tra env vars
   const missing = [
-    !SA_EMAIL     && 'GOOGLE_SERVICE_ACCOUNT_EMAIL',
-    !SA_KEY       && 'GOOGLE_PRIVATE_KEY',
+    !SA_EMAIL     && 'GOOGLE_SERVICE_ACCOUNT_EMAIL (hoặc GOOGLE_SERVICE_ACCOUNT_JSON)',
+    !SA_KEY       && 'GOOGLE_PRIVATE_KEY (hoặc GOOGLE_SERVICE_ACCOUNT_JSON)',
     !SHEET_ID     && 'GOOGLE_SHEETS_SPREADSHEET_ID',
     !SUPA_URL     && 'NEXT_PUBLIC_SUPABASE_URL',
     !SUPA_SVC_KEY && 'SUPABASE_SERVICE_ROLE_KEY',

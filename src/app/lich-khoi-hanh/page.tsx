@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { Phone, Calendar, Users, ChevronRight, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
@@ -279,9 +280,18 @@ export default function LichKhoiHanhPage() {
                           {/* Tên tour */}
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                              <span className="font-semibold text-text-primary leading-snug">
-                                {s.tour?.name ?? '—'}
-                              </span>
+                              {s.tour?.slug ? (
+                                <Link
+                                  href={`/tour/${s.tour.slug}`}
+                                  className="font-semibold text-text-primary leading-snug hover:text-brand-blue hover:underline transition-colors"
+                                >
+                                  {s.tour.name}
+                                </Link>
+                              ) : (
+                                <span className="font-semibold text-text-primary leading-snug">
+                                  {s.tour?.name ?? '—'}
+                                </span>
+                              )}
                               {s.sheets_row_id?.startsWith('SS-') && (
                                 <span className="inline-block px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-semibold rounded">
                                   SeaStar

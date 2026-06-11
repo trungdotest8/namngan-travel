@@ -15,7 +15,7 @@ function TourResultCard({ tour }: { tour: TourSearchResult }) {
   const schedule = tour.schedules[0]
   return (
     <Link
-      href={`/tours/${tour.slug}`}
+      href={tour.slug ? `/tour/${tour.slug}` : `/tour/${tour.id}`}
       className="group flex flex-col bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md border border-gray-100 transition-all duration-200"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-brand-bg">

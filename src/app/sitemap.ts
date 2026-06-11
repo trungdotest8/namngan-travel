@@ -26,18 +26,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const { data: tours } = await supabase
       .from('tours')
-      .select('id, slug, updated_at')
+      .select('id, slug, updated_at, detail_synced_at')
       .eq('is_active', true)
       .order('updated_at', { ascending: false })
 
     const tourRoutes: MetadataRoute.Sitemap = (tours ?? []).flatMap(t => {
-      const mod = t.updated_at ? new Date(t.updated_at) : new Date()
-      const entries: MetadataRoute.Sitemap = [
-        { url: `${BASE}/tour/${t.id}`, lastModified: mod, changeFrequency: 'weekly', priority: 0.8 },
-      ]
+      const mod = t.detail_synced_at
+        ? new Date(t.detail_synced_at)
+        : t.updated_at ? new Date(t.updated_at) : new Date()
+      const entries: MetadataRoute.Sitemap = []
       if (t.slug) {
-        entries.push({ url: `${BASE}/tours/${t.slug}`, lastModified: mod, changeFrequency: 'weekly', priority: 0.7 })
+        // canonical slug URL — highest priority
+        entries.push({ url: `${BASE}/tour/${t.slug}`, lastModified: mod, changeFrequency: 'weekly', priority: 0.8 })
       }
+      // backward-compat UUID URL — lower priority so it doesn't compete with canonical
+      entries.push({ url: `${BASE}/tour/${t.id}`, lastModified: mod, changeFrequency: 'weekly', priority: 0.5 })
       return entries
     })
 

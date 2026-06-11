@@ -15,6 +15,7 @@ interface ScheduleRow {
 
 interface TourRow {
   id:             string
+  slug:           string | null
   name:           string
   destination:    string | null
   duration_days:  number | null
@@ -34,6 +35,7 @@ function processTours(tours: TourRow[]): TourListingCardProps[] {
       .sort((a, b) => a.departure_date.localeCompare(b.departure_date))
     return {
       id:             t.id,
+      slug:           t.slug,
       name:           t.name,
       destination:    t.destination,
       country:        null,
@@ -62,7 +64,7 @@ export default async function TourTrongNuocPage() {
   const { data, error } = await supabase
     .from('tours')
     .select(`
-      id, name, destination, duration_days, category, thumbnail_url, hashtags,
+      id, slug, name, destination, duration_days, category, thumbnail_url, hashtags,
       tour_schedules(departure_date, price_adult, status)
     `)
     .eq('is_active', true)

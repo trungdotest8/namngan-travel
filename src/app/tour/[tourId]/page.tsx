@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
-import TourDetailClient from './TourDetailClient'
+import TourDetailClient, { type RelatedTour } from './TourDetailClient'
 import type { Tour, TourSchedule } from '@/types/tour.types'
 
 export const revalidate = 3600
@@ -141,7 +141,20 @@ export default async function TourDetailPage(
     .limit(10)
 
   const schedules = (schData ?? []) as unknown as TourSchedule[]
-  const jsonLd    = buildJsonLd(tour, schedules)
+
+  // Related tours: same category, different code, limit 3
+  const { data: relData } = tour.category
+    ? await supabase
+        .from('tours')
+        .select('id, slug, name, duration_days, thumbnail_url, category')
+        .eq('is_active', true)
+        .eq('category', tour.category)
+        .neq('code', tour.code)
+        .limit(3)
+    : { data: null }
+
+  const relatedTours = (relData ?? []) as unknown as RelatedTour[]
+  const jsonLd       = buildJsonLd(tour, schedules)
 
   return (
     <>
@@ -153,7 +166,7 @@ export default async function TourDetailPage(
       <Header />
       <main className="min-h-screen bg-[#F5F7FA]">
         <ErrorBoundary moduleName="TourDetailPage">
-          <TourDetailClient tour={tour} schedules={schedules} />
+          <TourDetailClient tour={tour} schedules={schedules} relatedTours={relatedTours} />
         </ErrorBoundary>
       </main>
       <Footer />

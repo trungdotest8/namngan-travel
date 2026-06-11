@@ -144,7 +144,7 @@ export default function DiemDenDetailClient({ params }: { params: { slug: string
                 {tours.map(tour => (
                   <Link
                     key={tour.id}
-                    href={tour.slug ? `/tours/${tour.slug}` : `/tour/${tour.id}`}
+                    href={tour.slug ? `/tour/${tour.slug}` : `/tour/${tour.id}`}
                     className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all"
                   >
                     <div className="relative h-48 overflow-hidden bg-[#F0F7FF]">

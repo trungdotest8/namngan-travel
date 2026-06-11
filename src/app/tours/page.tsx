@@ -16,6 +16,7 @@ interface ScheduleRow {
 
 interface TourRow {
   id:            string
+  slug:          string | null
   name:          string
   destination:   string | null
   country:       string | null
@@ -45,6 +46,7 @@ function processTours(tours: TourRow[]): TourListingCardProps[] {
 
     return {
       id:             t.id,
+      slug:           t.slug,
       name:           t.name,
       destination:    t.destination,
       country,
@@ -75,7 +77,7 @@ export default async function ToursPage() {
   const { data, error } = await supabase
     .from('tours')
     .select(`
-      id, name, destination, country, duration_days, category, thumbnail_url, hashtags,
+      id, slug, name, destination, country, duration_days, category, thumbnail_url, hashtags,
       tour_schedules(departure_date, price_adult, status)
     `)
     .eq('is_active', true)

@@ -163,6 +163,7 @@ export default async function DuLichCountryPage({
       .sort((a, b) => a.departure_date.localeCompare(b.departure_date))
     return {
       id:             t.id,
+      slug:           t.slug,
       name:           t.name,
       destination:    t.destination,
       country:        t.country,

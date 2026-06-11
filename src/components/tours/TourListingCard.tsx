@@ -4,6 +4,7 @@ import { Calendar, Clock, MapPin } from 'lucide-react'
 
 export interface TourListingCardProps {
   id:             string
+  slug?:          string | null
   name:           string
   destination:    string | null
   country?:       string | null
@@ -30,7 +31,7 @@ function formatDate(dateStr: string) {
 }
 
 export default function TourListingCard({
-  id, name, destination, country, duration_days,
+  id, slug, name, destination, country, duration_days,
   thumbnail_url, next_departure, min_price, category,
 }: TourListingCardProps) {
   const safeThumb = toHttps(thumbnail_url)
@@ -40,10 +41,11 @@ export default function TourListingCard({
     : 'bg-emerald-600 text-white'
   const badgeText = isIntl ? 'Quốc tế' : 'Trong nước'
   const displayDest = country && isIntl ? country : destination
+  const href = slug ? `/tour/${slug}` : `/tour/${id}`
 
   return (
     <Link
-      href={`/tour/${id}`}
+      href={href}
       className="group flex flex-col rounded-xl overflow-hidden border border-gray-100 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out"
     >
       {/* Thumbnail */}

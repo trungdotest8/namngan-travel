@@ -231,7 +231,7 @@ function TourCardStatic({ tour }: {
 }) {
   return (
     <Link
-      href={`/tours/${tour.slug}`}
+      href={`/tour/${tour.slug}`}
       className="group flex flex-col bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md border border-gray-100 transition-all duration-200"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-brand-bg">

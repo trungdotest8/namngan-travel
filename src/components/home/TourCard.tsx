@@ -21,7 +21,7 @@ interface TourCardProps {
 export default function TourCard({ tour, minPrice, featured = false }: TourCardProps) {
   return (
     <Link
-      href={`/tours/${tour.slug}`}
+      href={tour.slug ? `/tour/${tour.slug}` : `/tour/${tour.id}`}
       className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg border border-gray-100 transition-shadow duration-200"
     >
       {/* Thumbnail */}

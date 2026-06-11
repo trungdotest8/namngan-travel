@@ -11,6 +11,15 @@ import { TripGenieLeadModal, useTripGenieModal } from '@/components/booking/Trip
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import type { Tour, TourSchedule } from '@/types/tour.types'
 
+export interface RelatedTour {
+  id:           string
+  slug:         string | null
+  name:         string
+  duration_days: number | null
+  thumbnail_url: string | null
+  category:     string | null
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmtVND(n: number): string {
@@ -52,11 +61,12 @@ function parseHighlights(raw: string | null): string[] {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 interface Props {
-  tour:      Tour
-  schedules: TourSchedule[]
+  tour:         Tour
+  schedules:    TourSchedule[]
+  relatedTours: RelatedTour[]
 }
 
-export default function TourDetailClient({ tour, schedules }: Props) {
+export default function TourDetailClient({ tour, schedules, relatedTours }: Props) {
   const [bookingOpen,     setBookingOpen]     = useState(false)
   const [selectedSchedId, setSelectedSchedId] = useState<string | null>(null)
   const [openDays,        setOpenDays]        = useState<Record<number, boolean>>({})
@@ -399,6 +409,56 @@ export default function TourDetailClient({ tour, schedules }: Props) {
           <h2 className="text-lg font-bold text-[#1A1A2E] mb-3">Điều khoản & Chính sách</h2>
           <div className="text-sm text-[#444] leading-relaxed whitespace-pre-line">
             {tour.policies}
+          </div>
+        </section>
+      )}
+
+      {/* ── TOUR CÙNG LOẠI ──────────────────────────────────────────────────── */}
+      {relatedTours.length > 0 && (
+        <section className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">
+          <h2 className="text-lg font-bold text-[#1A1A2E] mb-4">Tour cùng loại</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {relatedTours.map(t => {
+              const href = t.slug ? `/tour/${t.slug}` : `/tour/${t.id}`
+              const nights = t.duration_days && t.duration_days > 1 ? t.duration_days - 1 : null
+              const durationLabel = t.duration_days
+                ? (nights ? `${t.duration_days}N${nights}Đ` : `${t.duration_days} ngày`)
+                : null
+              return (
+                <Link
+                  key={t.id}
+                  href={href}
+                  className="group flex flex-col rounded-xl border border-gray-100 overflow-hidden hover:border-[#005BAA]/40 hover:shadow-md transition-all"
+                >
+                  {t.thumbnail_url ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={t.thumbnail_url}
+                      alt={t.name}
+                      className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-32 bg-[#F0F7FF] flex items-center justify-center">
+                      <MapPin size={24} className="text-[#005BAA] opacity-30" />
+                    </div>
+                  )}
+                  <div className="p-3 flex flex-col gap-1 flex-1">
+                    <p className="text-sm font-semibold text-[#1A1A2E] line-clamp-2 group-hover:text-[#005BAA] transition-colors leading-snug">
+                      {t.name}
+                    </p>
+                    {durationLabel && (
+                      <p className="text-xs text-[#666666] flex items-center gap-1">
+                        <Clock size={11} />
+                        {durationLabel}
+                      </p>
+                    )}
+                    <span className="mt-auto text-[11px] font-semibold text-[#005BAA] group-hover:underline">
+                      Xem ngay →
+                    </span>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         </section>
       )}
