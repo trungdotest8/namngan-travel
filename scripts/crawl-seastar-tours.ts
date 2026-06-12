@@ -59,6 +59,7 @@ const ItineraryDaySchema = z.object({
   day:         z.number().int().positive(),
   title:       z.string().min(1),
   description: z.string().min(1),
+  meals:       z.array(z.string()).optional(),  // ["Sáng", "Trưa", "Tối"] nếu PDF ghi rõ
 })
 
 const TourExtractSchema = z.object({
@@ -227,7 +228,7 @@ Trả về JSON thuần túy (không có markdown, không có \`\`\`json), đún
   "departure":  "Thành phố xuất phát, ví dụ: Hà Nội, TP.HCM",
   "summary":    "Mô tả ngắn 100–200 ký tự về tour",
   "highlights": ["điểm nổi bật 1", "điểm nổi bật 2", ...],
-  "itinerary":  [{ "day": 1, "title": "Tiêu đề ngày 1", "description": "Mô tả chi tiết" }, ...],
+  "itinerary":  [{ "day": 1, "title": "Tiêu đề ngày 1", "description": "Mô tả chi tiết", "meals": ["Sáng", "Trưa", "Tối"] }, ...],
   "inclusions": ["Điểm đã bao gồm 1", ...],
   "exclusions": ["Điểm chưa bao gồm 1", ...],
   "policies":   "Chính sách hủy/đổi tour hoặc null nếu không có"
@@ -237,7 +238,8 @@ Lưu ý:
 - slug: chuyển tên tour về chữ thường không dấu, thay khoảng trắng bằng gạch ngang
 - category: dựa trên điểm đến (Việt Nam → "trong nước", nước ngoài → "nước ngoài")
 - highlights: tối thiểu 1 mục
-- itinerary: tối thiểu 1 ngày, day phải là số nguyên dương`
+- itinerary: tối thiểu 1 ngày, day phải là số nguyên dương
+- meals: mảng các bữa ăn được bao gồm trong ngày đó (ví dụ ["Sáng", "Trưa", "Tối"]); bỏ qua trường này (hoặc để mảng rỗng) nếu PDF không ghi rõ bữa nào`
 
 async function extractWithClaude(entry: TourEntry, attempt = 1, zodError = ''): Promise<TourExtract | null> {
   const cached = jsonPath(entry.code)
