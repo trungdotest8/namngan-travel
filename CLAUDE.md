@@ -414,8 +414,8 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | SCRAPER-TQ | TrieuHao TQ Downloader | ✅ v1.0.0 | `scripts/download-trieuhao-tq.mjs` — 30 tours; 128MB |
 | AUDIENCE-CONTACTS | SMS Audience Import | ✅ v1.0.0 | migration #22 ✅ cloud; `/api/admin/audiences/export` ✅ |
 | SEASTAR-CRAWLER | SeaStar Crawler v3 | ✅ **v1.2.0** | `scripts/crawl-seastar-tours.ts` — 83 tours Sheets ✅; batch write ✅ |
-| TOURS-IMPORT | Tour Detail Import từ Sheets | ⏳ **v1.0.0** | `scripts/import-tours-from-sheet.ts` — 39 rows đọc được; import chưa xác nhận hoàn thành |
-| TOUR-DETAIL-PAGE | Trang chi tiết tour | ✅ **v3.0.0** | `TourDetailClient.tsx` — lead-capture first; Timeline; TabNav; LeadBox |
+| TOURS-IMPORT | Tour Detail Import từ Sheets | ✅ **v1.0.1** | `scripts/import-tours-from-sheet.ts` — 36 tours đã upsert Supabase ✅ |
+| TOUR-DETAIL-PAGE | Trang chi tiết tour | ✅ **v3.1.0** | `TourDetailClient.tsx` — force-dynamic fix 500; LeadBox+TabNav+Timeline |
 | TOUR-LEADBOX | Lead Capture trên Tour | ✅ v1.0.0 | `src/components/tour/TourLeadBox.tsx` — Zod phone + advisor card tel/Zalo |
 | TOUR-TABNAV | Sticky Tab Nav | ✅ v1.0.0 | `src/components/tour/TourTabNav.tsx` — IntersectionObserver 2 tab |
 | TOUR-TIMELINE | Timeline Itinerary | ✅ v1.0.0 | `src/components/tour/TourTimeline.tsx` — open sẵn; meals badge; thu/mở gọn |
@@ -471,41 +471,34 @@ useAiChatStore          (store/ai-chat.store.ts)           ✅
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
-GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) — commit 8815db6
-Vercel  : namngan-travel — deploy tự động từ main
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) — commit 5dee169
+Vercel  : namngan-travel — deploy tự động từ main — latest: lbgtoii7q ✅ Ready
 Supabase: indjoegnsvcteaozmgrg — 23 migrations local / 22 cloud
           ✅ migrations #22 (audience_contacts) + #24 (tours_detail_columns) ĐÃ PUSH
           ✅ bucket 'tour-galleries' | ✅ ai_conversations | ✅ featured_destinations
           ✅ SeaStar 476 lịch synced tháng 6–11/2026
+          ✅ 36 tours có detail_synced_at NOT NULL (import-tours-from-sheet.ts ✅)
 Resend  : Domain namngantravel.com — PENDING DNS
 ANTHROPIC_API_KEY: ✅ .env.local + ✅ Vercel
 TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID: ✅ Vercel đã set
-Env vars CẦN THÊM Vercel: NEXT_PUBLIC_SALES_NAME, NEXT_PUBLIC_SALES_PHONE,
-                           ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
+NEXT_PUBLIC_SALES_NAME=Lê Hoài Nam: ✅ Vercel Production + Development
+NEXT_PUBLIC_SALES_PHONE=0932611933: ✅ Vercel Production + Development
+Env vars CẦN THÊM Vercel: ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
 Remote Dev: Tailscale ✅ | code-server ✅ | Mac 100.117.250.21:8080 | pw: 074f49a444ee24314c07bda0
 
 Google Sheets:
   Tab "tour_schedules": SeaStar sync 2h sáng hàng ngày (Apps Script Code.gs)
-  Tab "tours_master": 83 tours crawled ✅ (39 unique codes sau dedup)
+  Tab "tours_master": 83 tours crawled ✅ (36 unique codes upsert Supabase ✅)
 
-SeaStar Crawler v3 — ✅ HOÀN THÀNH:
-  scripts/crawl-seastar-tours.ts | 83 tours | 0 lỗi | commit dd0d9fb + 8815db6
-  ✅ Auto-create tab tours_master nếu chưa tồn tại
-  ✅ Batch write (batchUpdate + single append) — không còn 429 rate limit
-  ✅ meals optional trong ItineraryDaySchema + EXTRACT_PROMPT
+Tour Detail Page v3.1.0 — ✅ DONE (commit 5dee169):
+  Root cause fix: ISR (revalidate=3600) + cookies() = DYNAMIC_SERVER_USAGE 500
+  Fix: export const dynamic = 'force-dynamic' + revalidate = 0
+  Confirmed: production build 200 ✅ | Vercel deploy Ready ✅
 
-Tour Detail Import:
-  scripts/import-tours-from-sheet.ts — user báo "đã chạy", đọc được 39 dòng
-  ⚠️ Chưa xác nhận kết quả import thành công vào Supabase
-  Cần: kiểm tra tours table có detail_synced_at không null
-
-Tour Detail Page v3.0.0 — ✅ DONE (commit 8815db6):
-  Layout: Breadcrumb → H1+USP → TourLeadBox → Info Block 4ô → Giá → TabNav → Timeline → Schedule
-  TourLeadBox: POST /api/leads source=tour_detail → classify+Telegram auto
-  TourTabNav: sticky top-16; IntersectionObserver 2 tab
-  TourTimeline: open sẵn; meals badges; Thu/Mở gọn tất cả
-  AIRLINE_MAP: thêm FD/QW/CZ/MF/MU/CA
-  Fallback: tour thiếu detail vẫn ra LeadBox + Lịch khởi hành sạch
+scripts/import-tours-from-sheet.ts v1.0.1 fixes:
+  ✅ ws package cho Node.js 20 (Supabase Realtime transport)
+  ✅ Dedup by code trước upsert (tránh ON CONFLICT error)
+  ✅ scripts/ excluded khỏi Next.js tsconfig (tránh type-check lỗi)
 
 Claude models:
   src/lib/ai/claude.ts              → claude-sonnet-4-6
@@ -514,43 +507,36 @@ Claude models:
   src/app/api/content/generate/route.ts → claude-opus-4-8
 ```
 
-### Data Contract — Thay đổi phiên #58
+### Data Contract — Thay đổi phiên #59
 
 ```typescript
-// TourItineraryDay.meals — đã có trong type, nay crawler cũng extract (optional)
-// meals?: string[]  // ["Sáng", "Trưa", "Tối"] — backward-compat: thiếu vẫn hợp lệ
+// page.tsx /tour/[tourId]:
+// export const dynamic = 'force-dynamic'  ← BẮT BUỘC khi dùng cookies() với revalidate
+// export const revalidate = 0
 
-// TourLeadBox POST /api/leads:
-// { full_name: "Khách hàng", phone, lead_source: "tour_detail",
-//   source_channel: "web_form", destination_interest: tourName,
-//   message: "Yêu cầu tư vấn: {code} — {name}" }
-
-// NEXT_PUBLIC_SALES_NAME / NEXT_PUBLIC_SALES_PHONE:
-// Env vars mới — fallback: "Tư vấn viên Nam Ngân" / "0932611933"
+// import-tours-from-sheet.ts:
+// _buildClient() nay pass { realtime: { transport: WebSocket } }
+// Payload dedup by code (Map) trước khi gọi upsertBatch()
 ```
 
 ### Files ưu tiên cao chưa tồn tại / cần fix
 
 ```
-# ƯU TIÊN #1 — XÁC NHẬN KẾT QUẢ IMPORT SUPABASE:
-  Kiểm tra: SELECT COUNT(*) FROM tours WHERE detail_synced_at IS NOT NULL;
-  Nếu chưa import: npx tsx scripts/import-tours-from-sheet.ts --dry-run → rồi import thật
+# ƯU TIÊN #1 — TEST TOUR DETAIL PAGE END-TO-END:
+  Mở https://www.namngantravel.com/tour/hanh-trinh-cung-duong-vang-nhat-ban-tokyo-fuji-nagoya-kyoto-kobe-osaka
+  Kiểm tra: trang load 200, Timeline/Inclusions hiển thị, LeadBox hoạt động
 
-# ƯU TIÊN #2 — VERCEL ENV VARS (manual, không cần code):
-  Vercel Dashboard → Settings → Environment Variables:
-  - NEXT_PUBLIC_SALES_NAME=<tên tư vấn viên>
-  - NEXT_PUBLIC_SALES_PHONE=<SĐT tư vấn viên>
-  - ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
-  → Redeploy
+# ƯU TIÊN #2 — TEST LEADBOX SUBMIT:
+  Điền SĐT → Submit → kiểm tra CRM tab Leads + Telegram notify
+  Cần: NEXT_PUBLIC_SALES_NAME/PHONE đã set ✅ → tên "Lê Hoài Nam" phải hiện đúng
 
-# ƯU TIÊN #3 — TEST END-TO-END LEADBOX:
-  Mở /tour/{any-tourId} → điền SĐT → submit
-  Kiểm tra: CRM tab Leads có lead mới không + Telegram notify tới không
+# ƯU TIÊN #3 — KIỂM TRA LINK TRANG CHỦ:
+  Các tour card trên trang chủ đang dùng slug cũ (sapa-fansipan, v.v.)
+  Cần: xem TourCard href có dùng slug mới từ Supabase không
+  Nếu không: update TourCard để dùng đúng slug từ DB
 
-# ƯU TIÊN #4 — CRAWLER MEALS (tùy chọn, không gấp):
-  Chạy lại crawler với --force-ai để extract meals cho 83 tours đã có JSON cache
-  → npx tsx scripts/crawl-seastar-tours.ts --force-ai
-  → Re-import sau
+# ƯU TIÊN #4 — VERCEL ENV VARS CÒN THIẾU (manual):
+  ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
 
 # ƯU TIÊN #5 — RESEND DNS:
   Kiểm tra DNS namngantravel.com đã propagate chưa → activate Resend domain
@@ -558,14 +544,15 @@ Claude models:
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Xác nhận import Supabase hoàn thành** — query `tours WHERE detail_synced_at IS NOT NULL` → nếu 0 thì chạy lại import
-2. **Thêm NEXT_PUBLIC_SALES_NAME + NEXT_PUBLIC_SALES_PHONE vào Vercel** — TourLeadBox cần để hiển thị đúng tên/SĐT tư vấn viên
-3. **Test TourLeadBox end-to-end** — submit SĐT trên trang tour → kiểm tra CRM + Telegram nhận notify
+1. **Test tour detail page production** — mở `/tour/hanh-trinh-cung-duong-vang-nhat-ban-tokyo-fuji-nagoya-kyoto-kobe-osaka` trên namngantravel.com → confirm 200 + nội dung hiển thị
+2. **Test TourLeadBox submit** — điền SĐT → submit → CRM + Telegram nhận notify
+3. **Kiểm tra TourCard href** — tour cards trang chủ có link đúng slug mới không (tránh link chết 404)
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-12 | Handover #59 — Tour Detail 500 fix + Import ✅ | force-dynamic DYNAMIC_SERVER_USAGE; 36 tours imported; ws+dedup fix |
 | 2026-06-12 | Handover #58 — Tour Detail v3.0.0 + Crawler ✅ | TourLeadBox+TabNav+Timeline; crawler batch fix; 83 tours Sheets |
 | 2026-06-12 | Handover #57 — Crawler Pipeline vận hành | endpoint fix departures.php; 3 tours AI ok; Sheets tab lỗi fix |
 | 2026-06-12 | Handover #56 — Tour Detail v2.0.0 hotfix | [slug]→[tourId] revert; UUID-safe lookup; isolated schedules |
@@ -584,5 +571,4 @@ Claude models:
 | 2026-06-09 | Handover #44 — SeaStar 6 tháng + fix limit + xóa TrieuHao | getMonths(3→6); limit 200→1000; 476 lịch synced |
 | 2026-06-09 | Handover #43 — Xóa TrieuHao sync hoàn toàn | Removed: sync-trieuhao.mjs, trieuhao.ts, /api/departures/ingest |
 | 2026-06-09 | Handover #40 — Phase 5 ✅ + push | CRM; ItineraryBuilder AI streaming+markdown |
-| 2026-06-09 | Handover #39 — Phase 4 hoàn thành | Zalo webhook ✅; FB webhook ✅; Zalo client ✅ |
 | 2026-06-09 | Handover #38 — Import CSV + migration #18 fix | Import CSV bulk; default filter Đã chốt |
