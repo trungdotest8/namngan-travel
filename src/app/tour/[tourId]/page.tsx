@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/Header'
@@ -8,24 +8,20 @@ import type { Tour, TourSchedule } from '@/types/tour.types'
 
 export const revalidate = 3600
 
-// UUID v4 pattern — backward-compat với URLs cũ dạng /tour/{UUID}
+// UUID v4 — bắt buộc kiểm tra trước khi so sánh cột id (tránh Postgres 22P02)
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-type TourWithSchedules = Tour & { tour_schedules: TourSchedule[] | null }
 
 // ── Static params ──────────────────────────────────────────────────────────────
 
-export async function generateStaticParams(): Promise<{ slug: string }[]> {
+export async function generateStaticParams(): Promise<{ tourId: string }[]> {
   try {
     const supabase = await createClient()
     const { data } = await supabase
       .from('tours')
-      .select('slug')
-      .not('slug', 'is', null)
+      .select('id, slug')
       .eq('is_active', true)
-    return (data ?? [])
-      .filter((t): t is { slug: string } => typeof t.slug === 'string')
-      .map(t => ({ slug: t.slug }))
+    // Dùng slug nếu có, ngược lại dùng id — khi slug=NULL toàn bộ dùng UUID
+    return (data ?? []).map(t => ({ tourId: (t.slug as string | null) ?? (t.id as string) }))
   } catch {
     return []
   }
@@ -34,14 +30,16 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
 // ── Metadata ───────────────────────────────────────────────────────────────────
 
 export async function generateMetadata(
-  { params }: { params: { slug: string } }
+  { params }: { params: { tourId: string } }
 ): Promise<Metadata> {
+  const param = decodeURIComponent(params.tourId).trim()
   try {
     const supabase = await createClient()
+    const col = UUID_RE.test(param) ? 'id' : 'slug'
     const { data } = await supabase
       .from('tours')
       .select('name, summary, description, thumbnail_url, duration_days')
-      .eq('slug', params.slug)
+      .eq(col, param)
       .eq('is_active', true)
       .maybeSingle()
 
@@ -106,55 +104,87 @@ function buildJsonLd(tour: Tour, schedules: TourSchedule[]): Record<string, unkn
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default async function TourDetailPage(
-  { params }: { params: { slug: string } }
+  { params }: { params: { tourId: string } }
 ) {
+  const param = decodeURIComponent(params.tourId).trim()
   const supabase = await createClient()
 
-  // 1 round-trip: tour + tất cả schedules cùng lúc
-  let { data: raw } = await supabase
-    .from('tours')
-    .select('*, tour_schedules(*)')
-    .eq('slug', params.slug)
-    .eq('is_active', true)
-    .maybeSingle()
+  // ── 1. UUID-safe 2-step lookup ─────────────────────────────────────────────
+  // KHÔNG đưa chuỗi không phải UUID vào cột id (tránh Postgres 22P02)
+  let tour: Tour | null = null
 
-  // Backward-compat: nếu slug lookup thất bại và giá trị là UUID, thử by id
-  if (!raw && UUID_RE.test(params.slug)) {
-    const { data: byId } = await supabase
+  if (UUID_RE.test(param)) {
+    const { data, error } = await supabase
       .from('tours')
-      .select('*, tour_schedules(*)')
-      .eq('id', params.slug)
+      .select('*')
+      .eq('id', param)
       .eq('is_active', true)
       .maybeSingle()
-    raw = byId
+    if (error) {
+      console.error('[tour-detail] id lookup:', error.message)
+      notFound()
+    }
+    tour = data as Tour | null
+  } else {
+    const { data, error } = await supabase
+      .from('tours')
+      .select('*')
+      .eq('slug', param)
+      .eq('is_active', true)
+      .maybeSingle()
+    if (error) {
+      console.error('[tour-detail] slug lookup:', error.message)
+      notFound()
+    }
+    tour = data as Tour | null
   }
 
-  if (!raw) notFound()
+  if (!tour) notFound()
 
-  // Tách tour fields khỏi nested schedules
-  const rawData = raw as unknown as TourWithSchedules
-  const { tour_schedules: rawSchedules, ...tourRest } = rawData
-  const tour = tourRest as unknown as Tour
+  // ── 2. Canonical redirect: UUID → slug khi slug đã có ─────────────────────
+  if (UUID_RE.test(param) && tour.slug) {
+    redirect(`/tour/${tour.slug}`)
+  }
 
-  // Lọc + sort schedules trong JS: status=open, departure_date >= hôm nay, tăng dần
-  const today = new Date().toISOString().split('T')[0]
-  const schedules = ((rawSchedules ?? []) as TourSchedule[])
-    .filter(s => s.status === 'open' && s.departure_date >= today)
-    .sort((a, b) => a.departure_date.localeCompare(b.departure_date))
-    .slice(0, 12)
+  // ── 3. Schedules — lỗi chỉ ẩn section, KHÔNG 500 cả trang ────────────────
+  let schedules: TourSchedule[] = []
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const { data: schData, error: schError } = await supabase
+      .from('tour_schedules')
+      .select('*')
+      .eq('tour_id', tour.id)
+      .eq('status', 'open')
+      .gte('departure_date', today)
+      .order('departure_date', { ascending: true })
+      .limit(12)
 
-  // Related tours: cùng category, khác code, limit 3
-  const { data: relData } = tour.category
-    ? await supabase
+    if (schError) {
+      console.error('[tour-detail] schedules:', schError.message)
+    } else {
+      schedules = (schData ?? []) as TourSchedule[]
+    }
+  } catch (e) {
+    console.error('[tour-detail] schedules exception:', e)
+  }
+
+  // ── 4. Related tours — lỗi chỉ ẩn section ────────────────────────────────
+  let relatedTours: RelatedTour[] = []
+  try {
+    if (tour.category) {
+      const { data: relData, error: relError } = await supabase
         .from('tours')
         .select('id, slug, name, duration_days, thumbnail_url, category')
         .eq('is_active', true)
         .eq('category', tour.category)
         .neq('code', tour.code)
         .limit(3)
-    : { data: null }
+      if (!relError) relatedTours = (relData ?? []) as unknown as RelatedTour[]
+    }
+  } catch (e) {
+    console.error('[tour-detail] related:', e)
+  }
 
-  const relatedTours = (relData ?? []) as unknown as RelatedTour[]
   const jsonLd = buildJsonLd(tour, schedules)
 
   return (
