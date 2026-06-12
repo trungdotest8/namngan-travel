@@ -151,53 +151,41 @@ function buildHeaders(extra: Record<string, string> = {}): Record<string, string
 }
 
 async function scrapeTourList(destId: number): Promise<TourEntry[]> {
-  // Thử API JSON trước, fallback về HTML scrape
-  try {
-    const res = await axios.get<unknown>(`${BASE_URL}/api/tours.php?dest_id=${destId}`, {
-      headers: buildHeaders({ Accept: 'application/json' }),
-      timeout: 15000,
-    })
-    const data = res.data as { data?: Array<{ code?: string; name?: string; route?: string; pdf_url?: string }> }
-    if (Array.isArray(data?.data) && data.data.length > 0) {
-      return data.data
-        .filter(t => t.pdf_url)
-        .map(t => ({
-          code:    t.code    ?? `SS-${destId}-${Date.now()}`,
-          name:    t.name    ?? '',
-          route:   t.route   ?? '',
-          pdf_url: t.pdf_url ?? '',
-        }))
-    }
-  } catch {
-    // API không tồn tại → thử HTML
+  // API thực tế: /api/departures.php?dest_id=X&month=YYYY-MM
+  // Scan 6 tháng tới để gom đủ unique program_url
+  const months: string[] = []
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i)
+    months.push(d.toISOString().slice(0, 7))
   }
 
-  // HTML scrape: tìm các link .pdf trên trang destination
-  const pageUrl = `${BASE_URL}/?dest_id=${destId}`
-  const res = await axios.get<string>(pageUrl, {
-    headers: buildHeaders({ Accept: 'text/html' }),
-    timeout: 20000,
-    responseType: 'text',
-  })
-  const $ = cheerio.load(res.data as string)
+  const seen    = new Set<string>()
   const entries: TourEntry[] = []
 
-  // Tìm mọi <a href="...pdf"> trên trang
-  $('a[href]').each((_, el) => {
-    const href = $(el).attr('href') ?? ''
-    if (!href.toLowerCase().includes('.pdf')) return
+  for (const month of months) {
+    try {
+      const res = await axios.get<unknown>(
+        `${BASE_URL}/api/departures.php?dest_id=${destId}&month=${month}`,
+        { headers: buildHeaders({ Accept: 'application/json' }), timeout: 15000 },
+      )
+      type DepRow = { name?: string; program_url?: string }
+      const data = res.data as { data?: DepRow[] }
+      for (const dep of data?.data ?? []) {
+        const pdfUrl = dep.program_url ?? ''
+        if (!pdfUrl || seen.has(pdfUrl)) continue
+        seen.add(pdfUrl)
 
-    const fullUrl   = href.startsWith('http') ? href : `${BASE_URL}${href}`
-    const rowText   = $(el).closest('tr, .tour-item, .program-item, li').text().trim()
-    const tourName  = $(el).attr('title') || $(el).text().trim() || rowText.split('\n')[0].trim() || `Tour ${destId}`
-    const codeMatch = rowText.match(/\b([A-Z]{2,4}-\d{3,6})\b/) ??
-                      fullUrl.match(/\/([A-Z]{2,4}-\d{3,6})[._/]/)
-    const code      = codeMatch ? codeMatch[1] : `SS-${destId}-${slugify(tourName).slice(0, 12)}`
+        // Code tạm từ hash segment trong URL — Claude sẽ chuẩn hoá khi extract
+        const parts   = pdfUrl.split('/')
+        const hashSeg = parts[parts.length - 2] ?? `${destId}`
+        const code    = `SS-${hashSeg.slice(0, 8).toUpperCase()}`
 
-    if (fullUrl && !entries.some(e => e.pdf_url === fullUrl)) {
-      entries.push({ code, name: tourName, route: '', pdf_url: fullUrl })
+        entries.push({ code, name: dep.name ?? '', route: '', pdf_url: pdfUrl })
+      }
+    } catch {
+      // bỏ qua lỗi tháng lẻ, tiếp tục tháng tiếp
     }
-  })
+  }
 
   return entries
 }
