@@ -46,17 +46,20 @@ export default function TourListingCard({
   return (
     <Link
       href={href}
-      className="group flex flex-col rounded-xl overflow-hidden border border-gray-100 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out"
+      className="group relative flex flex-col rounded-xl border border-gray-100 bg-white shadow-sm hover:-translate-y-1 transition-transform duration-300 ease-out"
     >
+      {/* shadow layer — opacity transition thay cho box-shadow transition */}
+      <div className="absolute inset-0 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" aria-hidden="true" />
       {/* Thumbnail */}
-      <div className="relative aspect-[16/10] overflow-hidden bg-gray-100">
+      <div className="relative aspect-[16/10] overflow-hidden rounded-t-xl bg-gray-100">
         {safeThumb ? (
           <Image
             src={safeThumb}
             alt={name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+            className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            quality={75}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#F0F7FF] to-[#D0E8FF]">

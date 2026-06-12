@@ -22,17 +22,20 @@ export default function TourCard({ tour, minPrice, featured = false }: TourCardP
   return (
     <Link
       href={tour.slug ? `/tour/${tour.slug}` : `/tour/${tour.id}`}
-      className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg border border-gray-100 transition-shadow duration-200"
+      className="group relative flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm"
     >
+      {/* shadow layer — opacity transition thay cho box-shadow transition */}
+      <div className="absolute inset-0 rounded-2xl shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" aria-hidden="true" />
       {/* Thumbnail */}
-      <div className="relative aspect-[16/10] overflow-hidden bg-brand-bg">
+      <div className="relative aspect-[16/10] overflow-hidden rounded-t-2xl bg-brand-bg">
         {toHttps(tour.thumbnail_url) ? (
           <Image
             src={toHttps(tour.thumbnail_url)!}
             alt={tour.name}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            quality={75}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-gray-300">

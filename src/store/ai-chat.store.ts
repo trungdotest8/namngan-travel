@@ -23,12 +23,17 @@ export const useAiChatStore = create<AiChatState>((set) => ({
 
   setContext:   (ctx) => set((s) => ({ context: { ...s.context, ...ctx } })),
   addMessage:   (msg) => set((s) => ({ messages: [...s.messages, msg], error: null })),
+  // Dùng index thay map() — chỉ tạo 1 object mới (tin nhắn đang stream),
+  // giữ nguyên reference của N-1 tin nhắn cũ → React.memo hoạt động đúng.
   appendDelta:  (id, delta) =>
-    set((s) => ({
-      messages: s.messages.map((m) =>
-        m.id === id ? { ...m, content: m.content + delta } : m,
-      ),
-    })),
+    set((s) => {
+      const idx = s.messages.findIndex((m) => m.id === id)
+      if (idx === -1) return {}
+      const updated = { ...s.messages[idx], content: s.messages[idx].content + delta }
+      const messages = s.messages.slice()
+      messages[idx] = updated
+      return { messages }
+    }),
   setStreaming: (v) => set({ isStreaming: v }),
   setError:    (e) => set({ error: e }),
   clear:       () => set({ messages: [], isStreaming: false, error: null }),

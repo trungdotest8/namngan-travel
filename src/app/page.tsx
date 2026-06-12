@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 // Revalidate mỗi 1 giờ — đảm bảo điểm đến nổi bật luôn lấy data mới từ DB
-export const revalidate = 3600
+export const revalidate = 1800
 import Image from 'next/image'
 import { Clock, MapPin, Star, Shield, Users, Award, HeadphonesIcon, ChevronRight, Phone } from 'lucide-react'
 import Header from '@/components/layout/Header'
@@ -232,15 +232,18 @@ function TourCardStatic({ tour }: {
   return (
     <Link
       href={`/tour/${tour.slug}`}
-      className="group flex flex-col bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md border border-gray-100 transition-all duration-200"
+      className="group relative flex flex-col bg-white rounded-xl border border-gray-100 shadow-sm"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-brand-bg">
+      {/* shadow layer — opacity transition thay cho box-shadow transition */}
+      <div className="absolute inset-0 rounded-xl shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" aria-hidden="true" />
+      <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-brand-bg">
         <Image
           src={tour.thumbnail_url}
           alt={tour.name}
           fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          quality={75}
         />
         <div className="absolute top-2 left-2 flex gap-1.5">
           <span className={`px-2 py-0.5 text-white text-[10px] font-semibold rounded-full ${
@@ -249,7 +252,7 @@ function TourCardStatic({ tour }: {
             {tour.category === 'nước ngoài' ? 'Quốc tế' : 'Trong nước'}
           </span>
         </div>
-        <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
+        <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
           <Star size={9} fill="currentColor" className="text-yellow-400" />
           4.8
         </div>
@@ -445,13 +448,13 @@ export default async function HomePage() {
                 <Link
                   key={dest.name}
                   href={dest.href}
-                  className="group relative rounded-xl overflow-hidden aspect-square sm:aspect-[3/4] bg-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                  className="group relative rounded-xl overflow-hidden aspect-square sm:aspect-[3/4] bg-gray-200 shadow-sm"
                 >
                   <Image
                     src={dest.image_url}
                     alt={dest.name}
                     fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-300"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                     sizes="(max-width: 640px) 33vw, (max-width: 1024px) 20vw, 16vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
@@ -465,7 +468,7 @@ export default async function HomePage() {
         </section>
 
         {/* ── INTERNATIONAL TOURS ──────────────────────────── */}
-        <section className="py-8 sm:py-12 bg-white">
+        <section className="py-8 sm:py-12 bg-white" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 700px' }}>
           <div className="container-main">
             <SectionHeader
               tag="Du lịch quốc tế"
@@ -522,7 +525,7 @@ export default async function HomePage() {
         </section>
 
         {/* ── DOMESTIC TOURS ───────────────────────────────── */}
-        <section className="py-8 sm:py-12 bg-white">
+        <section className="py-8 sm:py-12 bg-white" style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 700px' }}>
           <div className="container-main">
             <SectionHeader
               tag="Du lịch trong nước"
@@ -558,7 +561,7 @@ export default async function HomePage() {
                 return (
                   <div
                     key={item.title}
-                    className="bg-white rounded-2xl p-5 sm:p-6 text-center shadow-sm hover:shadow-md transition-shadow border border-gray-50"
+                    className="bg-white rounded-2xl p-5 sm:p-6 text-center shadow-sm border border-gray-50"
                   >
                     <div className="w-12 h-12 sm:w-14 sm:h-14 bg-brand-bg rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
                       <Icon size={22} className="text-brand-blue" />
@@ -586,7 +589,7 @@ export default async function HomePage() {
                 <Link
                   key={article.id}
                   href={article.href}
-                  className="group flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
+                  className="group flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden"
                 >
                   <div className="relative h-40 sm:h-44 overflow-hidden bg-brand-bg">
                     <Image

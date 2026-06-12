@@ -1,6 +1,19 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+/**
+ * ChatWidget — widget chat nổi góc phải màn hình.
+ *
+ * Kiến trúc AiChatTab tối ưu hiệu năng:
+ * ┌ AiChatTab        — layout thuần, KHÔNG subscribe store
+ * ├── AiChatMessages — subscribe: messages, isStreaming, error; smart-scroll; memo
+ * │   └── ChatMessage × N — React.memo: chỉ re-render tin nhắn đang stream
+ * └── AiInput        — React.memo; local state; owns sendMessage; subscribe isStreaming
+ *
+ * Gõ chữ vào AiInput KHÔNG kích hoạt bất kỳ re-render nào ở danh sách tin nhắn.
+ * Mỗi token stream chỉ re-render ChatMessage cuối — toàn bộ tin nhắn cũ đóng băng.
+ */
+
+import { memo, useState, useRef, useEffect, useCallback } from 'react'
 import { MessageCircle, X, Send, Bot, User as UserIcon } from 'lucide-react'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { LeadFormSchema } from '@/lib/validations/lead.schema'
@@ -18,10 +31,13 @@ function readUtm() {
   }
 }
 
-type Tab         = 'lead' | 'ai'
+type Tab          = 'lead' | 'ai'
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error'
 
-// ── Tab Lead (form gốc) ────────────────────────────────────────────────────
+// Số tin nhắn tối đa hiển thị trong DOM cùng lúc
+const MAX_VISIBLE_MESSAGES = 30
+
+// ── LeadTab ────────────────────────────────────────────────────────────────────
 function LeadTab() {
   const [name,   setName]   = useState('')
   const [phone,  setPhone]  = useState('')
@@ -128,48 +144,168 @@ function LeadTab() {
   )
 }
 
-// ── Tab AI Chat ────────────────────────────────────────────────────────────
-function AiChatTab() {
-  const { messages, isStreaming, error, addMessage, appendDelta, setStreaming, setError } =
-    useAiChatStore()
-  const [input, setInput]     = useState('')
-  const bottomRef              = useRef<HTMLDivElement>(null)
-  const inputRef               = useRef<HTMLInputElement>(null)
+// ── ChatMessage ────────────────────────────────────────────────────────────────
+// React.memo + custom comparator: chỉ re-render khi content của tin nhắn này đổi.
+const ChatMessage = memo(
+  function ChatMessage({ msg, showStreaming }: { msg: AiMessage; showStreaming: boolean }) {
+    const isUser = msg.role === 'user'
+    return (
+      <div className={`flex items-end gap-1.5 ${isUser ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center
+          ${isUser ? 'bg-gray-100' : 'bg-brand-blue/10'}`}>
+          {isUser
+            ? <UserIcon size={13} className="text-gray-500" />
+            : <Bot size={13} className="text-brand-blue" />}
+        </div>
+        <div
+          className={`max-w-[80%] px-3 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap break-words
+            ${isUser
+              ? 'bg-brand-blue text-white rounded-br-sm'
+              : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
+        >
+          {msg.content || (msg.role === 'assistant' && showStreaming
+            ? <span className="inline-block w-4 h-1 bg-gray-400 rounded animate-pulse" />
+            : null)}
+        </div>
+      </div>
+    )
+  },
+  (prev, next) =>
+    prev.msg.id === next.msg.id &&
+    prev.msg.content === next.msg.content &&
+    prev.showStreaming === next.showStreaming,
+)
+ChatMessage.displayName = 'ChatMessage'
 
+// ── AiChatMessages ─────────────────────────────────────────────────────────────
+// Component riêng subscribe messages — AiChatTab KHÔNG cần subscribe.
+// Smart-scroll: rAF throttle, khóa khi user cuộn lên đọc lịch sử.
+const AiChatMessages = memo(function AiChatMessages() {
+  const messages    = useAiChatStore((s) => s.messages)
+  const isStreaming = useAiChatStore((s) => s.isStreaming)
+  const error       = useAiChatStore((s) => s.error)
+
+  const containerRef        = useRef<HTMLDivElement>(null)
+  const userScrollingUpRef   = useRef(false)
+  const rafPendingRef        = useRef(false)
+  const prevLengthRef        = useRef(0)
+
+  const isNearBottom = useCallback(() => {
+    const el = containerRef.current
+    if (!el) return true
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 80
+  }, [])
+
+  const scrollToBottom = useCallback(() => {
+    const el = containerRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [])
+
+  const scheduleScroll = useCallback(() => {
+    if (rafPendingRef.current || userScrollingUpRef.current) return
+    rafPendingRef.current = true
+    requestAnimationFrame(() => {
+      rafPendingRef.current = false
+      if (!userScrollingUpRef.current) scrollToBottom()
+    })
+  }, [scrollToBottom])
+
+  // Tin nhắn mới → reset lock + scroll ngay
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isStreaming])
+    if (messages.length > prevLengthRef.current) {
+      prevLengthRef.current = messages.length
+      userScrollingUpRef.current = false
+      scrollToBottom()
+    }
+  }, [messages.length, scrollToBottom])
 
-  const sendMessage = useCallback(async () => {
-    const text = input.trim()
-    if (!text || isStreaming) return
-    setInput('')
+  // Stream đang chạy → scroll throttled qua rAF
+  useEffect(() => {
+    if (isStreaming) scheduleScroll()
+  }, [messages, isStreaming, scheduleScroll])
+
+  const onScroll = useCallback(() => {
+    userScrollingUpRef.current = !isNearBottom()
+  }, [isNearBottom])
+
+  const isEmpty = messages.length === 0
+
+  // Giới hạn DOM: chỉ render tin nhắn gần nhất
+  const visible = messages.length > MAX_VISIBLE_MESSAGES
+    ? messages.slice(messages.length - MAX_VISIBLE_MESSAGES)
+    : messages
+
+  return (
+    <div
+      ref={containerRef}
+      onScroll={onScroll}
+      className="flex-1 overflow-y-auto px-3 py-3 space-y-2 min-h-0"
+    >
+      {isEmpty && (
+        <div className="text-center pt-4">
+          <Bot size={28} className="mx-auto text-brand-blue/40 mb-2" />
+          <p className="text-xs text-gray-400 leading-relaxed">
+            Xin chào! Tôi là TripGenie.<br />
+            Hãy cho tôi biết bạn muốn đi đâu?
+          </p>
+        </div>
+      )}
+      {visible.map((msg) => (
+        <ChatMessage key={msg.id} msg={msg} showStreaming={isStreaming} />
+      ))}
+      {error && (
+        <p className="text-[11px] text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+      )}
+    </div>
+  )
+})
+AiChatMessages.displayName = 'AiChatMessages'
+
+// ── AiInput ────────────────────────────────────────────────────────────────────
+// State text hoàn toàn cục bộ — gõ chữ không ảnh hưởng AiChatMessages bên trên.
+// Chứa toàn bộ sendMessage logic, dùng getState() → không bao giờ stale.
+// Input KHÔNG bị disabled khi AI đang stream (user có thể gõ sẵn câu tiếp theo).
+const AiInput = memo(function AiInput() {
+  const [text, setText]  = useState('')
+  const inputRef         = useRef<HTMLInputElement>(null)
+  // Subscribe isStreaming để enable/disable nút Gửi
+  const isStreaming       = useAiChatStore((s) => s.isStreaming)
+
+  // Tự động focus sau khi AI trả lời xong
+  useEffect(() => {
+    if (!isStreaming) inputRef.current?.focus()
+  }, [isStreaming])
+
+  const handleSend = useCallback(async () => {
+    const trimmed = text.trim()
+    if (!trimmed) return
+
+    // Đọc state hiện tại — không stale closure
+    const { isStreaming: streaming, addMessage, appendDelta, setStreaming, setError } =
+      useAiChatStore.getState()
+    if (streaming) return
+
+    setText('')
 
     const userMsg: AiMessage = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: text,
+      id:        crypto.randomUUID(),
+      role:      'user',
+      content:   trimmed,
       createdAt: new Date(),
     }
     addMessage(userMsg)
 
     const assistantId = crypto.randomUUID()
-    const assistantMsg: AiMessage = {
-      id: assistantId,
-      role: 'assistant',
-      content: '',
-      createdAt: new Date(),
-    }
-    addMessage(assistantMsg)
+    addMessage({ id: assistantId, role: 'assistant', content: '', createdAt: new Date() })
     setStreaming(true)
     setError(null)
 
     try {
       const history = useAiChatStore
         .getState()
-        .messages.slice(0, -1) // loại placeholder assistant vừa thêm
+        .messages.slice(0, -1)
         .map((m) => ({ role: m.role, content: m.content }))
-      history.push({ role: 'user', content: text })
+      history.push({ role: 'user', content: trimmed })
 
       const res = await fetch('/api/ai/chat', {
         method:  'POST',
@@ -192,96 +328,61 @@ function AiChatTab() {
           if (data === '[DONE]') break
           try {
             const parsed = JSON.parse(data)
-            if (parsed.content)       appendDelta(assistantId, parsed.content)
-            else if (parsed.error)    setError(parsed.error)
-          } catch { /* ignore malformed */ }
+            if (parsed.content)    appendDelta(assistantId, parsed.content)
+            else if (parsed.error) setError(parsed.error)
+          } catch { /* bỏ qua chunk lỗi định dạng */ }
         }
       }
     } catch {
       setError('Không thể kết nối AI. Vui lòng thử lại.')
     } finally {
       setStreaming(false)
-      inputRef.current?.focus()
     }
-  }, [input, isStreaming, addMessage, appendDelta, setStreaming, setError])
+  }, [text]) // chỉ phụ thuộc text — stable khi user không gõ
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
+    if (e.key === 'Enter') { e.preventDefault(); handleSend() }
   }
 
-  const isEmpty = messages.length === 0
+  return (
+    <div className="border-t border-gray-100 px-3 py-2 flex gap-2 items-center">
+      <input
+        ref={inputRef}
+        type="text"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={onKeyDown}
+        placeholder="Nhập tin nhắn…"
+        className="flex-1 text-xs px-2.5 py-2 border border-gray-200 rounded-lg outline-none bg-gray-50
+                   focus:border-brand-blue focus:bg-white focus:ring-2 focus:ring-brand-blue/10"
+      />
+      <button
+        onClick={handleSend}
+        disabled={!text.trim() || isStreaming}
+        className="w-8 h-8 rounded-lg bg-brand-blue text-white flex items-center justify-center
+                   hover:bg-brand-light transition-colors disabled:opacity-40 flex-shrink-0"
+        aria-label="Gửi"
+      >
+        <Send size={13} />
+      </button>
+    </div>
+  )
+})
+AiInput.displayName = 'AiInput'
 
+// ── AiChatTab ──────────────────────────────────────────────────────────────────
+// Pure layout component — không subscribe bất kỳ store nào.
+// KHÔNG bao giờ re-render do stream. Chỉ re-render khi tab switch.
+function AiChatTab() {
   return (
     <div className="flex flex-col h-full">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 min-h-0">
-        {isEmpty && (
-          <div className="text-center pt-4">
-            <Bot size={28} className="mx-auto text-brand-blue/40 mb-2" />
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Xin chào! Tôi là TripGenie.<br />
-              Hãy cho tôi biết bạn muốn đi đâu?
-            </p>
-          </div>
-        )}
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex items-end gap-1.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
-          >
-            <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center
-              ${msg.role === 'assistant' ? 'bg-brand-blue/10' : 'bg-gray-100'}`}>
-              {msg.role === 'assistant'
-                ? <Bot size={13} className="text-brand-blue" />
-                : <UserIcon size={13} className="text-gray-500" />}
-            </div>
-            <div
-              className={`max-w-[80%] px-3 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap break-words
-                ${msg.role === 'user'
-                  ? 'bg-brand-blue text-white rounded-br-sm'
-                  : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
-            >
-              {msg.content || (msg.role === 'assistant' && isStreaming
-                ? <span className="inline-block w-4 h-1 bg-gray-400 rounded animate-pulse" />
-                : null)}
-            </div>
-          </div>
-        ))}
-        {error && (
-          <p className="text-[11px] text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
-        )}
-        <div ref={bottomRef} />
-      </div>
-
-      {/* Input */}
-      <div className="border-t border-gray-100 px-3 py-2 flex gap-2 items-center">
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder="Nhập tin nhắn…"
-          disabled={isStreaming}
-          className="flex-1 text-xs px-2.5 py-2 border border-gray-200 rounded-lg outline-none bg-gray-50
-                     focus:border-brand-blue focus:bg-white focus:ring-2 focus:ring-brand-blue/10
-                     disabled:opacity-50"
-        />
-        <button
-          onClick={sendMessage}
-          disabled={!input.trim() || isStreaming}
-          className="w-8 h-8 rounded-lg bg-brand-blue text-white flex items-center justify-center
-                     hover:bg-brand-light transition-colors disabled:opacity-40 flex-shrink-0"
-          aria-label="Gửi"
-        >
-          <Send size={13} />
-        </button>
-      </div>
+      <AiChatMessages />
+      <AiInput />
     </div>
   )
 }
 
-// ── Widget chính ───────────────────────────────────────────────────────────
+// ── ChatWidgetInner ────────────────────────────────────────────────────────────
 function ChatWidgetInner() {
   const [isOpen, setIsOpen] = useState(false)
   const [tab,    setTab]    = useState<Tab>('lead')
