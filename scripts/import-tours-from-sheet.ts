@@ -22,11 +22,15 @@ import { google } from 'googleapis'
 import { createClient } from '@supabase/supabase-js'
 import * as dotenv from 'dotenv'
 import { z } from 'zod'
+import WebSocket from 'ws'
 
 // DbClient type được suy luận từ hàm gọi thực tế — tránh ReturnType<typeof createClient>
 // (generic mặc định của createClient ≠ kiểu được infer khi truyền string args)
 function _buildClient(url: string, key: string) {
-  return createClient(url, key, { auth: { persistSession: false } })
+  return createClient(url, key, {
+    auth: { persistSession: false },
+    realtime: { transport: WebSocket },
+  })
 }
 type DbClient = ReturnType<typeof _buildClient>
 
@@ -465,9 +469,17 @@ async function main(): Promise<void> {
     return
   }
 
-  // 9. Upsert (LIVE only)
-  console.log(`\n📤 Đang upsert ${payload.length} tour vào Supabase...`)
-  const { upserted, failed } = await upsertBatch(payload, supabase)
+  // 9. Deduplicate by code (keep last occurrence — Sheets data có thể trùng code)
+  const dedupMap = new Map<string, TourDetailUpsert>()
+  for (const row of payload) dedupMap.set(row.code, row)
+  const dedupedPayload = Array.from(dedupMap.values())
+  if (dedupedPayload.length < payload.length) {
+    console.log(`\n⚠️  Dedup: ${payload.length} → ${dedupedPayload.length} (bỏ ${payload.length - dedupedPayload.length} code trùng)`)
+  }
+
+  // 10. Upsert (LIVE only)
+  console.log(`\n📤 Đang upsert ${dedupedPayload.length} tour vào Supabase...`)
+  const { upserted, failed } = await upsertBatch(dedupedPayload, supabase)
 
   console.log('\n─────────────────────────────────────────────')
   console.log('✅ HOÀN TẤT')
