@@ -72,7 +72,7 @@ function extractSACredentials(): { email: string; key: string } {
 }
 
 const { email: SA_EMAIL, key: SA_KEY } = extractSACredentials()
-const SHEET_ID     = process.env.GOOGLE_SHEETS_SPREADSHEET_ID ?? ''
+const SHEET_ID     = (process.env.GOOGLE_SHEETS_SPREADSHEET_ID ?? '').split('/')[0].trim()
 const SUPA_URL     = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const SUPA_SVC_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
 

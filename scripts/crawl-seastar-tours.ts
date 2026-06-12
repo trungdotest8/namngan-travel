@@ -43,7 +43,7 @@ const MAX_PDF_MB          = 30
 const ANTHROPIC_API_KEY        = process.env.ANTHROPIC_API_KEY ?? ''
 const SEASTAR_COOKIE           = process.env.SEASTAR_COOKIE ?? ''
 const GOOGLE_SA_JSON           = process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? ''
-const GOOGLE_SHEETS_ID         = process.env.GOOGLE_SHEETS_SPREADSHEET_ID ?? ''
+const GOOGLE_SHEETS_ID         = (process.env.GOOGLE_SHEETS_SPREADSHEET_ID ?? '').split('/')[0].trim()
 
 // ─── CLI args ─────────────────────────────────────────────────────────────────
 
@@ -321,7 +321,7 @@ async function buildSheetsAuth() {
   const sa = JSON.parse(GOOGLE_SA_JSON) as { client_email: string; private_key: string }
   const auth = new google.auth.JWT({
     email:  sa.client_email,
-    key:    sa.private_key,
+    key:    sa.private_key.replace(/\\n/g, '\n'),
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   })
   return auth
