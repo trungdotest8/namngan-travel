@@ -325,6 +325,19 @@ async function sheetsUpsert(
   const sheets  = google.sheets({ version: 'v4', auth })
   const range   = `${SHEET_TAB}!A:N`
 
+  // Tạo tab tours_master nếu chưa tồn tại
+  const metaRes = await sheets.spreadsheets.get({
+    spreadsheetId: GOOGLE_SHEETS_ID,
+    fields: 'sheets/properties/title',
+  })
+  const tabExists = metaRes.data.sheets?.some(s => s.properties?.title === SHEET_TAB)
+  if (!tabExists && !isDry) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      requestBody: { requests: [{ addSheet: { properties: { title: SHEET_TAB } } }] },
+    })
+  }
+
   // Đọc dữ liệu hiện tại — xây Map<code, rowIndex (1-based)>
   const getRes = await sheets.spreadsheets.values.get({
     spreadsheetId: GOOGLE_SHEETS_ID,
@@ -351,7 +364,9 @@ async function sheetsUpsert(
     if (code) codeMap.set(code, idx + 1) // 1-based row
   })
 
-  let written = 0
+  // Phân loại rows thành update (đã có) và append (mới)
+  const updateData: Array<{ range: string; values: (string | number | null)[][] }> = []
+  const appendRows: (string | number | null)[][] = []
 
   for (const { entry, data } of tours) {
     const row: (string | number | null)[] = [
@@ -373,31 +388,43 @@ async function sheetsUpsert(
 
     if (isDry) {
       console.log(`  [dry-run] ${data.code} — ${data.name}`)
-      written++
       continue
     }
 
     const existingRow = codeMap.get(data.code)
     if (existingRow) {
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: GOOGLE_SHEETS_ID,
-        range:         `${SHEET_TAB}!A${existingRow}`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody:   { values: [row] },
-      })
+      updateData.push({ range: `${SHEET_TAB}!A${existingRow}`, values: [row] })
     } else {
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: GOOGLE_SHEETS_ID,
-        range:         `${SHEET_TAB}!A1`,
-        valueInputOption: 'USER_ENTERED',
-        insertDataOption: 'INSERT_ROWS',
-        requestBody:   { values: [row] },
-      })
-      codeMap.set(data.code, existing.length + 1)
+      appendRows.push(row)
     }
+  }
 
-    written++
-    await sleep(300) // tránh rate limit Sheets API
+  if (isDry) return tours.length
+
+  let written = 0
+
+  // Batch update các row đã tồn tại — 1 API call
+  if (updateData.length > 0) {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      requestBody: {
+        valueInputOption: 'USER_ENTERED',
+        data: updateData,
+      },
+    })
+    written += updateData.length
+  }
+
+  // Append toàn bộ row mới — 1 API call
+  if (appendRows.length > 0) {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      range:         `${SHEET_TAB}!A1`,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody:   { values: appendRows },
+    })
+    written += appendRows.length
   }
 
   return written
