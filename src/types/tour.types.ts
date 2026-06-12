@@ -45,6 +45,8 @@ export interface TourSchedule {
   price_child:    number          // VND
   seats_total:    number
   seats_booked:   number
+  flight_code_departure: string | null   // e.g. "VN-141"
+  flight_code_return:    string | null   // e.g. "VN-142"
   meeting_point:  string | null
   transport:      string | null   // "máy bay" | "xe limousine"
   status:         TourScheduleStatus

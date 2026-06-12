@@ -3,18 +3,19 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import TourDetailClient, { type RelatedTour } from './TourDetailClient'
 import type { Tour, TourSchedule } from '@/types/tour.types'
 
 export const revalidate = 3600
 
-// UUID v4 pattern — dùng để backward-compat với URLs cũ dạng /tour/{UUID}
+// UUID v4 pattern — backward-compat với URLs cũ dạng /tour/{UUID}
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+type TourWithSchedules = Tour & { tour_schedules: TourSchedule[] | null }
 
 // ── Static params ──────────────────────────────────────────────────────────────
 
-export async function generateStaticParams(): Promise<{ tourId: string }[]> {
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
   try {
     const supabase = await createClient()
     const { data } = await supabase
@@ -24,7 +25,7 @@ export async function generateStaticParams(): Promise<{ tourId: string }[]> {
       .eq('is_active', true)
     return (data ?? [])
       .filter((t): t is { slug: string } => typeof t.slug === 'string')
-      .map(t => ({ tourId: t.slug }))
+      .map(t => ({ slug: t.slug }))
   } catch {
     return []
   }
@@ -33,31 +34,34 @@ export async function generateStaticParams(): Promise<{ tourId: string }[]> {
 // ── Metadata ───────────────────────────────────────────────────────────────────
 
 export async function generateMetadata(
-  { params }: { params: { tourId: string } }
+  { params }: { params: { slug: string } }
 ): Promise<Metadata> {
   try {
     const supabase = await createClient()
     const { data } = await supabase
       .from('tours')
-      .select('name, summary, description, thumbnail_url')
-      .eq('slug', params.tourId)
+      .select('name, summary, description, thumbnail_url, duration_days')
+      .eq('slug', params.slug)
       .eq('is_active', true)
       .maybeSingle()
 
     if (!data) return { title: 'Tour | Nam Ngân Travel' }
 
-    const rawDesc = ((data.summary ?? data.description ?? '') as string).slice(0, 160)
+    const name = data.name as string
+    const rawDesc = (data.summary ?? data.description) as string | null
+    const duration = data.duration_days as number | null
+    const description = rawDesc
+      ? rawDesc.slice(0, 160)
+      : `${name}${duration ? ` — tour ${duration} ngày` : ''} do Nam Ngân Travel tổ chức. Liên hệ để nhận lịch và giá tốt nhất.`
 
     return {
-      title: `${data.name as string} | Nam Ngân Travel`,
-      description: rawDesc,
+      title: `${name} | Nam Ngân Travel`,
+      description,
       openGraph: {
-        title: `${data.name as string} | Nam Ngân Travel`,
-        description: rawDesc,
+        title: `${name} | Nam Ngân Travel`,
+        description,
         type: 'website',
-        ...(data.thumbnail_url
-          ? { images: [{ url: data.thumbnail_url as string }] }
-          : {}),
+        ...(data.thumbnail_url ? { images: [{ url: data.thumbnail_url as string }] } : {}),
       },
     }
   } catch {
@@ -102,24 +106,24 @@ function buildJsonLd(tour: Tour, schedules: TourSchedule[]): Record<string, unkn
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default async function TourDetailPage(
-  { params }: { params: { tourId: string } }
+  { params }: { params: { slug: string } }
 ) {
   const supabase = await createClient()
 
-  // Primary: query by slug (canonical URL)
+  // 1 round-trip: tour + tất cả schedules cùng lúc
   let { data: raw } = await supabase
     .from('tours')
-    .select('*')
-    .eq('slug', params.tourId)
+    .select('*, tour_schedules(*)')
+    .eq('slug', params.slug)
     .eq('is_active', true)
     .maybeSingle()
 
-  // Backward-compat: if slug lookup fails and value is a UUID, try by id
-  if (!raw && UUID_RE.test(params.tourId)) {
+  // Backward-compat: nếu slug lookup thất bại và giá trị là UUID, thử by id
+  if (!raw && UUID_RE.test(params.slug)) {
     const { data: byId } = await supabase
       .from('tours')
-      .select('*')
-      .eq('id', params.tourId)
+      .select('*, tour_schedules(*)')
+      .eq('id', params.slug)
       .eq('is_active', true)
       .maybeSingle()
     raw = byId
@@ -127,22 +131,19 @@ export default async function TourDetailPage(
 
   if (!raw) notFound()
 
-  const tour = raw as unknown as Tour
+  // Tách tour fields khỏi nested schedules
+  const rawData = raw as unknown as TourWithSchedules
+  const { tour_schedules: rawSchedules, ...tourRest } = rawData
+  const tour = tourRest as unknown as Tour
 
-  // Open schedules from today onward
+  // Lọc + sort schedules trong JS: status=open, departure_date >= hôm nay, tăng dần
   const today = new Date().toISOString().split('T')[0]
-  const { data: schData } = await supabase
-    .from('tour_schedules')
-    .select('*')
-    .eq('tour_id', tour.id)
-    .eq('status', 'open')
-    .gte('departure_date', today)
-    .order('departure_date', { ascending: true })
-    .limit(10)
+  const schedules = ((rawSchedules ?? []) as TourSchedule[])
+    .filter(s => s.status === 'open' && s.departure_date >= today)
+    .sort((a, b) => a.departure_date.localeCompare(b.departure_date))
+    .slice(0, 12)
 
-  const schedules = (schData ?? []) as unknown as TourSchedule[]
-
-  // Related tours: same category, different code, limit 3
+  // Related tours: cùng category, khác code, limit 3
   const { data: relData } = tour.category
     ? await supabase
         .from('tours')
@@ -154,20 +155,21 @@ export default async function TourDetailPage(
     : { data: null }
 
   const relatedTours = (relData ?? []) as unknown as RelatedTour[]
-  const jsonLd       = buildJsonLd(tour, schedules)
+  const jsonLd = buildJsonLd(tour, schedules)
 
   return (
     <>
       <script
         type="application/ld+json"
-        // JSON.stringify ensures safe serialization — không đặt raw data trực tiếp
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Header />
       <main className="min-h-screen bg-[#F5F7FA]">
-        <ErrorBoundary moduleName="TourDetailPage">
-          <TourDetailClient tour={tour} schedules={schedules} relatedTours={relatedTours} />
-        </ErrorBoundary>
+        <TourDetailClient
+          tour={tour}
+          schedules={schedules}
+          relatedTours={relatedTours}
+        />
       </main>
       <Footer />
     </>

@@ -2,33 +2,40 @@
 
 import { useState } from 'react'
 import {
-  CheckCircle, XCircle, ChevronDown, Calendar, Phone,
-  ArrowLeft, MapPin, Clock, Tag,
+  CheckCircle2, XCircle, ChevronDown, Calendar, Phone,
+  ArrowLeft, MapPin, Clock, Tag, Plane,
 } from 'lucide-react'
 import Link from 'next/link'
 import BookingModal from '@/components/booking/BookingModal'
 import { TripGenieLeadModal, useTripGenieModal } from '@/components/booking/TripGenieLeadModal'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import BookingScheduleButton from '@/components/tour/BookingScheduleButton'
 import type { Tour, TourSchedule } from '@/types/tour.types'
 
 export interface RelatedTour {
-  id:           string
-  slug:         string | null
-  name:         string
+  id:            string
+  slug:          string | null
+  name:          string
   duration_days: number | null
   thumbnail_url: string | null
-  category:     string | null
+  category:      string | null
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmtVND(n: number): string {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n)
+  return new Intl.NumberFormat('vi-VN').format(n) + 'đ'
 }
 
 function fmtDate(d: string): string {
   return new Date(d + 'T00:00:00').toLocaleDateString('vi-VN', {
     weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric',
+  })
+}
+
+function fmtDateShort(d: string): string {
+  return new Date(d + 'T00:00:00').toLocaleDateString('vi-VN', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
   })
 }
 
@@ -38,7 +45,7 @@ function formatDuration(days: number | null): string {
   return nights <= 0 ? `${days} ngày` : `${days}N${nights}Đ`
 }
 
-// highlights là TEXT trong DB — có thể chứa JSON array hoặc plain text
+// highlights là TEXT — có thể chứa JSON array hoặc plain text
 function parseHighlights(raw: string | null): string[] {
   if (!raw) return []
   const trimmed = raw.trim()
@@ -49,13 +56,35 @@ function parseHighlights(raw: string | null): string[] {
         return parsed.filter((x): x is string => typeof x === 'string').filter(Boolean)
       }
     } catch {
-      // fall through to line split
+      // fall through
     }
   }
   return trimmed
     .split('\n')
     .map(s => s.replace(/^[-•*]\s*/, '').trim())
     .filter(Boolean)
+}
+
+// Suy tên hãng hàng không từ prefix mã chuyến
+function airlineName(code: string | null): string {
+  if (!code) return '—'
+  const prefix = code.split('-')[0]?.toUpperCase() ?? ''
+  const map: Record<string, string> = {
+    VN: 'Vietnam Airlines',
+    VJ: 'Vietjet Air',
+    QH: 'Bamboo Airways',
+    BL: 'Pacific Airlines',
+    VU: 'Vietravel Airlines',
+    TH: 'Viettravel Airlines',
+  }
+  return map[prefix] ? `${map[prefix]} (${code})` : code
+}
+
+function slotsLabel(s: TourSchedule): { text: string; cls: string } {
+  const avail = Math.max(0, (s.seats_total ?? 0) - (s.seats_booked ?? 0))
+  if (avail === 0)  return { text: 'Hết chỗ', cls: 'text-red-500 font-medium' }
+  if (avail <= 5)   return { text: `Còn ${avail} chỗ`, cls: 'text-orange-500 font-medium' }
+  return { text: `${avail} chỗ`, cls: 'text-[#666666]' }
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -67,12 +96,11 @@ interface Props {
 }
 
 export default function TourDetailClient({ tour, schedules, relatedTours }: Props) {
-  const [bookingOpen,     setBookingOpen]     = useState(false)
-  const [selectedSchedId, setSelectedSchedId] = useState<string | null>(null)
-  const [openDays,        setOpenDays]        = useState<Record<number, boolean>>({})
+  const [floatingBookingOpen, setFloatingBookingOpen] = useState(false)
+  const [openDays, setOpenDays]                       = useState<Record<number, boolean>>({})
   const lead = useTripGenieModal()
 
-  // ── Derived data ─────────────────────────────────────────────────────────────
+  // ── Derived ──────────────────────────────────────────────────────────────────
   const highlights  = parseHighlights(tour.highlights)
   const inclusions  = (tour.inclusions ?? []).filter(Boolean)
   const exclusions  = (tour.exclusions ?? []).filter(Boolean)
@@ -82,25 +110,6 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
                     : tour.category === 'nước ngoài' ? 'Nước ngoài'
                     : (tour.category ?? null)
   const duration    = formatDuration(tour.duration_days)
-
-  // Put selected schedule first so BookingModal pre-selects it
-  const sortedSchedules: TourSchedule[] = selectedSchedId
-    ? [
-        ...schedules.filter(s => s.id === selectedSchedId),
-        ...schedules.filter(s => s.id !== selectedSchedId),
-      ]
-    : schedules
-
-  // ── Handlers ─────────────────────────────────────────────────────────────────
-  function openBooking(scheduleId?: string) {
-    setSelectedSchedId(scheduleId ?? null)
-    setBookingOpen(true)
-  }
-
-  function closeBooking() {
-    setBookingOpen(false)
-    setSelectedSchedId(null)
-  }
 
   function toggleDay(idx: number) {
     setOpenDays(prev => ({ ...prev, [idx]: !prev[idx] }))
@@ -121,7 +130,6 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
 
       {/* ── HERO ─────────────────────────────────────────────────────────────── */}
       <section className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-        {/* Thumbnail — ẩn nếu không có */}
         {tour.thumbnail_url && (
           <div className="w-full h-56 sm:h-72 overflow-hidden bg-gray-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -158,33 +166,25 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
             </div>
           )}
 
-          {/* Name */}
+          {/* h1 */}
           <h1 className="text-2xl sm:text-3xl font-bold text-[#1A1A2E] leading-tight">
             {tour.name}
           </h1>
 
-          {/* Summary — ẩn nếu null */}
+          {/* Summary */}
           {tour.summary && (
             <p className="text-[#666666] text-base leading-relaxed">{tour.summary}</p>
           )}
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+          {/* CTA chính: orange "Nhận Tư Vấn Lịch Trình" */}
+          <div className="pt-1">
             <button
               onClick={() => lead.open(destination ?? undefined)}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#005BAA] text-white font-semibold rounded-xl hover:bg-[#0078D7] active:scale-[0.98] transition-all text-sm"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#FF6B00] text-white font-bold rounded-xl hover:bg-orange-600 active:scale-[0.98] transition-all text-sm shadow-md shadow-orange-200"
             >
-              Nhận tư vấn miễn phí
+              <Phone size={15} />
+              Nhận Tư Vấn Lịch Trình
             </button>
-            {schedules.length > 0 && (
-              <button
-                onClick={() => openBooking()}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#FF6B00] text-white font-semibold rounded-xl hover:bg-orange-600 active:scale-[0.98] transition-all text-sm"
-              >
-                <Calendar size={15} />
-                Đặt tour ngay
-              </button>
-            )}
           </div>
         </div>
       </section>
@@ -196,7 +196,7 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {highlights.map((item, i) => (
               <li key={i} className="flex items-start gap-2.5">
-                <CheckCircle size={17} className="text-[#005BAA] shrink-0 mt-0.5" />
+                <CheckCircle2 size={17} className="text-[#005BAA] shrink-0 mt-0.5" />
                 <span className="text-sm text-[#1A1A2E] leading-relaxed">{item}</span>
               </li>
             ))}
@@ -227,7 +227,7 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
                         {day.day}
                       </span>
                       <span className="font-semibold text-[#1A1A2E] text-sm sm:text-base truncate">
-                        {day.title ?? `Ngày ${day.day}`}
+                        {`Ngày ${day.day}: ${day.title ?? ''}`}
                       </span>
                     </div>
                     <ChevronDown
@@ -238,7 +238,6 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
 
                   {isOpen && (
                     <div className="px-5 sm:px-6 pb-5 pt-1 space-y-3">
-                      {/* Meals badges — nếu có */}
                       {day.meals && day.meals.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                           {day.meals.map(m => (
@@ -251,7 +250,6 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
                           ))}
                         </div>
                       )}
-                      {/* Content: whitespace-pre-line giữ dấu xuống dòng từ crawler */}
                       {day.description && (
                         <p className="text-sm text-[#444] leading-relaxed whitespace-pre-line">
                           {day.description}
@@ -273,13 +271,11 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
           <div className={`grid gap-6 ${inclusions.length > 0 && exclusions.length > 0 ? 'sm:grid-cols-2' : 'grid-cols-1'}`}>
             {inclusions.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-[#005BAA] uppercase tracking-wide mb-2.5">
-                  Bao gồm
-                </p>
+                <p className="text-xs font-semibold text-[#005BAA] uppercase tracking-wide mb-2.5">Bao gồm</p>
                 <ul className="space-y-2">
                   {inclusions.map((item, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <CheckCircle size={15} className="text-[#005BAA] shrink-0 mt-0.5" />
+                      <CheckCircle2 size={15} className="text-[#005BAA] shrink-0 mt-0.5" />
                       <span className="text-sm text-[#1A1A2E]">{item}</span>
                     </li>
                   ))}
@@ -288,9 +284,7 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
             )}
             {exclusions.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-2.5">
-                  Không bao gồm
-                </p>
+                <p className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-2.5">Không bao gồm</p>
                 <ul className="space-y-2">
                   {exclusions.map((item, i) => (
                     <li key={i} className="flex items-start gap-2">
@@ -305,7 +299,7 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
         </section>
       )}
 
-      {/* ── LỊCH KHỞI HÀNH ──────────────────────────────────────────────────── */}
+      {/* ── LỊCH KHỞI HÀNH — luôn hiển thị ─────────────────────────────────── */}
       <section className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
         <div className="px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center gap-2">
           <Calendar size={18} className="text-[#005BAA]" />
@@ -313,83 +307,135 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
         </div>
 
         {schedules.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[480px]">
-              <thead>
-                <tr className="bg-[#F0F7FF]">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#005BAA] uppercase tracking-wide">
-                    Ngày đi
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#005BAA] uppercase tracking-wide">
-                    Người lớn
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#005BAA] uppercase tracking-wide">
-                    Trẻ em
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-[#005BAA] uppercase tracking-wide">
-                    Chỗ còn
-                  </th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {schedules.map(s => {
-                  const available = Math.max(
-                    0,
-                    (s.seats_total ?? 0) - (s.seats_booked ?? 0)
-                  )
-                  const almostFull = available > 0 && available <= 5
-                  const isFull     = available === 0
+          <>
+            {/* Desktop: table (md+) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-[#F0F7FF]">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#005BAA] uppercase tracking-wide">Ngày đi</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#005BAA] uppercase tracking-wide">Ngày về</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#005BAA] uppercase tracking-wide">
+                      <span className="flex items-center gap-1"><Plane size={12} />Chuyến bay</span>
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-[#005BAA] uppercase tracking-wide">Người lớn</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-[#005BAA] uppercase tracking-wide">Trẻ em</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-[#005BAA] uppercase tracking-wide">Chỗ còn</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {schedules.map(s => {
+                    const { text: slotText, cls: slotCls } = slotsLabel(s)
+                    const isFull = slotText === 'Hết chỗ'
+                    return (
+                      <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">
+                          {fmtDate(s.departure_date)}
+                        </td>
+                        <td className="px-4 py-3 text-[#666666] whitespace-nowrap">
+                          {fmtDate(s.return_date)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {s.flight_code_departure ? (
+                            <span className="text-xs text-[#444]">{airlineName(s.flight_code_departure)}</span>
+                          ) : (
+                            <span className="text-xs text-[#999]">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-[#FF6B00] whitespace-nowrap">
+                          {fmtVND(s.price_adult)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-[#666666] whitespace-nowrap">
+                          {s.price_child > 0 ? fmtVND(s.price_child) : '—'}
+                        </td>
+                        <td className={`px-4 py-3 text-right text-xs whitespace-nowrap ${slotCls}`}>
+                          {slotText}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <BookingScheduleButton
+                            schedule={s}
+                            tourId={tour.id}
+                            tourName={tour.name}
+                            disabled={isFull}
+                          />
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-                  return (
-                    <tr key={s.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-[#1A1A2E] whitespace-nowrap">
-                        {fmtDate(s.departure_date)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-[#FF6B00] whitespace-nowrap">
-                        {fmtVND(s.price_adult)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-[#666666] whitespace-nowrap">
-                        {s.price_child > 0 ? fmtVND(s.price_child) : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        {isFull ? (
-                          <span className="text-xs font-medium text-red-500">Hết chỗ</span>
-                        ) : almostFull ? (
-                          <span className="text-xs font-medium text-orange-500">
-                            Còn {available} chỗ
-                          </span>
-                        ) : (
-                          <span className="text-xs text-[#666666]">{available} chỗ</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => openBooking(s.id)}
-                          disabled={isFull}
-                          className="px-3 py-1.5 bg-[#005BAA] text-white text-xs font-semibold rounded-lg hover:bg-[#0078D7] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          Đăng ký
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+            {/* Mobile: card per schedule (<md) */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {schedules.map(s => {
+                const { text: slotText, cls: slotCls } = slotsLabel(s)
+                const isFull = slotText === 'Hết chỗ'
+                return (
+                  <div key={s.id} className="p-4 space-y-3">
+                    {/* Dates */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div>
+                        <p className="text-[10px] text-[#999] uppercase tracking-wide">Ngày đi</p>
+                        <p className="font-semibold text-[#1A1A2E] text-sm">{fmtDateShort(s.departure_date)}</p>
+                      </div>
+                      <span className="text-[#ccc] text-lg">→</span>
+                      <div>
+                        <p className="text-[10px] text-[#999] uppercase tracking-wide">Ngày về</p>
+                        <p className="font-semibold text-[#1A1A2E] text-sm">{fmtDateShort(s.return_date)}</p>
+                      </div>
+                    </div>
+
+                    {/* Flight */}
+                    {s.flight_code_departure && (
+                      <div className="flex items-center gap-1.5 text-xs text-[#444]">
+                        <Plane size={12} className="text-[#005BAA]" />
+                        {airlineName(s.flight_code_departure)}
+                      </div>
+                    )}
+
+                    {/* Price row */}
+                    <div className="flex gap-4">
+                      <div>
+                        <p className="text-[10px] text-[#999] uppercase tracking-wide">Người lớn</p>
+                        <p className="font-bold text-[#FF6B00] text-base">{fmtVND(s.price_adult)}</p>
+                      </div>
+                      {s.price_child > 0 && (
+                        <div>
+                          <p className="text-[10px] text-[#999] uppercase tracking-wide">Trẻ em</p>
+                          <p className="font-semibold text-[#666666] text-sm">{fmtVND(s.price_child)}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Slots + Button */}
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs ${slotCls}`}>{slotText}</span>
+                      <BookingScheduleButton
+                        schedule={s}
+                        tourId={tour.id}
+                        tourName={tour.name}
+                        disabled={isFull}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
         ) : (
-          /* Không có lịch — CTA liên hệ */
+          /* Không có lịch open */
           <div className="px-5 sm:px-6 py-8 text-center space-y-4">
             <p className="text-[#666666] text-sm">
-              Liên hệ để biết lịch khởi hành gần nhất
+              Liên hệ để nhận lịch khởi hành sớm nhất
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 onClick={() => lead.open(destination ?? undefined)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#005BAA] text-white font-semibold text-sm rounded-xl hover:bg-[#0078D7] transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#FF6B00] text-white font-semibold text-sm rounded-xl hover:bg-orange-600 transition-colors"
               >
-                Nhận tư vấn
+                Nhận Tư Vấn Lịch Trình
               </button>
               <a
                 href="tel:0932611933"
@@ -405,7 +451,7 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
 
       {/* ── POLICIES — ẩn nếu null ───────────────────────────────────────────── */}
       {tour.policies && (
-        <section className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">
+        <section className="bg-gray-50 rounded-2xl p-5 sm:p-6 border border-gray-200">
           <h2 className="text-lg font-bold text-[#1A1A2E] mb-3">Điều khoản & Chính sách</h2>
           <div className="text-sm text-[#444] leading-relaxed whitespace-pre-line">
             {tour.policies}
@@ -413,7 +459,7 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
         </section>
       )}
 
-      {/* ── TOUR CÙNG LOẠI ──────────────────────────────────────────────────── */}
+      {/* ── TOUR CÙNG LOẠI — ẩn nếu không có ──────────────────────────────── */}
       {relatedTours.length > 0 && (
         <section className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">
           <h2 className="text-lg font-bold text-[#1A1A2E] mb-4">Tour cùng loại</h2>
@@ -463,7 +509,7 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
         </section>
       )}
 
-      {/* ── FLOATING CTA — mobile sticky ────────────────────────────────────── */}
+      {/* ── FLOATING CTA — sticky bottom ────────────────────────────────────── */}
       <div
         className="fixed bottom-4 left-0 right-0 flex justify-center z-30 pointer-events-none"
         aria-hidden="true"
@@ -476,7 +522,7 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
             Tư vấn
           </button>
           <button
-            onClick={() => openBooking()}
+            onClick={() => setFloatingBookingOpen(true)}
             className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#FF6B00] text-white font-bold text-sm rounded-full shadow-lg hover:bg-orange-600 active:scale-[0.97] transition-all"
           >
             <Calendar size={14} />
@@ -486,13 +532,13 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
       </div>
 
       {/* ── MODALS ───────────────────────────────────────────────────────────── */}
-      {bookingOpen && (
+      {floatingBookingOpen && schedules.length > 0 && (
         <ErrorBoundary moduleName="BookingModal">
           <BookingModal
             tourId={tour.id}
             tourName={tour.name}
-            schedules={sortedSchedules}
-            onClose={closeBooking}
+            schedules={schedules}
+            onClose={() => setFloatingBookingOpen(false)}
           />
         </ErrorBoundary>
       )}
