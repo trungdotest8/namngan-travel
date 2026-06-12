@@ -6,7 +6,8 @@ import Footer from '@/components/layout/Footer'
 import TourDetailClient, { type RelatedTour } from './TourDetailClient'
 import type { Tour, TourSchedule } from '@/types/tour.types'
 
-export const revalidate = 3600
+export const dynamic    = 'force-dynamic'
+export const revalidate = 0
 
 // UUID v4 — bắt buộc kiểm tra trước khi so sánh cột id (tránh Postgres 22P02)
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
