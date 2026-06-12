@@ -388,17 +388,17 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | Child | Module | Trạng thái | Files chính |
 |-------|--------|-----------|-------------|
 | A | Search UI | ✅ v2.1.0 | `src/components/search/TourSearchBar.tsx` + `SearchResults.tsx` |
-| B | Lịch khởi hành + PDF Indexer | ✅ v1.3.1 | `src/lib/integrations/seastar.ts` — 6 tháng; limit 1000; nameHash fix |
+| B | Lịch khởi hành + PDF Indexer | ✅ v1.3.1 | `src/lib/integrations/seastar.ts` — 6 tháng; limit 1000 |
 | C | Itinerary + PDF Embed | ✅ v2.1.0 | `TourDetail.tsx` + `PdfViewer.tsx` |
 | D | Hồ sơ khách | ✅ v1.3.0 | `CustomerProfileDrawer.tsx` + `CustomerTable.tsx` — Export+Import CSV ✅ |
 | E | Chat & Lead | ✅ v2.2.0 | `ChatWidget.tsx` — 2 tab: "Để lại số" + "Chat AI" |
 | F | CMS / RSS | ✅ v1.3.0 | `ArticleFeed.tsx` — TiptapEditor ✅ |
-| G | DB Schema | ✅ **23 local / 22 cloud** | `supabase/migrations/` — migrations #22 + #24 ✅ pushed |
+| G | DB Schema | ✅ **23 local / 22 cloud** | `supabase/migrations/` — #22 + #24 ✅ cloud |
 | CRM | Admin CRM | ✅ v8.4.0 | `crm/page.tsx` — 8 tabs; SeaStar-only sync ✅ |
 | AUTH | Admin Auth | ✅ v2.0.0 | `login/page.tsx` + `middleware.ts` — cookie: `admin_session` |
 | TRIPGENIE | AI Chat Core | ✅ v1.2.0 | `/api/ai/chat` Node.js runtime; RAG ✅ — claude-sonnet-4-6 |
 | TRIPGENIE-LEADS | Lead Capture | ✅ v2.1.0 | `/api/leads` POST (adminClient); `/api/leads/[id]` PATCH ✅ |
-| TRIPGENIE-CLASSIFY | AI Classification | ✅ v1.0.0 | `src/lib/ai/classify.ts`; `/api/ai/classify-lead` — claude-haiku-4-5 |
+| TRIPGENIE-CLASSIFY | AI Classification | ✅ v1.0.0 | `src/lib/ai/classify.ts` — claude-haiku-4-5 |
 | TRIPGENIE-AFFILIATE | Affiliate Engine | ✅ v1.0.0 | migration #18; `src/lib/affiliate/tracker.ts` |
 | TRIPGENIE-ITINERARY | Itinerary Builder AI | ✅ v1.0.0 | `/api/ai/itinerary` 4096 tokens SSE — claude-sonnet-4-6 |
 | LEADS-ACTIVITIES | Nhật ký chăm sóc | ✅ v1.0.0 | migration #19; `/api/leads/[id]/activities` |
@@ -407,31 +407,34 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | RAG | AI Context | ✅ v1.0.0 | `src/lib/ai/rag.ts` — searchRelevantTours() |
 | ZALO-WEBHOOK | Phase 4 Zalo OA | ✅ v1.0.0 | `/api/webhooks/zalo/route.ts` + `src/lib/zalo/client.ts` |
 | FB-LEADS-WEBHOOK | Phase 4 FB Lead Ads | ✅ v1.0.0 | `/api/webhooks/fb-leads/route.ts` |
-| GSHEET-SYNC | Google Sheets Sync | ✅ v1.1.0 | `scripts/sheets-sync/Code.gs` — LIVE ✅; URL: www.namngantravel.com |
+| GSHEET-SYNC | Google Sheets Sync | ✅ v1.1.0 | `scripts/sheets-sync/Code.gs` — LIVE ✅ |
 | PHASE6-SEO | Programmatic SEO | ✅ v1.0.0 | `src/app/du-lich/[country]/page.tsx` + `CountryToursClient.tsx` |
-| PHASE6-CONTENT | Content Generate AI | ✅ v1.0.1 | `src/app/api/content/generate/route.ts` — claude-opus-4-8 |
-| REMOTE-DEV | Tailscale + code-server | ✅ v1.0.0 | LaunchAgents; Mac 100.117.250.21; Xiaomi 100.119.4.16; port 8080 |
-| SCRAPER-TQ | TrieuHao TQ Downloader | ✅ v1.0.0 | `scripts/download-trieuhao-tq.mjs` — 30 tours; 69 files; 128MB |
-| AUDIENCE-CONTACTS | SMS Audience Import | ✅ v1.0.0 | migration #22 ✅ cloud; `scripts/import-sms-audience.ts` ✅; `/api/admin/audiences/export` ✅ |
-| SEASTAR-CRAWLER | SeaStar Tour Detail Crawler v3 | ⏳ **v1.1.0** | `scripts/crawl-seastar-tours.ts` — endpoint fix ✅; **Sheets write lỗi "tab not found" chưa fix** |
-| TOURS-IMPORT | Tour Detail Import từ Sheets | ✅ v1.0.0 | migration #24 ✅ cloud; `scripts/import-tours-from-sheet.ts` |
-| TOUR-DETAIL-PAGE | Trang chi tiết tour data-driven | ✅ **v2.0.0** | `src/app/tour/[tourId]/page.tsx` — UUID-safe hotfix; [slug] reverted về [tourId] |
-| TOUR-LINKS | Tour ecosystem linking | ✅ v1.0.0 | 13 files — sitemap, TourCard, TourListingCard, /lich-khoi-hanh, "Tour cùng loại" |
-| BOOKING-BTN | BookingScheduleButton island | ✅ v1.0.0 | `src/components/tour/BookingScheduleButton.tsx` — ErrorBoundary "TourBooking" |
+| PHASE6-CONTENT | Content Generate AI | ✅ v1.0.1 | `/api/content/generate` — claude-opus-4-8 |
+| REMOTE-DEV | Tailscale + code-server | ✅ v1.0.0 | Mac 100.117.250.21:8080 \| pw: 074f49a444ee24314c07bda0 |
+| SCRAPER-TQ | TrieuHao TQ Downloader | ✅ v1.0.0 | `scripts/download-trieuhao-tq.mjs` — 30 tours; 128MB |
+| AUDIENCE-CONTACTS | SMS Audience Import | ✅ v1.0.0 | migration #22 ✅ cloud; `/api/admin/audiences/export` ✅ |
+| SEASTAR-CRAWLER | SeaStar Crawler v3 | ✅ **v1.2.0** | `scripts/crawl-seastar-tours.ts` — 83 tours Sheets ✅; batch write ✅ |
+| TOURS-IMPORT | Tour Detail Import từ Sheets | ⏳ **v1.0.0** | `scripts/import-tours-from-sheet.ts` — 39 rows đọc được; import chưa xác nhận hoàn thành |
+| TOUR-DETAIL-PAGE | Trang chi tiết tour | ✅ **v3.0.0** | `TourDetailClient.tsx` — lead-capture first; Timeline; TabNav; LeadBox |
+| TOUR-LEADBOX | Lead Capture trên Tour | ✅ v1.0.0 | `src/components/tour/TourLeadBox.tsx` — Zod phone + advisor card tel/Zalo |
+| TOUR-TABNAV | Sticky Tab Nav | ✅ v1.0.0 | `src/components/tour/TourTabNav.tsx` — IntersectionObserver 2 tab |
+| TOUR-TIMELINE | Timeline Itinerary | ✅ v1.0.0 | `src/components/tour/TourTimeline.tsx` — open sẵn; meals badge; thu/mở gọn |
+| TOUR-LINKS | Tour ecosystem linking | ✅ v1.0.0 | sitemap, TourCard, TourListingCard, /lich-khoi-hanh, "Tour cùng loại" |
+| BOOKING-BTN | BookingScheduleButton | ✅ v1.0.0 | `src/components/tour/BookingScheduleButton.tsx` |
 
 ### Trạng thái API Routes
 
 | Route | Method | Trạng thái | Ghi chú |
 |-------|--------|-----------|---------|
-| `/api/leads` | POST | ✅ v2.1.0 | createAdminClient + honeypot + lead_score + Telegram |
-| `/api/leads` | GET | ✅ v1.0.0 | Auth + filter ?channel= ?status= ?page= ?limit= |
+| `/api/leads` | POST | ✅ v2.1.0 | adminClient + honeypot + lead_score + Telegram + classify auto |
+| `/api/leads` | GET | ✅ | Auth + filter ?channel= ?status= ?page= ?limit= |
 | `/api/leads/[id]` | PATCH | ✅ | LeadStatusUpdateSchema + auth |
 | `/api/leads/[id]/activities` | GET+POST | ✅ | ActivityInsertSchema + Realtime broadcast |
 | `/api/leads/import` | POST | ✅ | Bulk insert max 500 |
-| `/api/ai/chat` | POST | ✅ v1.2.0 | Node.js runtime + RAG + SSE streaming — claude-sonnet-4-6 |
-| `/api/ai/classify-lead` | POST | ✅ | classifyLead() → UPDATE ai_tier + ai_tags — claude-haiku-4-5 |
-| `/api/ai/itinerary` | POST | ✅ v1.0.0 | Node.js; 4096 tokens; SSE stream — claude-sonnet-4-6 |
-| `/api/affiliate/track` | GET | ✅ | record click → 302 redirect; IP hash SHA-256 |
+| `/api/ai/chat` | POST | ✅ v1.2.0 | Node.js + RAG + SSE — claude-sonnet-4-6 |
+| `/api/ai/classify-lead` | POST | ✅ | classifyLead() — claude-haiku-4-5 |
+| `/api/ai/itinerary` | POST | ✅ | 4096 tokens SSE — claude-sonnet-4-6 |
+| `/api/affiliate/track` | GET | ✅ | click → 302 redirect; IP hash SHA-256 |
 | `/api/customer-profile` | GET+PATCH | ✅ | Auth + limit 200 |
 | `/api/search` | POST | ✅ | OR query name\|destination\|country |
 | `/api/cms` | GET/POST | ✅ | pagination + new_article notification |
@@ -441,16 +444,16 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | `/api/notifications` | POST | ✅ | x-webhook-secret |
 | `/api/departures` | GET | ✅ | filter destination/month/status/country; max 1000 |
 | `/api/departures` | POST | ✅ v2.2.0 | SeaStar-only; 6 tháng; broadcast Realtime |
-| `/api/departures/sync` | POST | ✅ v1.0.0 | Apps Script UPSERT; SYNC_API_URL=www.namngantravel.com ⚠️ |
+| `/api/departures/sync` | POST | ✅ | Apps Script UPSERT; URL: www.namngantravel.com |
 | `/api/itinerary/[tourId]` | GET | ✅ | |
 | `/api/pdf-index` | GET | ✅ | FTS RPC |
 | `/api/cron/crawl-pdf` | GET | ✅ | |
 | `/api/webhooks/n8n` | POST | ✅ | |
 | `/api/webhooks/moda` | POST | ✅ | |
-| `/api/webhooks/zalo` | POST+GET | ✅ v1.0.0 | HMAC SHA256 + upsert lead + auto-reply |
-| `/api/webhooks/fb-leads` | POST+GET | ✅ v1.0.0 | hub.challenge + Graph API + dedup fb_lead_id |
-| `/api/content/generate` | POST | ✅ v1.0.1 | Admin auth; claude-opus-4-8; style seo/blog/social; INSERT articles draft |
-| `/api/admin/audiences/export` | GET | ✅ v1.0.0 | ?platform=facebook\|tiktok&source=; SHA-256; paginate .range(offset,offset+999) |
+| `/api/webhooks/zalo` | POST+GET | ✅ | HMAC SHA256 + upsert lead + auto-reply |
+| `/api/webhooks/fb-leads` | POST+GET | ✅ | hub.challenge + Graph API + dedup fb_lead_id |
+| `/api/content/generate` | POST | ✅ | Admin auth; claude-opus-4-8; INSERT articles draft |
+| `/api/admin/audiences/export` | GET | ✅ | ?platform=facebook\|tiktok; SHA-256; paginate |
 
 ### Zustand Stores
 
@@ -468,118 +471,118 @@ useAiChatStore          (store/ai-chat.store.ts)           ✅
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
-GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) — commit 76a46f1
-          ⚠️ scripts/crawl-seastar-tours.ts CÓ uncommitted change (endpoint fix chưa commit)
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) — commit 8815db6
 Vercel  : namngan-travel — deploy tự động từ main
 Supabase: indjoegnsvcteaozmgrg — 23 migrations local / 22 cloud
           ✅ migrations #22 (audience_contacts) + #24 (tours_detail_columns) ĐÃ PUSH
           ✅ bucket 'tour-galleries' | ✅ ai_conversations | ✅ featured_destinations
           ✅ SeaStar 476 lịch synced tháng 6–11/2026
 Resend  : Domain namngantravel.com — PENDING DNS
-SeaStar : ✅ sync 6 tháng | code bug fixed (nameHash suffix)
 ANTHROPIC_API_KEY: ✅ .env.local + ✅ Vercel
 TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID: ✅ Vercel đã set
-Env vars CẦN THÊM Vercel: ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
+Env vars CẦN THÊM Vercel: NEXT_PUBLIC_SALES_NAME, NEXT_PUBLIC_SALES_PHONE,
+                           ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
 Remote Dev: Tailscale ✅ | code-server ✅ | Mac 100.117.250.21:8080 | pw: 074f49a444ee24314c07bda0
-TQ Scraper: ./trieuhao-tours-tq/ — 30 tour; 69 file PDF/DOCX/DOC; 128MB (cần upload Drive)
+
+Google Sheets:
+  Tab "tour_schedules": SeaStar sync 2h sáng hàng ngày (Apps Script Code.gs)
+  Tab "tours_master": 83 tours crawled ✅ (39 unique codes sau dedup)
+
+SeaStar Crawler v3 — ✅ HOÀN THÀNH:
+  scripts/crawl-seastar-tours.ts | 83 tours | 0 lỗi | commit dd0d9fb + 8815db6
+  ✅ Auto-create tab tours_master nếu chưa tồn tại
+  ✅ Batch write (batchUpdate + single append) — không còn 429 rate limit
+  ✅ meals optional trong ItineraryDaySchema + EXTRACT_PROMPT
+
+Tour Detail Import:
+  scripts/import-tours-from-sheet.ts — user báo "đã chạy", đọc được 39 dòng
+  ⚠️ Chưa xác nhận kết quả import thành công vào Supabase
+  Cần: kiểm tra tours table có detail_synced_at không null
+
+Tour Detail Page v3.0.0 — ✅ DONE (commit 8815db6):
+  Layout: Breadcrumb → H1+USP → TourLeadBox → Info Block 4ô → Giá → TabNav → Timeline → Schedule
+  TourLeadBox: POST /api/leads source=tour_detail → classify+Telegram auto
+  TourTabNav: sticky top-16; IntersectionObserver 2 tab
+  TourTimeline: open sẵn; meals badges; Thu/Mở gọn tất cả
+  AIRLINE_MAP: thêm FD/QW/CZ/MF/MU/CA
+  Fallback: tour thiếu detail vẫn ra LeadBox + Lịch khởi hành sạch
 
 Claude models:
-  src/lib/ai/claude.ts              → claude-sonnet-4-6   (B2C chat, volume cao)
-  src/lib/ai/classify.ts            → claude-haiku-4-5-20251001 (classification)
-  src/app/api/ai/itinerary/route.ts → claude-sonnet-4-6   (4096 tokens, quality)
-  src/app/api/content/generate/route.ts → claude-opus-4-8 (low volume, SEO)
-
-Google Sheets Sync — LIVE ✅:
-  scripts/sheets-sync/Code.gs — Apps Script
-  ⚠️ SYNC_API_URL phải dùng https://www.namngantravel.com/api/departures/sync
-  Trigger: 2h sáng hàng ngày (Asia/Ho_Chi_Minh) | Tab: "tour_schedules"
-
-SeaStar Crawler v3 — ⏳ ĐANG VẬN HÀNH (endpoint đã fix, Sheets write còn lỗi):
-  scripts/crawl-seastar-tours.ts | Flags: --limit=N | --force-ai | --dry-run
-  ✅ Endpoint: /api/departures.php?dest_id=X&month=YYYY-MM (đã fix từ tours.php lỗi 404)
-  ✅ scrapeTourList: scan 6 tháng, collect unique program_url
-  ✅ Pre-flight: SA email share Editor OK | private_key unescape OK | SPREADSHEET_ID OK
-  ✅ Claude AI extract: 3 tours test OK (cached tại data/seastar-pdfs/ + data/seastar-json/)
-  ❌ sheetsUpsert: lỗi "Unable to parse range: tours_master!A:N" — tab chưa tồn tại
-  FIX CẦN LÀM: trong sheetsUpsert(), thêm batchUpdate tạo sheet tab trước khi đọc/ghi
-  Cache: data/seastar-pdfs/ 3 files | data/seastar-json/ 3 files (--force-ai để re-extract)
-
-Tour Detail Import (từ Sheets tours_master) — chờ crawler hoàn thành:
-  scripts/import-tours-from-sheet.ts
-  Env cần: GOOGLE_SERVICE_ACCOUNT_JSON + GOOGLE_SHEETS_SPREADSHEET_ID ✅ đã có
-  Columns DB: summary, inclusions (jsonb), exclusions (jsonb), policies, pdf_url, detail_synced_at
-
-Tour Detail Page v2.0.0 hotfix — ✅ DONE (Handover #57):
-  src/app/tour/[tourId]/page.tsx    ← [slug] reverted về [tourId]; UUID-safe 2-step lookup
-  UUID_RE check trước mọi query id → tránh Postgres 22P02 (nguồn 500 gốc)
-  Schedules query tách riêng try/catch → lỗi schedule không 500 trang
-  redirect(/tour/{slug}) khi UUID tour có canonical slug → SEO canonical
-  generateStaticParams: slug ?? id → SSG prerender bằng UUID khi slug=NULL
+  src/lib/ai/claude.ts              → claude-sonnet-4-6
+  src/lib/ai/classify.ts            → claude-haiku-4-5-20251001
+  src/app/api/ai/itinerary/route.ts → claude-sonnet-4-6
+  src/app/api/content/generate/route.ts → claude-opus-4-8
 ```
 
-### Data Contract — Thay đổi phiên #57
+### Data Contract — Thay đổi phiên #58
 
 ```typescript
-// Không thay đổi data contract — chỉ fix routing và script
-// TourSchedule.flight_code_departure / flight_code_return vẫn giữ nguyên
-// Tour.slug vẫn NULL toàn bộ cho đến khi import-tours-from-sheet.ts chạy
+// TourItineraryDay.meals — đã có trong type, nay crawler cũng extract (optional)
+// meals?: string[]  // ["Sáng", "Trưa", "Tối"] — backward-compat: thiếu vẫn hợp lệ
+
+// TourLeadBox POST /api/leads:
+// { full_name: "Khách hàng", phone, lead_source: "tour_detail",
+//   source_channel: "web_form", destination_interest: tourName,
+//   message: "Yêu cầu tư vấn: {code} — {name}" }
+
+// NEXT_PUBLIC_SALES_NAME / NEXT_PUBLIC_SALES_PHONE:
+// Env vars mới — fallback: "Tư vấn viên Nam Ngân" / "0932611933"
 ```
 
 ### Files ưu tiên cao chưa tồn tại / cần fix
 
 ```
-# ƯU TIÊN #1 — FIX SHEETS "tab not found" rồi commit + chạy --limit=3 lại:
-  Vào scripts/crawl-seastar-tours.ts → hàm sheetsUpsert()
-  Trước dòng "Đọc dữ liệu hiện tại", thêm batchUpdate tạo tab "tours_master" nếu chưa có:
-    const meta = await sheets.spreadsheets.get({ spreadsheetId: GOOGLE_SHEETS_ID, fields: 'sheets/properties/title' })
-    const tabExists = meta.data.sheets?.some(s => s.properties?.title === SHEET_TAB)
-    if (!tabExists && !isDry) {
-      await sheets.spreadsheets.batchUpdate({ spreadsheetId: GOOGLE_SHEETS_ID,
-        requestBody: { requests: [{ addSheet: { properties: { title: SHEET_TAB } } }] } })
-    }
-  Sau fix: npx tsx scripts/crawl-seastar-tours.ts --limit=3 → xác nhận 3 dòng trong tab tours_master
+# ƯU TIÊN #1 — XÁC NHẬN KẾT QUẢ IMPORT SUPABASE:
+  Kiểm tra: SELECT COUNT(*) FROM tours WHERE detail_synced_at IS NOT NULL;
+  Nếu chưa import: npx tsx scripts/import-tours-from-sheet.ts --dry-run → rồi import thật
 
-# ƯU TIÊN #2 — GATE (sau khi 3 dòng vào Sheets):
-  Đọc 3 dòng, kiểm chất lượng slug/itinerary/inclusions → hỏi user duyệt full crawl
+# ƯU TIÊN #2 — VERCEL ENV VARS (manual, không cần code):
+  Vercel Dashboard → Settings → Environment Variables:
+  - NEXT_PUBLIC_SALES_NAME=<tên tư vấn viên>
+  - NEXT_PUBLIC_SALES_PHONE=<SĐT tư vấn viên>
+  - ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
+  → Redeploy
 
-# ƯU TIÊN #3 — CRAWL FULL (sau Gate):
-  npx tsx scripts/crawl-seastar-tours.ts (không --limit)
+# ƯU TIÊN #3 — TEST END-TO-END LEADBOX:
+  Mở /tour/{any-tourId} → điền SĐT → submit
+  Kiểm tra: CRM tab Leads có lead mới không + Telegram notify tới không
 
-# ƯU TIÊN #4 — IMPORT SUPABASE:
-  npx tsx scripts/import-tours-from-sheet.ts --dry-run
-  npx tsx scripts/import-tours-from-sheet.ts
+# ƯU TIÊN #4 — CRAWLER MEALS (tùy chọn, không gấp):
+  Chạy lại crawler với --force-ai để extract meals cho 83 tours đã có JSON cache
+  → npx tsx scripts/crawl-seastar-tours.ts --force-ai
+  → Re-import sau
 
-# ƯU TIÊN #5 — VERCEL ENV VARS (manual):
-  Vercel Dashboard → ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET → Redeploy
+# ƯU TIÊN #5 — RESEND DNS:
+  Kiểm tra DNS namngantravel.com đã propagate chưa → activate Resend domain
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Fix sheetsUpsert() tạo tab "tours_master"** — crawler đã chạy được, chỉ vướng tạo tab mới; fix nhỏ ~5 dòng
-2. **Chạy `--limit=3` lại, soát chất lượng 3 dòng, qua Gate** — mới được phép crawl full
-3. **Crawl full → import Supabase** — tour pages có slug + detail data đầy đủ
+1. **Xác nhận import Supabase hoàn thành** — query `tours WHERE detail_synced_at IS NOT NULL` → nếu 0 thì chạy lại import
+2. **Thêm NEXT_PUBLIC_SALES_NAME + NEXT_PUBLIC_SALES_PHONE vào Vercel** — TourLeadBox cần để hiển thị đúng tên/SĐT tư vấn viên
+3. **Test TourLeadBox end-to-end** — submit SĐT trên trang tour → kiểm tra CRM + Telegram nhận notify
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
-| 2026-06-12 | Handover #57 — Crawler Pipeline vận hành | endpoint fix departures.php; Sheets 403+key fix; 3 tours AI ok; Sheets tab lỗi cần fix |
-| 2026-06-12 | Handover #56 — Tour Detail v2.0.0 hotfix | [slug]→[tourId] revert; UUID-safe lookup; isolated schedules; redirect canonical |
-| 2026-06-12 | Handover #56 — Tour Detail v2.0.0 | [slug] route; flight codes; mobile cards; BookingScheduleButton; not-found; error.tsx |
-| 2026-06-11 | Handover #55 — Tour Ecosystem Linking DONE | sitemap /tour/[slug]; TourListingCard slug prop; /lich-khoi-hanh Link; "Tour cùng loại" |
-| 2026-06-11 | Handover #54 — Tour Detail Page DONE | page.tsx Server Component ISR + TourDetailClient.tsx; /tours/[slug] redirect fix; build ✅ SSG |
-| 2026-06-11 | Handover #53 — Tours Detail Import DONE | migration #24 + import-tours-from-sheet.ts + tour.types.ts ✅; TS CLEAN |
-| 2026-06-11 | Handover #52 — Crawler DONE + migration fix | crawl-seastar-tours.ts ✅ commit 28cdb91; migration #22 IF NOT EXISTS fix commit 884eca8 |
-| 2026-06-11 | Handover #51 — Audience Contacts DONE + Crawler plan | Audience pipeline ✅ commit 072fb4f; Crawler v3 plan approved |
+| 2026-06-12 | Handover #58 — Tour Detail v3.0.0 + Crawler ✅ | TourLeadBox+TabNav+Timeline; crawler batch fix; 83 tours Sheets |
+| 2026-06-12 | Handover #57 — Crawler Pipeline vận hành | endpoint fix departures.php; 3 tours AI ok; Sheets tab lỗi fix |
+| 2026-06-12 | Handover #56 — Tour Detail v2.0.0 hotfix | [slug]→[tourId] revert; UUID-safe lookup; isolated schedules |
+| 2026-06-12 | Handover #56 — Tour Detail v2.0.0 | [slug] route; flight codes; mobile cards; BookingScheduleButton |
+| 2026-06-11 | Handover #55 — Tour Ecosystem Linking DONE | sitemap /tour/[slug]; TourListingCard slug prop; /lich-khoi-hanh |
+| 2026-06-11 | Handover #54 — Tour Detail Page DONE | page.tsx Server Component ISR + TourDetailClient.tsx; SSG |
+| 2026-06-11 | Handover #53 — Tours Detail Import DONE | migration #24 + import-tours-from-sheet.ts + tour.types.ts ✅ |
+| 2026-06-11 | Handover #52 — Crawler DONE + migration fix | crawl-seastar-tours.ts ✅; migration #22 IF NOT EXISTS fix |
+| 2026-06-11 | Handover #51 — Audience Contacts DONE + Crawler plan | Audience pipeline ✅; Crawler v3 plan approved |
 | 2026-06-11 | Handover #50 — Sheets Sync LIVE + Audience spec | Sheets sync live ✅; URL fix www.; migrations #16-21 cloud ✅ |
-| 2026-06-10 | Handover #49 — Sheets Sync + Model Tune | Code.gs Apps Script thay n8n; /api/departures/sync; migration #21 |
+| 2026-06-10 | Handover #49 — Sheets Sync + Model Tune | Code.gs Apps Script; /api/departures/sync; migration #21 |
 | 2026-06-10 | Handover #48 — Model update claude-opus-4-8 | 4 files AI → claude-opus-4-8; TS CLEAN |
-| 2026-06-09 | Handover #47 — Remote dev + TQ Scraper | Tailscale+code-server ✅; /api/content/generate ✅; 30 TQ tours scraped |
+| 2026-06-09 | Handover #47 — Remote dev + TQ Scraper | Tailscale+code-server ✅; /api/content/generate; 30 TQ tours |
 | 2026-06-09 | Handover #46 — Phase 6 DONE: /api/content/generate | claude-sonnet-4-6; style seo/blog/social; INSERT articles draft |
 | 2026-06-09 | Handover #45 — Phase 6 SEO + Japan seed + SeaStar fix | /du-lich/[country] ✅; migration #20; SeaStar code fix |
-| 2026-06-09 | Handover #44 — SeaStar 6 tháng + fix limit + xóa TrieuHao | getMonths(3→6); limit 200→1000; TrieuHao removed; 476 lịch synced |
+| 2026-06-09 | Handover #44 — SeaStar 6 tháng + fix limit + xóa TrieuHao | getMonths(3→6); limit 200→1000; 476 lịch synced |
 | 2026-06-09 | Handover #43 — Xóa TrieuHao sync hoàn toàn | Removed: sync-trieuhao.mjs, trieuhao.ts, /api/departures/ingest |
 | 2026-06-09 | Handover #40 — Phase 5 ✅ + push | CRM; ItineraryBuilder AI streaming+markdown |
 | 2026-06-09 | Handover #39 — Phase 4 hoàn thành | Zalo webhook ✅; FB webhook ✅; Zalo client ✅ |
 | 2026-06-09 | Handover #38 — Import CSV + migration #18 fix | Import CSV bulk; default filter Đã chốt |
-| 2026-06-09 | Handover #37 — LeadsTab v3.0 + Export CSV | LeadsTab rewrite (type-safe); export FB/TikTok/Excel |
