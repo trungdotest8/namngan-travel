@@ -393,8 +393,8 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | D | Hồ sơ khách | ✅ v1.3.0 | `CustomerProfileDrawer.tsx` + `CustomerTable.tsx` — Export+Import CSV ✅ |
 | E | Chat & Lead | ✅ v2.2.0 | `ChatWidget.tsx` — 2 tab: "Để lại số" + "Chat AI" |
 | F | CMS / RSS | ✅ v1.3.0 | `ArticleFeed.tsx` — TiptapEditor ✅ |
-| G | DB Schema | ✅ **23 local / 22 cloud** | `supabase/migrations/` — #22 + #24 ✅ cloud |
-| CRM | Admin CRM | ✅ v8.4.0 | `crm/page.tsx` — 8 tabs; SeaStar-only sync ✅ |
+| G | DB Schema | ✅ **24 local / 22 cloud** | `supabase/migrations/` — migration #26 (images) LOCAL chưa push |
+| CRM | Admin CRM | ✅ v8.5.0 | `crm/page.tsx` + `ToursTab.tsx` — gallery button (🖼) per row ✅ |
 | AUTH | Admin Auth | ✅ v2.0.0 | `login/page.tsx` + `middleware.ts` — cookie: `admin_session` |
 | TRIPGENIE | AI Chat Core | ✅ v1.2.0 | `/api/ai/chat` Node.js runtime; RAG ✅ — claude-sonnet-4-6 |
 | TRIPGENIE-LEADS | Lead Capture | ✅ v2.1.0 | `/api/leads` POST (adminClient); `/api/leads/[id]` PATCH ✅ |
@@ -415,12 +415,15 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | AUDIENCE-CONTACTS | SMS Audience Import | ✅ v1.0.0 | migration #22 ✅ cloud; `/api/admin/audiences/export` ✅ |
 | SEASTAR-CRAWLER | SeaStar Crawler v3 | ✅ **v1.2.0** | `scripts/crawl-seastar-tours.ts` — 83 tours Sheets ✅; batch write ✅ |
 | TOURS-IMPORT | Tour Detail Import từ Sheets | ✅ **v1.0.1** | `scripts/import-tours-from-sheet.ts` — 36 tours đã upsert Supabase ✅ |
-| TOUR-DETAIL-PAGE | Trang chi tiết tour | ✅ **v3.1.0** | `TourDetailClient.tsx` — force-dynamic fix 500; LeadBox+TabNav+Timeline |
+| TOUR-DETAIL-PAGE | Trang chi tiết tour | ✅ **v4.0.0** | `TourDetailClient.tsx` — TourGallery wired; gallery fallback thumbnail |
 | TOUR-LEADBOX | Lead Capture trên Tour | ✅ v1.0.0 | `src/components/tour/TourLeadBox.tsx` — Zod phone + advisor card tel/Zalo |
 | TOUR-TABNAV | Sticky Tab Nav | ✅ v1.0.0 | `src/components/tour/TourTabNav.tsx` — IntersectionObserver 2 tab |
 | TOUR-TIMELINE | Timeline Itinerary | ✅ v1.0.0 | `src/components/tour/TourTimeline.tsx` — open sẵn; meals badge; thu/mở gọn |
 | TOUR-LINKS | Tour ecosystem linking | ✅ v1.0.0 | sitemap, TourCard, TourListingCard, /lich-khoi-hanh, "Tour cùng loại" |
 | BOOKING-BTN | BookingScheduleButton | ✅ v1.0.0 | `src/components/tour/BookingScheduleButton.tsx` |
+| HOMEPAGE-PERF | Homepage FPS Fix | ✅ **v1.0.0** | `page.tsx`+`TourCard.tsx`+`TourListingCard.tsx` — shadow-overlay; content-visibility ⚡ |
+| TRIPAGENT-PERF | TripAgent Chat Perf | ✅ **v1.0.0** | `AiChatPanel.tsx`+`ChatWidget.tsx`+`ai-chat.store.ts` — React.memo; smart-scroll ⚡ |
+| TOUR-GALLERY | Tour Gallery (upload thủ công) | ✅ **v1.0.0** | `TourGallery.tsx`+`GalleryLightbox.tsx`+`TourGalleryManager.tsx`; migration #26 |
 
 ### Trạng thái API Routes
 
@@ -439,8 +442,9 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | `/api/search` | POST | ✅ | OR query name\|destination\|country |
 | `/api/cms` | GET/POST | ✅ | pagination + new_article notification |
 | `/api/tours` | GET/POST | ✅ | filter category/country/is_active |
+| `/api/tours/[id]` | PATCH | ✅ | TourUpdateSchema — hỗ trợ images[] (migration #26) |
 | `/api/featured-destinations` | ALL | ✅ | |
-| `/api/admin/upload-image` | POST | ✅ | base64 → `tour-galleries` |
+| `/api/admin/upload-image` | POST | ✅ | base64 → `tour-galleries` bucket |
 | `/api/notifications` | POST | ✅ | x-webhook-secret |
 | `/api/departures` | GET | ✅ | filter destination/month/status/country; max 1000 |
 | `/api/departures` | POST | ✅ v2.2.0 | SeaStar-only; 6 tháng; broadcast Realtime |
@@ -465,21 +469,22 @@ useCalendarStore        (store/calendar.store.ts)          ✅ — limit 1000
 useChatStore            (store/chat.store.ts)              ✅
 useCmsStore             (store/cms.store.ts)               ✅
 useCustomerProfileStore (store/customer-profile.store.ts)  ✅ — default filter 'deposited'
-useAiChatStore          (store/ai-chat.store.ts)           ✅
+useAiChatStore          (store/ai-chat.store.ts)           ✅ — appendDelta O(1) index-based ⚡
 ```
 
 ### Hạ tầng & Tích hợp bên ngoài
 
 ```
-GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) — commit 5dee169
-Vercel  : namngan-travel — deploy tự động từ main — latest: lbgtoii7q ✅ Ready
-Supabase: indjoegnsvcteaozmgrg — 23 migrations local / 22 cloud
-          ✅ migrations #22 (audience_contacts) + #24 (tours_detail_columns) ĐÃ PUSH
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main) — commit ce41935
+          ⚠️  Gallery changes (Handover #62) chưa commit+push — làm ngay
+Vercel  : namngan-travel — deploy tự động từ main — last deploy từ ce41935
+Supabase: indjoegnsvcteaozmgrg — 24 migrations local / 22 cloud
+          ⚠️  migration #26 (tour_images) LOCAL ONLY — cần push lên cloud
           ✅ bucket 'tour-galleries' | ✅ ai_conversations | ✅ featured_destinations
           ✅ SeaStar 476 lịch synced tháng 6–11/2026
-          ✅ 36 tours có detail_synced_at NOT NULL (import-tours-from-sheet.ts ✅)
+          ✅ 36 tours có detail_synced_at NOT NULL
 Resend  : Domain namngantravel.com — PENDING DNS
-ANTHROPIC_API_KEY: ✅ .env.local + ✅ Vercel
+ANTHROPIC_API_KEY: ⚠️ CREDIT DEPLETED — TripAgent 400 error — cần nạp console.anthropic.com
 TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID: ✅ Vercel đã set
 NEXT_PUBLIC_SALES_NAME=Lê Hoài Nam: ✅ Vercel Production + Development
 NEXT_PUBLIC_SALES_PHONE=0932611933: ✅ Vercel Production + Development
@@ -490,15 +495,10 @@ Google Sheets:
   Tab "tour_schedules": SeaStar sync 2h sáng hàng ngày (Apps Script Code.gs)
   Tab "tours_master": 83 tours crawled ✅ (36 unique codes upsert Supabase ✅)
 
-Tour Detail Page v3.1.0 — ✅ DONE (commit 5dee169):
-  Root cause fix: ISR (revalidate=3600) + cookies() = DYNAMIC_SERVER_USAGE 500
-  Fix: export const dynamic = 'force-dynamic' + revalidate = 0
-  Confirmed: production build 200 ✅ | Vercel deploy Ready ✅
-
-scripts/import-tours-from-sheet.ts v1.0.1 fixes:
-  ✅ ws package cho Node.js 20 (Supabase Realtime transport)
-  ✅ Dedup by code trước upsert (tránh ON CONFLICT error)
-  ✅ scripts/ excluded khỏi Next.js tsconfig (tránh type-check lỗi)
+pnpm build (Handover #62): ✅ CLEAN — 0 TypeScript errors
+  Route /: ○ Static ISR revalidate=1800
+  Route /tao-lich-trinh: ○ Static
+  /api/affiliate/track: ƒ Dynamic (pre-existing DYNAMIC_SERVER_USAGE warning — không ảnh hưởng)
 
 Claude models:
   src/lib/ai/claude.ts              → claude-sonnet-4-6
@@ -507,51 +507,99 @@ Claude models:
   src/app/api/content/generate/route.ts → claude-opus-4-8
 ```
 
-### Data Contract — Thay đổi phiên #59
+### Data Contract — Thay đổi phiên #62
 
 ```typescript
-// page.tsx /tour/[tourId]:
-// export const dynamic = 'force-dynamic'  ← BẮT BUỘC khi dùng cookies() với revalidate
-// export const revalidate = 0
+// ── TOUR GALLERY (migration #26) ─────────────────────────────────────────────
+// tours.images: string[] | null (JSONB)
+// - null = chưa upload ảnh → trang tour fallback về thumbnail_url
+// - string[] = URLs từ bucket 'tour-galleries' do admin upload
+// - images[0] = ảnh đại diện gallery (cover)
+// Tách biệt với gallery_urls (text[]) đã có — gallery_urls = URL nhập tay, images = upload
 
-// import-tours-from-sheet.ts:
-// _buildClient() nay pass { realtime: { transport: WebSocket } }
-// Payload dedup by code (Map) trước khi gọi upsertBatch()
+// TourGallery component (TourDetailClient.tsx line ~178):
+//   if Array.isArray(tour.images) && tour.images.length > 0 → render <TourGallery>
+//   else if tour.thumbnail_url → render hero img fallback
+//   else → nothing (không crash)
+//
+// TourGallery layout patterns:
+//   1 image  → full width, aspect-ratio 16:9
+//   2 images → grid-cols-2, aspect-ratio 4:3
+//   3 images → large left (50%) + 2 stacked right, h-72 fixed
+//   4 images → 2×2 grid, aspect-ratio 4:3
+//   ≥5 images → h-[420px] fixed, large 50% + 2×2 right
+//              "Xem tất cả ảnh (+n)" button bottom-right of large image
+//   Mobile → CSS scroll-snap carousel, width=85vw per slide, badge [i/n]
+//
+// GalleryLightbox: keyboard ← → Esc; aria-modal; fixed z-[70]
+//
+// TourGalleryManager (CRM ToursTab — icon 🖼 per row):
+//   - Reads tours.images (not gallery_urls)
+//   - Upload via /api/admin/upload-image (base64 → Supabase Storage)
+//   - HTML5 draggable reorder; max 12 images; warn >500KB (không blocking)
+//   - PATCH /api/tours/[id] với { images: string[] }
+//   - ErrorBoundary moduleName="GalleryManager"
+
+// ── HOMEPAGE TOUR CARDS — SHADOW OVERLAY PATTERN ─────────────────────────────
+// transition-opacity instead of transition-shadow (compositor only, không repaint)
+// page.tsx: export const revalidate = 1800
+// INTL + DOMESTIC sections: style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 700px' }}
+
+// ── TRIPAGENT PERFORMANCE PATTERNS ───────────────────────────────────────────
+// ai-chat.store.ts appendDelta O(1) index-based; React.memo ChatBubble/ChatMessage
+// Smart scroll: rafPendingRef + userScrollingUpRef (80px threshold)
+// page.tsx /tour/[tourId]: export const dynamic = 'force-dynamic'
 ```
 
-### Files ưu tiên cao chưa tồn tại / cần fix
+### Files ưu tiên cao cần làm
 
 ```
-# ƯU TIÊN #1 — TEST TOUR DETAIL PAGE END-TO-END:
-  Mở https://www.namngantravel.com/tour/hanh-trinh-cung-duong-vang-nhat-ban-tokyo-fuji-nagoya-kyoto-kobe-osaka
-  Kiểm tra: trang load 200, Timeline/Inclusions hiển thị, LeadBox hoạt động
+# ƯU TIÊN #1 — COMMIT + PUSH GALLERY CHANGES LÊN GITHUB:
+  git add supabase/migrations/20260613000000_tour_images.sql
+          src/types/tour.types.ts
+          src/app/api/tours/[id]/route.ts
+          src/components/crm/TourGalleryManager.tsx
+          src/app/(admin)/crm/ToursTab.tsx
+          src/components/tour/TourGallery.tsx
+          src/components/tour/GalleryLightbox.tsx
+          src/app/tour/[tourId]/TourDetailClient.tsx
+          CLAUDE.md
+  git commit -m "feat(gallery): Tour Gallery upload thủ công — TourGalleryManager + TourGallery + Lightbox + migration #26"
+  git push → Vercel auto deploy
 
-# ƯU TIÊN #2 — TEST LEADBOX SUBMIT:
-  Điền SĐT → Submit → kiểm tra CRM tab Leads + Telegram notify
-  Cần: NEXT_PUBLIC_SALES_NAME/PHONE đã set ✅ → tên "Lê Hoài Nam" phải hiện đúng
+# ƯU TIÊN #2 — PUSH MIGRATION #26 LÊN SUPABASE CLOUD:
+  supabase db push  (hoặc chạy SQL thủ công trên Supabase Dashboard)
+  ALTER TABLE tours ADD COLUMN IF NOT EXISTS images jsonb;
 
-# ƯU TIÊN #3 — KIỂM TRA LINK TRANG CHỦ:
-  Các tour card trên trang chủ đang dùng slug cũ (sapa-fansipan, v.v.)
-  Cần: xem TourCard href có dùng slug mới từ Supabase không
-  Nếu không: update TourCard để dùng đúng slug từ DB
+# ƯU TIÊN #3 — NẠP ANTHROPIC API CREDITS (TripAgent đang DOWN):
+  Vào console.anthropic.com → Billing → Add credits
+  Nạp tối thiểu $10 để TripAgent hoạt động lại
+  Sau nạp: test TripAgent trên production widget
 
-# ƯU TIÊN #4 — VERCEL ENV VARS CÒN THIẾU (manual):
+# ƯU TIÊN #4 — TEST GALLERY END-TO-END (sau push Supabase):
+  1. Admin CRM → Tours tab → click icon 🖼 trên 1 tour
+  2. Upload 6 ảnh → kéo thả sắp xếp → Lưu
+  3. Mở trang /tour/[slug] → kiểm tra desktop grid (large+4small)
+  4. Mobile 380px → carousel vuốt mượt
+  5. Click ảnh → Lightbox mở → ← → Esc hoạt động
+
+# ƯU TIÊN #5 — VERCEL ENV VARS CÒN THIẾU (manual):
   ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
-
-# ƯU TIÊN #5 — RESEND DNS:
-  Kiểm tra DNS namngantravel.com đã propagate chưa → activate Resend domain
 ```
 
 ### Next Steps (3 việc làm ngay khi mở phiên mới)
 
-1. **Test tour detail page production** — mở `/tour/hanh-trinh-cung-duong-vang-nhat-ban-tokyo-fuji-nagoya-kyoto-kobe-osaka` trên namngantravel.com → confirm 200 + nội dung hiển thị
-2. **Test TourLeadBox submit** — điền SĐT → submit → CRM + Telegram nhận notify
-3. **Kiểm tra TourCard href** — tour cards trang chủ có link đúng slug mới không (tránh link chết 404)
+1. **Commit + push Gallery changes** — 9 files đã sửa/tạo → `git push` → Vercel auto deploy
+2. **Push migration #26 lên Supabase cloud** — `supabase db push` hoặc Dashboard SQL
+3. **Nạp Anthropic credits** — TripAgent đang 400 credit depleted → console.anthropic.com
 
 ### Change Log
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-13 | Handover #62 — Tour Gallery ✅ | migration #26; TourGalleryManager drag+upload; TourGallery grid/carousel; GalleryLightbox |
+| 2026-06-12 | Handover #61 — TripAgent Chat Perf ✅ | ChatBubble.memo+SmartScroll; AiInput isolated; appendDelta O(1) index-based |
+| 2026-06-12 | Handover #60 — Homepage FPS Fix ✅ | shadow-overlay pattern×3 cards; backdrop-blur removed; content-visibility; ISR 1800 |
 | 2026-06-12 | Handover #59 — Tour Detail 500 fix + Import ✅ | force-dynamic DYNAMIC_SERVER_USAGE; 36 tours imported; ws+dedup fix |
 | 2026-06-12 | Handover #58 — Tour Detail v3.0.0 + Crawler ✅ | TourLeadBox+TabNav+Timeline; crawler batch fix; 83 tours Sheets |
 | 2026-06-12 | Handover #57 — Crawler Pipeline vận hành | endpoint fix departures.php; 3 tours AI ok; Sheets tab lỗi fix |
@@ -569,6 +617,3 @@ Claude models:
 | 2026-06-09 | Handover #46 — Phase 6 DONE: /api/content/generate | claude-sonnet-4-6; style seo/blog/social; INSERT articles draft |
 | 2026-06-09 | Handover #45 — Phase 6 SEO + Japan seed + SeaStar fix | /du-lich/[country] ✅; migration #20; SeaStar code fix |
 | 2026-06-09 | Handover #44 — SeaStar 6 tháng + fix limit + xóa TrieuHao | getMonths(3→6); limit 200→1000; 476 lịch synced |
-| 2026-06-09 | Handover #43 — Xóa TrieuHao sync hoàn toàn | Removed: sync-trieuhao.mjs, trieuhao.ts, /api/departures/ingest |
-| 2026-06-09 | Handover #40 — Phase 5 ✅ + push | CRM; ItineraryBuilder AI streaming+markdown |
-| 2026-06-09 | Handover #38 — Import CSV + migration #18 fix | Import CSV bulk; default filter Đã chốt |

@@ -13,6 +13,7 @@ import BookingScheduleButton from '@/components/tour/BookingScheduleButton'
 import TourLeadBox from '@/components/tour/TourLeadBox'
 import TourTabNav from '@/components/tour/TourTabNav'
 import TourTimeline from '@/components/tour/TourTimeline'
+import TourGallery from '@/components/tour/TourGallery'
 import type { Tour, TourSchedule } from '@/types/tour.types'
 
 export interface RelatedTour {
@@ -174,8 +175,13 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
         <span className="text-[#1A1A2E] font-medium line-clamp-1">{tour.name}</span>
       </nav>
 
-      {/* ── HERO thumbnail (nếu có) ─────────────────────────────────────────── */}
-      {tour.thumbnail_url && (
+      {/* ── GALLERY (ảnh do admin upload) — ưu tiên hiển thị trên thumbnail ── */}
+      {Array.isArray(tour.images) && tour.images.length > 0 ? (
+        <ErrorBoundary moduleName="TourGallery">
+          <TourGallery images={tour.images} tourName={tour.name} />
+        </ErrorBoundary>
+      ) : tour.thumbnail_url ? (
+        /* ── Fallback: hero thumbnail đơn khi chưa có gallery ── */
         <div className="w-full h-52 sm:h-72 rounded-2xl overflow-hidden bg-gray-100 shadow-sm">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -184,7 +190,7 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
             className="w-full h-full object-cover"
           />
         </div>
-      )}
+      ) : null}
 
       {/* ── H1 + BADGES + USP ───────────────────────────────────────────────── */}
       <div className="space-y-3">

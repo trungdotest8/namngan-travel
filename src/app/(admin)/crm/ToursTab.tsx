@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Plus, Pencil, Trash2, Loader2, AlertCircle,
   CheckCircle2, X, Image as ImageIcon, Hash, Globe, MapPin,
-  Eye, EyeOff, Upload,
+  Eye, EyeOff, Upload, Images,
 } from 'lucide-react'
 import type { Tour } from '@/types/tour.types'
 import { COUNTRY_MAP } from '@/lib/tour-country'
+import TourGalleryManager from '@/components/crm/TourGalleryManager'
 
 
 const COUNTRIES = Object.keys(COUNTRY_MAP).sort()
@@ -186,6 +187,8 @@ export function ToursTab() {
 
   const [deleteId, setDeleteId]     = useState<string | null>(null)
   const [deleting, setDeleting]     = useState(false)
+
+  const [galleryTour, setGalleryTour] = useState<Tour | null>(null)
 
   const [galleryInput, setGalleryInput] = useState('')
   const [slugManual, setSlugManual] = useState(false)
@@ -579,6 +582,13 @@ export function ToursTab() {
                     <td className="py-2 px-3">
                       <div className="flex items-center gap-1 justify-end">
                         <button
+                          onClick={() => setGalleryTour(tour)}
+                          className="w-6 h-6 flex items-center justify-center rounded hover:bg-purple-50 text-gray-400 hover:text-purple-600 transition-colors"
+                          title="Quản lý ảnh gallery"
+                        >
+                          <Images size={12} />
+                        </button>
+                        <button
                           onClick={() => openEdit(tour)}
                           className="w-6 h-6 flex items-center justify-center rounded hover:bg-blue-50 text-gray-400 hover:text-[#005BAA] transition-colors"
                           title="Chỉnh sửa"
@@ -911,6 +921,22 @@ export function ToursTab() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Gallery Manager ── */}
+      {galleryTour && (
+        <TourGalleryManager
+          tourId={galleryTour.id}
+          tourName={galleryTour.name}
+          initialImages={galleryTour.images ?? []}
+          onClose={() => setGalleryTour(null)}
+          onSaved={(imgs) => {
+            setTours(prev =>
+              prev.map(t => t.id === galleryTour.id ? { ...t, images: imgs } : t)
+            )
+            showToast('Đã lưu thư viện ảnh')
+          }}
+        />
       )}
 
       {/* ── Delete confirm dialog ── */}

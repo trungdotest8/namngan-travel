@@ -27,6 +27,8 @@ export interface Tour {
   policies:         string | null
   pdf_url:          string | null
   detail_synced_at: string | null
+  // Gallery — migration #26 (null cho đến khi admin upload qua TourGalleryManager)
+  images:           string[] | null   // JSONB — upload thủ công, ảnh[0] = đại diện
 }
 
 export interface TourItineraryDay {

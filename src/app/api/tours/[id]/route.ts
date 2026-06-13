@@ -17,6 +17,7 @@ const TourUpdateSchema = z.object({
   highlights:    z.string().nullable().optional(),
   thumbnail_url: z.string().url().nullable().optional(),
   gallery_urls:  z.array(z.string().url()).optional(),
+  images:        z.array(z.string().url()).nullable().optional(),
   hashtags:      z.array(z.string()).optional(),
   is_active:     z.boolean().optional(),
 })
