@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminRequest } from '@/lib/admin-auth'
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Không có trường nào để cập nhật' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Kiểm tra slug/code trùng nếu có thay đổi
     if (parsed.data.slug) {
@@ -86,7 +86,7 @@ export async function DELETE(
     const { searchParams } = new URL(request.url)
     const hard = searchParams.get('hard') === 'true'
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     if (hard) {
       const { error } = await supabase.from('tours').delete().eq('id', params.id)
