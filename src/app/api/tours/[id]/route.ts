@@ -63,8 +63,13 @@ export async function PATCH(
       .select()
       .single()
 
-    if (error) throw error
-    if (!data) return NextResponse.json({ error: 'Tour không tồn tại' }, { status: 404 })
+    if (error) {
+      // PGRST116 = query returned 0 rows → tour ID không tồn tại
+      if ((error as { code?: string }).code === 'PGRST116') {
+        return NextResponse.json({ error: 'Tour không tồn tại' }, { status: 404 })
+      }
+      throw error
+    }
 
     return NextResponse.json({ tour: data })
   } catch (err) {
@@ -102,8 +107,12 @@ export async function DELETE(
       .select('id, is_active')
       .single()
 
-    if (error) throw error
-    if (!data) return NextResponse.json({ error: 'Tour không tồn tại' }, { status: 404 })
+    if (error) {
+      if ((error as { code?: string }).code === 'PGRST116') {
+        return NextResponse.json({ error: 'Tour không tồn tại' }, { status: 404 })
+      }
+      throw error
+    }
 
     return NextResponse.json({ tour: data, deactivated: true })
   } catch (err) {
