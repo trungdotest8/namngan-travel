@@ -175,23 +175,6 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
         <span className="text-[#1A1A2E] font-medium line-clamp-1">{tour.name}</span>
       </nav>
 
-      {/* ── GALLERY (ảnh do admin upload) — ưu tiên hiển thị trên thumbnail ── */}
-      {Array.isArray(tour.images) && tour.images.length > 0 ? (
-        <ErrorBoundary moduleName="TourGallery">
-          <TourGallery images={tour.images} tourName={tour.name} />
-        </ErrorBoundary>
-      ) : tour.thumbnail_url ? (
-        /* ── Fallback: hero thumbnail đơn khi chưa có gallery ── */
-        <div className="w-full h-52 sm:h-72 rounded-2xl overflow-hidden bg-gray-100 shadow-sm">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={tour.thumbnail_url}
-            alt={tour.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      ) : null}
-
       {/* ── H1 + BADGES + USP ───────────────────────────────────────────────── */}
       <div className="space-y-3">
         {/* Badges */}
@@ -232,6 +215,22 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
           </div>
         )}
       </div>
+
+      {/* ── GALLERY — ngay dưới title, trước lead-capture ───────────────────── */}
+      {Array.isArray(tour.images) && tour.images.length > 0 ? (
+        <ErrorBoundary moduleName="TourGallery">
+          <TourGallery images={tour.images} tourName={tour.name} />
+        </ErrorBoundary>
+      ) : tour.thumbnail_url ? (
+        <div className="w-full h-52 sm:h-72 rounded-2xl overflow-hidden bg-gray-100 shadow-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={tour.thumbnail_url}
+            alt={tour.name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      ) : null}
 
       {/* ── LEAD CAPTURE BOX ────────────────────────────────────────────────── */}
       <ErrorBoundary moduleName="TourLeadBox">

@@ -1,3 +1,14 @@
+// Định dạng object cho cột images (migration #27)
+// Tương thích ngược với string[] — TourGallery xử lý cả hai
+export interface TourImage {
+  order:        number
+  url:          string
+  alt:          string
+  caption:      string
+  local_path?:  string   // đường dẫn local sau khi agent.py tải về
+  db_updated?:  boolean  // đã sync vào DB chưa
+}
+
 export interface Tour {
   id:            string
   code:          string           // "NN-HN-001"
@@ -27,8 +38,9 @@ export interface Tour {
   policies:         string | null
   pdf_url:          string | null
   detail_synced_at: string | null
-  // Gallery — migration #26 (null cho đến khi admin upload qua TourGalleryManager)
-  images:           string[] | null   // JSONB — upload thủ công, ảnh[0] = đại diện
+  // Gallery — migration #26/#27 (null cho đến khi admin upload hoặc agent.py sync)
+  images:           (string | TourImage)[] | null   // JSONB — string[] (cũ) hoặc TourImage[] (mới)
+  source_url:       string | null                    // URL nguồn cào (migration #27)
 }
 
 export interface TourItineraryDay {

@@ -928,7 +928,7 @@ export function ToursTab() {
         <TourGalleryManager
           tourId={galleryTour.id}
           tourName={galleryTour.name}
-          initialImages={galleryTour.images ?? []}
+          initialImages={(galleryTour.images ?? []).map(img => typeof img === 'string' ? img : img.url)}
           onClose={() => setGalleryTour(null)}
           onSaved={(imgs) => {
             setTours(prev =>
