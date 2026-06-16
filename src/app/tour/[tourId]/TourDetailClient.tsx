@@ -465,9 +465,32 @@ export default function TourDetailClient({ tour, schedules, relatedTours }: Prop
                   </div>
 
                   {/* Content */}
-                  <p className="whitespace-pre-line text-sm text-slate-600 leading-relaxed">
-                    {day.description}
-                  </p>
+                  {day.description && (
+                    <p className="whitespace-pre-line text-sm text-slate-600 leading-relaxed">
+                      {day.description}
+                    </p>
+                  )}
+
+                  {/* Day images */}
+                  {Array.isArray(day.images) && day.images.length > 0 && (
+                    <div className={`mt-4 ${day.images.length === 1 ? '' : 'grid grid-cols-2 gap-3'}`}>
+                      {day.images.map((img, imgIdx) => (
+                        <div
+                          key={imgIdx}
+                          className={`rounded-xl overflow-hidden bg-gray-100 ${day.images!.length === 1 ? 'w-full' : ''}`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={img}
+                            alt={`${day.title} - ảnh ${imgIdx + 1}`}
+                            className="w-full object-cover max-h-72"
+                            loading="lazy"
+                            onError={e => { (e.target as HTMLImageElement).closest('div')!.style.display = 'none' }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </section>
               ))}
             </div>
