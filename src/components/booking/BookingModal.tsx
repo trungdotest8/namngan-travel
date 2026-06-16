@@ -5,10 +5,13 @@ import { X, Plus, Minus, Phone, CheckCircle, Loader2 } from 'lucide-react'
 import type { TourSchedule } from '@/types/tour.types'
 
 interface Props {
-  tourId:    string
-  tourName:  string
-  schedules: TourSchedule[]
-  onClose:   () => void
+  tourId:             string
+  tourName:           string
+  schedules:          TourSchedule[]
+  onClose:            () => void
+  initialScheduleId?: string
+  initialAdults?:     number
+  initialChildren?:   number
 }
 
 interface FormState {
@@ -64,13 +67,13 @@ function Stepper({
   )
 }
 
-export default function BookingModal({ tourId, tourName, schedules, onClose }: Props) {
+export default function BookingModal({ tourId, tourName, schedules, onClose, initialScheduleId, initialAdults, initialChildren }: Props) {
   const openSchedules = schedules.filter(s => s.status === 'open')
 
   const [form, setForm] = useState<FormState>({
-    scheduleId: openSchedules[0]?.id ?? '',
-    adults:     1,
-    children:   0,
+    scheduleId: initialScheduleId ?? openSchedules[0]?.id ?? '',
+    adults:     initialAdults ?? 1,
+    children:   initialChildren ?? 0,
     name:       '',
     phone:      '',
     email:      '',

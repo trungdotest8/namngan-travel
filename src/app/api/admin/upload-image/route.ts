@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { isAdminRequest } from '@/lib/admin-auth'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,9 +9,7 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const adminToken = req.cookies.get('admin-token')?.value
-    const secretHeader = req.headers.get('x-admin-secret')
-    if (!adminToken && secretHeader !== process.env.WEBHOOK_SECRET) {
+    if (!isAdminRequest(req)) {
       return NextResponse.json({ error: 'Unauthorized access' }, { status: 401 })
     }
 
