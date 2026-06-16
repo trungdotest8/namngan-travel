@@ -48,6 +48,7 @@ export interface TourItineraryDay {
   title:       string
   description: string
   meals?:      string[]           // ["Sáng", "Trưa", "Tối"]
+  images?:     string[]           // URLs ảnh minh họa trong ngày
 }
 
 export interface TourSchedule {

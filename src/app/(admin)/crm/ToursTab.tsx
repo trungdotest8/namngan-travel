@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Plus, Pencil, Trash2, Loader2, AlertCircle,
   CheckCircle2, X, Image as ImageIcon, Hash, Globe, MapPin,
-  Eye, EyeOff, Upload, Images,
+  Eye, EyeOff, Upload, Images, ChevronUp, ChevronDown, CalendarDays,
 } from 'lucide-react'
-import type { Tour } from '@/types/tour.types'
+import type { Tour, TourItineraryDay } from '@/types/tour.types'
 import { COUNTRY_MAP } from '@/lib/tour-country'
 import TourGalleryManager from '@/components/crm/TourGalleryManager'
 
@@ -32,6 +32,7 @@ interface TourFormState {
   duration_days: string
   description:   string
   highlights:    string
+  itinerary:     TourItineraryDay[]
   thumbnail_url: string
   gallery_urls:  string[]
   hashtags:      string   // comma-separated input
@@ -48,6 +49,7 @@ const EMPTY_FORM: TourFormState = {
   duration_days: '',
   description:   '',
   highlights:    '',
+  itinerary:     [],
   thumbnail_url: '',
   gallery_urls:  [],
   hashtags:      '',
@@ -65,6 +67,7 @@ function tourToForm(t: Tour): TourFormState {
     duration_days: t.duration_days != null ? String(t.duration_days) : '',
     description:   t.description ?? '',
     highlights:    t.highlights ?? '',
+    itinerary:     t.itinerary ?? [],
     thumbnail_url: t.thumbnail_url ?? '',
     gallery_urls:  t.gallery_urls ?? [],
     hashtags:      (t.hashtags ?? []).join(', '),
@@ -166,6 +169,169 @@ function ImageUploadInput({ onUploadSuccess }: { onUploadSuccess: (url: string) 
           <AlertCircle size={10} /> {uploadError}
         </p>
       )}
+    </div>
+  )
+}
+
+// ── ItineraryEditor ───────────────────────────────────────────────────────────
+
+const MEAL_OPTIONS = ['Sáng', 'Trưa', 'Tối']
+
+function ItineraryEditor({
+  days,
+  onChange,
+}: {
+  days: TourItineraryDay[]
+  onChange: (days: TourItineraryDay[]) => void
+}) {
+  function addDay() {
+    onChange([...days, { day: days.length + 1, title: '', description: '', meals: [], images: [] }])
+  }
+
+  function removeDay(idx: number) {
+    onChange(days.filter((_, i) => i !== idx).map((d, i) => ({ ...d, day: i + 1 })))
+  }
+
+  function moveDay(idx: number, dir: -1 | 1) {
+    const next = [...days]
+    const target = idx + dir
+    if (target < 0 || target >= next.length) return
+    ;[next[idx], next[target]] = [next[target], next[idx]]
+    onChange(next.map((d, i) => ({ ...d, day: i + 1 })))
+  }
+
+  function updateDay(idx: number, patch: Partial<TourItineraryDay>) {
+    onChange(days.map((d, i) => i === idx ? { ...d, ...patch } : d))
+  }
+
+  function toggleMeal(idx: number, meal: string) {
+    const cur = days[idx].meals ?? []
+    updateDay(idx, { meals: cur.includes(meal) ? cur.filter(m => m !== meal) : [...cur, meal] })
+  }
+
+  function addDayImage(idx: number, url: string) {
+    updateDay(idx, { images: [...(days[idx].images ?? []), url] })
+  }
+
+  function removeDayImage(dayIdx: number, imgIdx: number) {
+    updateDay(dayIdx, { images: (days[dayIdx].images ?? []).filter((_, i) => i !== imgIdx) })
+  }
+
+  return (
+    <div className="space-y-3">
+      {days.length === 0 && (
+        <div className="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center text-xs text-gray-400">
+          <CalendarDays size={20} className="mx-auto mb-1.5 text-gray-300" />
+          Chưa có lịch trình — nhấn &quot;+ Thêm ngày&quot; để bắt đầu
+        </div>
+      )}
+
+      {days.map((day, idx) => (
+        <div key={idx} className="border border-gray-200 rounded-xl overflow-hidden">
+          {/* Day header */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-[#F0F7FF] border-b border-blue-100">
+            <span className="w-7 h-7 flex items-center justify-center rounded-full bg-[#005BAA] text-white text-[11px] font-bold flex-shrink-0">
+              {day.day}
+            </span>
+            <input
+              value={day.title}
+              onChange={e => updateDay(idx, { title: e.target.value })}
+              placeholder={`Tiêu đề ngày ${day.day}...`}
+              className="flex-1 bg-transparent text-xs font-semibold text-[#1A1A2E] outline-none placeholder:text-gray-400 placeholder:font-normal"
+            />
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => moveDay(idx, -1)}
+                disabled={idx === 0}
+                className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-[#005BAA] disabled:opacity-25 transition-colors"
+              >
+                <ChevronUp size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={() => moveDay(idx, 1)}
+                disabled={idx === days.length - 1}
+                className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-[#005BAA] disabled:opacity-25 transition-colors"
+              >
+                <ChevronDown size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={() => removeDay(idx)}
+                className="w-6 h-6 flex items-center justify-center rounded text-gray-400 hover:text-red-500 transition-colors"
+              >
+                <X size={11} />
+              </button>
+            </div>
+          </div>
+
+          {/* Day body */}
+          <div className="px-3 py-2.5 space-y-2.5">
+            {/* Meals */}
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-12 flex-shrink-0">Bữa ăn</span>
+              {MEAL_OPTIONS.map(meal => (
+                <label key={meal} className="flex items-center gap-1 text-[11px] text-gray-600 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={(day.meals ?? []).includes(meal)}
+                    onChange={() => toggleMeal(idx, meal)}
+                    className="w-3 h-3 accent-[#005BAA]"
+                  />
+                  {meal}
+                </label>
+              ))}
+            </div>
+
+            {/* Description */}
+            <textarea
+              value={day.description}
+              onChange={e => updateDay(idx, { description: e.target.value })}
+              rows={4}
+              placeholder="Mô tả hoạt động, điểm tham quan, ghi chú..."
+              className="w-full border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:border-[#005BAA] outline-none resize-y leading-relaxed"
+            />
+
+            {/* Day images */}
+            <div>
+              <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+                Ảnh ngày {day.day} ({(day.images ?? []).length})
+              </div>
+              <ImageUploadInput onUploadSuccess={url => addDayImage(idx, url)} />
+              {(day.images ?? []).length > 0 && (
+                <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+                  {(day.images ?? []).map((url, imgIdx) => (
+                    <div key={imgIdx} className="relative group rounded-md overflow-hidden bg-gray-100" style={{ aspectRatio: '4/3' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.opacity = '0.3' }} />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                      <button
+                        type="button"
+                        onClick={() => removeDayImage(idx, imgIdx)}
+                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={8} />
+                      </button>
+                      <div className="absolute bottom-0.5 left-0.5 text-[8px] text-white/80 bg-black/40 px-1 rounded">
+                        {imgIdx + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={addDay}
+        className="w-full flex items-center justify-center gap-1.5 py-2.5 border-2 border-dashed border-[#005BAA]/30 rounded-xl text-xs text-[#005BAA] font-medium hover:border-[#005BAA]/60 hover:bg-[#F0F7FF] transition-colors"
+      >
+        <Plus size={12} /> Thêm ngày {days.length + 1}
+      </button>
     </div>
   )
 }
@@ -311,6 +477,7 @@ export function ToursTab() {
         duration_days: form.duration_days ? parseInt(form.duration_days, 10) : null,
         description:   form.description.trim() || null,
         highlights:    form.highlights.trim() || null,
+        itinerary:     form.itinerary.length > 0 ? form.itinerary : null,
         thumbnail_url: form.thumbnail_url.trim() || null,
         gallery_urls:  form.gallery_urls,
         hashtags:      hashtagsArr,
@@ -756,6 +923,14 @@ export function ToursTab() {
                 />
               </div>
             </div>
+
+            {/* ── Lịch trình ── */}
+            <SectionTitle>Lịch trình ({form.itinerary.length} ngày)</SectionTitle>
+
+            <ItineraryEditor
+              days={form.itinerary}
+              onChange={days => onField('itinerary', days)}
+            />
 
             {/* ── Hình ảnh ── */}
             <SectionTitle>Hình ảnh</SectionTitle>

@@ -5,6 +5,14 @@ import { isAdminRequest } from '@/lib/admin-auth'
 
 // ── Zod schema ───────────────────────────────────────────────────────────────
 
+const ItineraryDaySchema = z.object({
+  day:         z.number().int().min(1),
+  title:       z.string(),
+  description: z.string(),
+  meals:       z.array(z.string()).optional(),
+  images:      z.array(z.string()).optional(),
+})
+
 const TourUpdateSchema = z.object({
   name:          z.string().min(1).max(500).optional(),
   code:          z.string().min(1).max(50).optional(),
@@ -15,6 +23,7 @@ const TourUpdateSchema = z.object({
   duration_days: z.coerce.number().int().min(1).nullable().optional(),
   description:   z.string().nullable().optional(),
   highlights:    z.string().nullable().optional(),
+  itinerary:     z.array(ItineraryDaySchema).nullable().optional(),
   thumbnail_url: z.string().url().nullable().optional(),
   gallery_urls:  z.array(z.string().url()).optional(),
   images:        z.array(z.string().url()).nullable().optional(),
