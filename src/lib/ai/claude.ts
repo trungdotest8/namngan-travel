@@ -26,7 +26,7 @@ export function streamChatResponse(
     async start(controller) {
       try {
         const stream = anthropic.messages.stream({
-          model: 'claude-sonnet-4-6',
+          model: 'claude-opus-4-8',
           max_tokens: maxTokens,
           system: systemPrompt,
           messages,
