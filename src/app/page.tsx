@@ -44,9 +44,12 @@ const travelAgencySchema = {
   telephone:   '+84932611933',
   address: {
     '@type':           'PostalAddress',
-    addressLocality:   'TP. Hồ Chí Minh',
+    streetAddress:     '525/44 Huỳnh Văn Bánh',
+    addressLocality:   'Quận Phú Nhuận',
+    addressRegion:     'TP. Hồ Chí Minh',
     addressCountry:    'VN',
   },
+  email: 'dulichnamngan@gmail.com',
   sameAs: [
     'https://zalo.me/0932611933',
   ],

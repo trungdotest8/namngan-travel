@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       // 2. Stream nội dung lịch trình từ Claude
       try {
         const claudeStream = anthropic.messages.stream({
-          model:      'claude-opus-4-8',
+          model:      'claude-sonnet-4-6',
           max_tokens: 4096,
           system:     systemPrompt,
           messages:   [{ role: 'user', content: userContent }],

@@ -5,7 +5,7 @@ import {
   Plane, LayoutDashboard, Users, Settings, Newspaper, MapPin,
   Bell, Plus, TrendingUp, TrendingDown, Menu, X,
   CheckCircle2, AlertCircle, Loader2, LogOut, UserCog,
-  Facebook, Globe, MessageCircle, Music2, Phone,
+  Facebook, Globe, MessageCircle, Music2, Phone, Layers,
 } from 'lucide-react'
 import { useCustomerProfileStore } from '@/store/customer-profile.store'
 import type { CRMFilter } from '@/store/customer-profile.store'
@@ -19,11 +19,12 @@ import { ToursTab } from './ToursTab'
 import { StaffTab } from './StaffTab'
 import { DestinationsTab } from './DestinationsTab'
 import { LeadsTab } from './LeadsTab'
+import LandingPageTab from '@/components/cms/LandingPageTab'
 import type { Lead } from '@/types/lead.types'
 import type { AdminUser } from '@/types/admin.types'
 
 // ── Types ─────────────────────────────────────────────────────────────────
-type TabId = 'overview' | 'leads' | 'customers' | 'articles' | 'tours' | 'destinations' | 'staff' | 'config'
+type TabId = 'overview' | 'leads' | 'customers' | 'articles' | 'tours' | 'destinations' | 'landing-pages' | 'staff' | 'config'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function computeMetrics(leads: Lead[]) {
@@ -512,8 +513,9 @@ const NAV = [
   { id: 'customers'    as TabId, label: 'Hồ sơ Khách hàng',       icon: Users },
   { id: 'articles'     as TabId, label: 'Bài viết / Tin tức',     icon: Newspaper },
   { id: 'tours'        as TabId, label: 'Quản lý Tour',           icon: MapPin },
-  { id: 'destinations' as TabId, label: 'Điểm đến nổi bật',      icon: Plane },
-  { id: 'staff'        as TabId, label: 'Nhân Viên',              icon: UserCog },
+  { id: 'destinations'  as TabId, label: 'Điểm đến nổi bật',      icon: Plane },
+  { id: 'landing-pages' as TabId, label: 'Landing Pages',          icon: Layers },
+  { id: 'staff'         as TabId, label: 'Nhân Viên',              icon: UserCog },
   { id: 'config'       as TabId, label: 'Webhook & Email',        icon: Settings },
 ]
 
@@ -523,8 +525,9 @@ const TAB_TITLES: Record<TabId, string> = {
   customers:    'Hồ sơ Khách hàng',
   articles:     'Quản lý Bài viết',
   tours:        'Quản lý Tour — Hình ảnh & Hashtags',
-  destinations: 'Điểm đến nổi bật — Trang chủ',
-  staff:        'Quản lý Nhân Viên',
+  destinations:    'Điểm đến nổi bật — Trang chủ',
+  'landing-pages': 'Landing Page Chiến Dịch FB Ads',
+  staff:           'Quản lý Nhân Viên',
   config:       'Cấu hình Webhook & Email',
 }
 
@@ -829,6 +832,11 @@ const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null)
               {activeTab === 'destinations' && (
                 <ErrorBoundary moduleName="DestinationsTab">
                   <DestinationsTab />
+                </ErrorBoundary>
+              )}
+              {activeTab === 'landing-pages' && (
+                <ErrorBoundary moduleName="LandingPageTab">
+                  <LandingPageTab />
                 </ErrorBoundary>
               )}
               {activeTab === 'staff' && (

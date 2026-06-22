@@ -8,6 +8,18 @@ Tên miền tham chiếu thiết kế: `trieuhaotravel.vn_ (1).jpg` (file ảnh 
 > **⚠️ LƯU Ý TÊN THƯƠNG HIỆU:** Domain là `namngantravel.com` → "Nam Ngân" (ngân = bạc).
 > Nếu đúng tên là "Nam Ngạn" (ngạn = bờ/proverb) hãy báo Orchestrator để cập nhật.
 
+## Thông tin liên lạc chính thức
+
+> Dùng thống nhất trong toàn bộ codebase (Footer, JSON-LD, email templates, prompt AI...).
+
+| Trường | Giá trị |
+|--------|---------|
+| **Địa chỉ** | 525/44 Huỳnh Văn Bánh, Phường Phú Nhuận, Quận Phú Nhuận, Thành phố Hồ Chí Minh, Việt Nam |
+| **Email** | dulichnamngan@gmail.com |
+| **Hotline** | 0932 611 933 |
+| **Zalo** | 0774 623 514 |
+| **Website** | namngantravel.com |
+
 ## 🤖 TripGenie — Hệ thống AI Du lịch
 
 ### Tầm nhìn sản phẩm

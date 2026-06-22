@@ -77,7 +77,7 @@ export default function Footer() {
           <ul className="space-y-3 text-sm">
             <li className="flex items-start gap-2">
               <MapPin size={15} className="mt-0.5 shrink-0 text-brand-accent" />
-              <span>123 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM</span>
+              <span>525/44 Huỳnh Văn Bánh, Phường Phú Nhuận, Quận Phú Nhuận, TP. Hồ Chí Minh</span>
             </li>
             <li className="flex items-center gap-2">
               <Phone size={15} className="shrink-0 text-brand-accent" />
@@ -89,8 +89,8 @@ export default function Footer() {
             </li>
             <li className="flex items-center gap-2">
               <Mail size={15} className="shrink-0 text-brand-accent" />
-              <a href="mailto:info@namngantravel.com" className="hover:text-white transition-colors">
-                info@namngantravel.com
+              <a href="mailto:dulichnamngan@gmail.com" className="hover:text-white transition-colors">
+                dulichnamngan@gmail.com
               </a>
             </li>
           </ul>
