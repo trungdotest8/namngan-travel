@@ -45,7 +45,7 @@ export default function Header() {
         <div className="container-main flex items-center justify-between gap-4">
           <span className="flex items-center gap-1.5">
             <MapPin size={13} />
-            <span>Địa chỉ: 123 Lê Lợi, Q.1, TP.HCM</span>
+            <span>525/44 Huỳnh Văn Bánh, P. Phú Nhuận, Q. Phú Nhuận, TP.HCM</span>
           </span>
           <a
             href="tel:0932611933"
