@@ -394,13 +394,13 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | E | Chat & Lead | ✅ v2.2.0 | `ChatWidget.tsx` — 2 tab: "Để lại số" + "Chat AI" |
 | F | CMS / RSS | ✅ v1.3.0 | `ArticleFeed.tsx` — TiptapEditor ✅ |
 | G | DB Schema | ✅ **25 local / 25 cloud** | `supabase/migrations/` — tất cả đã push cloud ✅ |
-| CRM | Admin CRM | ✅ v8.7.0 | `crm/page.tsx` + `ToursTab.tsx` — normalize images trước TourGalleryManager ✅ |
+| CRM | Admin CRM | ✅ **v9.0.0** | `crm/ToursTab.tsx` — ItineraryEditor numbered days+meals+ảnh ✅ |
 | AUTH | Admin Auth | ✅ v2.0.0 | `login/page.tsx` + `middleware.ts` — cookie: `admin_session` |
-| TRIPGENIE | AI Chat Core | ✅ v1.2.0 | `/api/ai/chat` Node.js runtime; RAG ✅ — claude-sonnet-4-6 |
+| TRIPGENIE | AI Chat Core | ✅ v1.2.0 | `/api/ai/chat` Node.js runtime; RAG ✅ — **claude-opus-4-8** |
 | TRIPGENIE-LEADS | Lead Capture | ✅ v2.1.0 | `/api/leads` POST (adminClient); `/api/leads/[id]` PATCH ✅ |
-| TRIPGENIE-CLASSIFY | AI Classification | ✅ v1.0.0 | `src/lib/ai/classify.ts` — claude-haiku-4-5-20251001 |
+| TRIPGENIE-CLASSIFY | AI Classification | ✅ **v1.1.0** | `src/lib/ai/classify.ts` — **claude-opus-4-8** |
 | TRIPGENIE-AFFILIATE | Affiliate Engine | ✅ v1.0.0 | migration #18; `src/lib/affiliate/tracker.ts` |
-| TRIPGENIE-ITINERARY | Itinerary Builder AI | ✅ v1.0.0 | `/api/ai/itinerary` 4096 tokens SSE — claude-sonnet-4-6 |
+| TRIPGENIE-ITINERARY | Itinerary Builder AI | ✅ **v1.1.0** | `/api/ai/itinerary` 4096 tokens SSE — **claude-opus-4-8** |
 | LEADS-ACTIVITIES | Nhật ký chăm sóc | ✅ v1.0.0 | migration #19; `/api/leads/[id]/activities` |
 | LEADS-IMPORT | Bulk Import CSV | ✅ v1.0.0 | `/api/leads/import` POST max 500 |
 | NOTIFY | Notification | ✅ v2.1.0 | Email + Realtime + Telegram; `src/lib/notifications/index.ts` |
@@ -415,16 +415,17 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | AUDIENCE-CONTACTS | SMS Audience Import | ✅ v1.0.0 | migration #22 ✅ cloud; `/api/admin/audiences/export` ✅ |
 | SEASTAR-CRAWLER | SeaStar Crawler v3 | ✅ **v1.2.0** | `scripts/crawl-seastar-tours.ts` — 83 tours Sheets ✅; batch write ✅ |
 | TOURS-IMPORT | Tour Detail Import từ Sheets | ✅ **v1.0.1** | `scripts/import-tours-from-sheet.ts` — 36 tours đã upsert Supabase ✅ |
-| TOUR-DETAIL-PAGE | Trang chi tiết tour | ✅ **v5.0.0** | `TourDetailClient.tsx` — 2-col scrollspy (65/35 hero, 25/75 itinerary) ✅ |
+| TOUR-DETAIL-PAGE | Trang chi tiết tour | ✅ **v5.1.0** | `TourDetailClient.tsx` — 2-col scrollspy; day.images[] render thực sự ✅ |
 | TOUR-BOOKING-WIDGET | Sticky Booking Widget | ✅ **v1.0.0** | `src/components/tour/TourBookingWidget.tsx` — dropdown+stepper+realtime total |
 | ITINERARY-NAV | Scrollspy Sidebar Nav | ✅ **v1.0.0** | `src/components/tour/ItineraryNav.tsx` — IntersectionObserver + smooth scroll |
+| ITINERARY-EDITOR | Admin Itinerary Editor | ✅ **v1.0.0** | `ToursTab.tsx` ItineraryEditor — add/reorder days, meals, textarea, upload ảnh/ngày |
 | TOUR-LEADBOX | Lead Capture trên Tour | ✅ v1.0.0 | `src/components/tour/TourLeadBox.tsx` — Zod phone + advisor card tel/Zalo |
 | TOUR-LINKS | Tour ecosystem linking | ✅ v1.0.0 | sitemap, TourCard, TourListingCard, /lich-khoi-hanh, "Tour cùng loại" |
 | BOOKING-BTN | BookingScheduleButton | ✅ v1.0.0 | `src/components/tour/BookingScheduleButton.tsx` |
 | HOMEPAGE-PERF | Homepage FPS Fix | ✅ **v1.0.0** | `page.tsx`+`TourCard.tsx`+`TourListingCard.tsx` — shadow-overlay; content-visibility ⚡ |
 | TRIPAGENT-PERF | TripAgent Chat Perf | ✅ **v1.0.0** | `AiChatPanel.tsx`+`ChatWidget.tsx`+`ai-chat.store.ts` — React.memo; smart-scroll ⚡ |
 | TOUR-GALLERY | Tour Gallery | ✅ **v2.1.0** | `TourGallery.tsx` — backward-compat `TourImageItem`; `getImgUrl`/`getImgAlt` helpers |
-| TOURS-API-FIX | Tours PATCH/DELETE adminClient | ✅ **v1.0.0** | `src/app/api/tours/[id]/route.ts` — adminClient; PGRST116→404 |
+| TOURS-API-FIX | Tours PATCH/DELETE adminClient | ✅ **v1.2.0** | `src/app/api/tours/[id]/route.ts` — itinerary field thêm vào schema ✅ |
 | PYTHON-VENV | Python scraper env | ✅ v1.0.0 | `.venv/` — tất cả deps agent.py đã cài ✅ |
 | SEED-IMAGES | Seed script gallery | ✅ v1.0.0 | `scripts/seed-tour-images.ts` — npx tsx; --slug --images --file |
 | AGENT-PY | Tour Image Scraper | ✅ **v1.1.0** | `scripts/agent.py` — crawl+WebP+upload+alt+syncDB; --single --yes; 20 ảnh SeaStar test ✅ |
@@ -441,18 +442,18 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | `/api/leads/[id]` | PATCH | ✅ | field: `lead_status` (không phải `status`) + auth |
 | `/api/leads/[id]/activities` | GET+POST | ✅ | field: `action_type` enum note\|call\|email\|other |
 | `/api/leads/import` | POST | ✅ | Bulk insert max 500 |
-| `/api/ai/chat` | POST | ✅ v1.2.0 | Node.js + RAG + SSE — claude-sonnet-4-6 |
-| `/api/ai/classify-lead` | POST | ✅ | classifyLead() — claude-haiku-4-5-20251001 |
-| `/api/ai/itinerary` | POST | ✅ | 4096 tokens SSE — claude-sonnet-4-6 |
+| `/api/ai/chat` | POST | ✅ v1.2.0 | Node.js + RAG + SSE — **claude-opus-4-8** |
+| `/api/ai/classify-lead` | POST | ✅ | classifyLead() — **claude-opus-4-8** |
+| `/api/ai/itinerary` | POST | ✅ | 4096 tokens SSE — **claude-opus-4-8** |
 | `/api/affiliate/track` | GET | ✅ | param: `link_id` (UUID); 302 redirect hoặc 404 |
 | `/api/customer-profile` | GET+PATCH | ✅ | Auth + limit 200 |
 | `/api/search` | POST | ✅ | fields: destination + adults + children (required) |
 | `/api/cms` | GET/POST | ✅ | pagination + new_article notification |
 | `/api/tours` | GET | ✅ | filter: category URL-encoded + country + is_active |
-| `/api/tours/[id]` | PATCH | ✅ **v1.1.0** | adminClient ✅; images[] gallery; PGRST116 → 404 |
+| `/api/tours/[id]` | PATCH | ✅ **v1.2.0** | adminClient ✅; itinerary JSONB ✅; PGRST116 → 404 |
 | `/api/tours/[id]` | DELETE | ✅ **v1.1.0** | adminClient ✅; soft delete (is_active=false) |
 | `/api/featured-destinations` | ALL | ✅ | |
-| `/api/admin/upload-image` | POST | ✅ **v1.1.0** | isAdminRequest() ✅ (đã fix cookie bug); base64→`tour-galleries` |
+| `/api/admin/upload-image` | POST | ✅ **v1.1.0** | isAdminRequest() ✅; base64→`tour-galleries` |
 | `/api/notifications` | POST | ✅ | x-webhook-secret |
 | `/api/departures` | GET | ✅ | filter destination/month/status/country; max 1000 |
 | `/api/departures` | POST | ✅ v2.2.0 | SeaStar-only; 6 tháng; broadcast Realtime |
@@ -490,6 +491,7 @@ Supabase: indjoegnsvcteaozmgrg — 25 migrations local / 25 cloud ✅ (tất c�
           ✅ SeaStar 476 lịch synced tháng 6–11/2026
           ✅ 36 tours có detail_synced_at NOT NULL
           ✅ tours.images jsonb — migration #27: {url,alt,caption,order}[] + source_url column
+          ✅ TourItineraryDay.images?: string[] — lưu qua tours.itinerary JSONB (không cần migration)
 Resend  : Domain namngantravel.com — PENDING DNS (chưa verify)
 ANTHROPIC_API_KEY: ⚠️ hết credit cho agent.py --gen-alt (TripAgent Next.js vẫn OK)
 TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID: ✅ Vercel đã set
@@ -503,52 +505,31 @@ Google Sheets:
   Tab "tour_schedules": SeaStar sync 2h sáng hàng ngày (Apps Script Code.gs)
   Tab "tours_master": 83 tours crawled ✅ (36 unique codes upsert Supabase ✅)
 
-pnpm build (Handover #67): ✅ CLEAN — 0 TypeScript errors
+pnpm build (Handover #68): ✅ CLEAN — 0 TypeScript errors
 
-Claude models:
-  src/lib/ai/claude.ts              → claude-sonnet-4-6
-  src/lib/ai/classify.ts            → claude-haiku-4-5-20251001
-  src/app/api/ai/itinerary/route.ts → claude-sonnet-4-6
-  src/app/api/content/generate/route.ts → claude-opus-4-8
+Claude models (ALL claude-opus-4-8 từ phiên #68):
+  src/lib/ai/claude.ts              → claude-opus-4-8  ← đổi từ sonnet
+  src/lib/ai/classify.ts            → claude-opus-4-8  ← đổi từ haiku
+  src/app/api/ai/itinerary/route.ts → claude-opus-4-8  ← đổi từ sonnet
+  src/app/api/content/generate/route.ts → claude-opus-4-8  ← giữ nguyên
   scripts/agent.py --gen-alt        → claude-haiku-4-5-20251001 (⚠️ cần credit riêng)
 ```
 
-### Data Contract — Thay đổi phiên #67
+### Data Contract — Thay đổi phiên #68
 
 ```typescript
-// ── TOUR DETAIL PAGE v5.0.0 (phiên #67) ──────────────────────────────────────
-// Layout: 2-column — Hero (65/35) + Itinerary scrollspy (25/75)
-// TourDetailClient.tsx: max-w-7xl (tăng từ max-w-4xl)
-// Khối 1 Hero grid: md:[grid-template-columns:65%_35%]
-// Khối 2 Itinerary grid: md:[grid-template-columns:25%_75%] — ẨN nếu itinerary rỗng
-// Mobile: TourBookingWidget ẩn (hidden md:block); bottom bar cố định fixed bottom-0
-// Bottom bar: IntersectionObserver trên heroEndRef sentinel → showBottomBar state
+// ── ITINERARY DAY IMAGES (phiên #68) ──────────────────────────────────────────
+// TourItineraryDay.images?: string[]  ← MỚI (lưu trong tours.itinerary JSONB, không migration)
+// Admin: ItineraryEditor component trong ToursTab.tsx
+//   - add/remove/reorder ngày; bữa ăn checkbox Sáng/Trưa/Tối; textarea mô tả; upload ảnh/ngày
+//   - PATCH /api/tours/[id] body: { itinerary: TourItineraryDay[] | null }
+// Frontend: TourDetailClient.tsx — render day.images[] thành <img> thực
+//   - 1 ảnh: full-width max-h-72; 2+ ảnh: grid 2 cột
+//   - loading=lazy; onError ẩn div
 
-// TourBookingWidget (src/components/tour/TourBookingWidget.tsx):
-//   Props: { tour: Tour; schedules: TourSchedule[] }
-//   State: selectedId (schedule), adults (min 1), children (min 0)
-//   Total realtime = adults * selected.price_adult + children * selected.price_child
-//   Không có lịch open → ẩn stepper, hiện "Liên hệ nhận lịch mới" + TripGenieLeadModal
-//   Nút "ĐẶT TOUR NGAY" → mở BookingModal với initialScheduleId + initialAdults + initialChildren
-
-// ItineraryNav (src/components/tour/ItineraryNav.tsx):
-//   Props: { days: TourItineraryDay[] }
-//   IntersectionObserver rootMargin '-15% 0px -60% 0px'
-//   Active: border-l-[3px] border-[#005BAA] bg-[#F0F7FF]
-//   Mobile: MobileItineraryBar (horizontal pills, không sticky)
-
-// BookingModal (src/components/booking/BookingModal.tsx):
-//   Props thêm mới (optional): initialScheduleId?, initialAdults?, initialChildren?
-//   Backward-compat: existing callers không cần thay đổi
-
-// Footer Lead Form (inline trong TourDetailClient):
-//   Zod schema FooterLeadSchema: full_name + phone + email + pax + message
-//   POST /api/leads { lead_source: 'organic', source_channel: 'web_form' }
-
-// ── UPLOAD IMAGE FIX (phiên #67) ─────────────────────────────────────────────
-// /api/admin/upload-image: dùng isAdminRequest(req) từ @/lib/admin-auth
-// Cookie check: admin_session (ADMIN_COOKIE) — không còn hardcode 'admin-token'
-// Cả 3 callers OK: ToursTab, ArticlesTab, TourGalleryManager
+// ── API PATCH /api/tours/[id] — thêm itinerary vào TourUpdateSchema ────────────
+// itinerary: z.array(ItineraryDaySchema).nullable().optional()
+// ItineraryDaySchema: { day, title, description, meals?, images? }
 ```
 
 ### Files ưu tiên cao cần làm
@@ -585,6 +566,7 @@ Claude models:
 
 | Ngày | Giai đoạn | Thay đổi |
 |------|-----------|---------|
+| 2026-06-22 | Handover #68 — Itinerary Editor + Model Opus + Image fix ✅ | ItineraryEditor admin; day.images render; tất cả model → opus-4-8 |
 | 2026-06-16 | Handover #67 — Tour Detail v5.0.0 + Upload fix ✅ | 2-col scrollspy; TourBookingWidget+ItineraryNav mới; upload auth bug fixed |
 | 2026-06-16 | Handover #66 — Listing UI đồng nhất ✅ | HScrollRow ← → arrows; 4 trang filter+sort chuẩn hoá |
 | 2026-06-16 | Handover #65 — Agent.py Image Scraper ✅ | scripts/agent.py v1.1.0; migration #27 images format; TourGallery backward-compat |
@@ -603,5 +585,4 @@ Claude models:
 | 2026-06-11 | Handover #52 — Crawler DONE + migration fix | crawl-seastar-tours.ts ✅; migration #22 IF NOT EXISTS fix |
 | 2026-06-11 | Handover #51 — Audience Contacts DONE + Crawler plan | Audience pipeline ✅; Crawler v3 plan approved |
 | 2026-06-11 | Handover #50 — Sheets Sync LIVE + Audience spec | Sheets sync live ✅; URL fix www.; migrations #16-21 cloud ✅ |
-| 2026-06-10 | Handover #49 — Sheets Sync + Model Tune | Code.gs Apps Script; /api/departures/sync; migration #21 |
-| 2026-06-09 | Handover #44–48 — Phase 6 + Remote Dev + TQ Scraper + Models | /du-lich/[country] ✅; Tailscale+code-server; claude-opus-4-8 |
+| 2026-06-09 | Handover #44–49 — Phase 6 + Remote Dev + TQ Scraper + Models | /du-lich/[country] ✅; Tailscale+code-server; claude-opus-4-8 |
