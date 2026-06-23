@@ -49,6 +49,33 @@ export async function sendZaloText(userId: string, text: string): Promise<ZaloAp
   }
 }
 
+// Gửi tin nhắn với token cụ thể — dùng bởi Omnichannel Gateway multi-account
+// (wrapper convenience; logic đầy đủ ở @/lib/zalo/multi-account)
+export async function sendZaloTextWithToken(
+  userId: string,
+  text: string,
+  accessToken: string,
+): Promise<ZaloApiResponse> {
+  try {
+    const res = await fetch(`${ZALO_API_BASE}/message/cs`, {
+      method:  'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'access_token': accessToken,
+      },
+      body: JSON.stringify({
+        recipient: { user_id: userId },
+        message:   { text },
+      }),
+    })
+    if (!res.ok) throw new Error(`Zalo API HTTP ${res.status}: ${await res.text()}`)
+    return res.json() as Promise<ZaloApiResponse>
+  } catch (err) {
+    console.error('[Zalo Client] sendZaloTextWithToken thất bại:', err)
+    return { error: -1, message: err instanceof Error ? err.message : 'unknown' }
+  }
+}
+
 // Gửi tin nhắn với nút bấm (quick replies)
 export async function sendZaloWithButtons(
   userId:  string,

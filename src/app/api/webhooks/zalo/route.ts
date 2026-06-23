@@ -4,6 +4,12 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { triggerNotification } from '@/lib/notifications'
 import { sendZaloText, sendZaloWithButtons } from '@/lib/zalo/client'
+import { getZaloAccountByOaId, getDefaultZaloAccount } from '@/lib/zalo/multi-account'
+import {
+  sendTelegramToChatAndGetId,
+  formatZaloInboundMessage,
+} from '@/lib/telegram-gateway'
+import type { ZaloAccount } from '@/types/omnichannel.types'
 
 // Zalo OA webhook: HMAC SHA256 verify với ZALO_OA_SECRET
 function verifyZaloSignature(rawBody: string, signature: string): boolean {
@@ -62,12 +68,17 @@ export async function POST(request: NextRequest) {
     const event = parsed.data
     const zaloId = event.sender?.id ?? event.user_id_by_app ?? null
 
+    // Xác định tài khoản Zalo nào nhận tin — dùng để routing Telegram
+    const zaloAccount = event.app_id
+      ? await getZaloAccountByOaId(event.app_id)
+      : await getDefaultZaloAccount()
+
     switch (event.event_name) {
       case 'user_submit_form':
-        if (event.info?.length) await handleFormSubmit(event.info, zaloId)
+        if (event.info?.length) await handleFormSubmit(event.info, zaloId, zaloAccount)
         break
       case 'user_send_text':
-        await handleTextMessage(event, zaloId)
+        await handleTextMessage(event, zaloId, zaloAccount)
         break
       case 'follow':
         if (zaloId) await handleFollow(zaloId)
@@ -87,6 +98,7 @@ export async function POST(request: NextRequest) {
 async function handleFormSubmit(
   info: Array<{ field_name: string; value: string }>,
   zaloId: string | null,
+  zaloAccount: ZaloAccount | null,
 ) {
   const fields = Object.fromEntries(
     info.map(f => [f.field_name.toLowerCase().replace(/\s+/g, '_'), f.value.trim()])
@@ -110,7 +122,7 @@ async function handleFormSubmit(
 
   const { data: existing } = await supabase
     .from('leads')
-    .select('id, full_name')
+    .select('id, full_name, status')
     .or(orFilter)
     .maybeSingle()
 
@@ -124,6 +136,17 @@ async function handleFormSubmit(
       action_type: 'note',
       content:     `Khách gửi form qua Zalo OA${fullName ? ` (${fullName})` : ''}`,
     })
+
+    // Ghi conversation_log (inbound)
+    if (zaloAccount && zaloId) {
+      await logConversation({
+        supabase,
+        leadId:        existing.id,
+        zaloAccountId: zaloAccount.id,
+        direction:     'inbound',
+        messageText:   `[Form] ${JSON.stringify(fields)}`,
+      })
+    }
 
     // Auto-reply: báo đã cập nhật thông tin
     if (zaloId) {
@@ -164,6 +187,18 @@ async function handleFormSubmit(
     content:     'Lead mới từ form Zalo OA',
   })
 
+  // Ghi conversation_log + auto-create ticket cho lead mới
+  if (zaloAccount && zaloId) {
+    await logConversation({
+      supabase,
+      leadId:        lead.id,
+      zaloAccountId: zaloAccount.id,
+      direction:     'inbound',
+      messageText:   `[Form mới] ${JSON.stringify(fields)}`,
+    })
+    await ensureOpenTicket({ supabase, leadId: lead.id, subject: 'Form Zalo OA mới' })
+  }
+
   // Auto-reply: chào mừng + xác nhận đã nhận
   if (zaloId) {
     await sendZaloText(
@@ -183,7 +218,11 @@ async function handleFormSubmit(
   })
 }
 
-async function handleTextMessage(event: ZaloEvent, zaloId: string | null) {
+async function handleTextMessage(
+  event: ZaloEvent,
+  zaloId: string | null,
+  zaloAccount: ZaloAccount | null,
+) {
   if (!zaloId) return
   const text = event.message?.text?.trim()
   if (!text) return
@@ -192,18 +231,63 @@ async function handleTextMessage(event: ZaloEvent, zaloId: string | null) {
 
   const { data: lead } = await supabase
     .from('leads')
-    .select('id, full_name')
+    .select('id, full_name, status')
     .eq('zalo_id', zaloId)
     .maybeSingle()
 
   if (lead) {
-    // Lead đã tồn tại — ghi lại tin nhắn để admin theo dõi trong CRM
+    // Ghi log tin nhắn vào CRM
     await supabase.from('lead_activities').insert({
       lead_id:     lead.id,
       staff_name:  'Zalo OA',
       action_type: 'note',
       content:     `Tin nhắn Zalo: ${text.slice(0, 500)}`,
     })
+
+    // Gateway: forward tin nhắn lên Telegram với context CRM
+    if (zaloAccount) {
+      const bookingCtx = await getBookingContext(supabase, lead.id)
+      const tgChatId = zaloAccount.telegram_chat_id ?? process.env.TELEGRAM_CHAT_ID ?? null
+
+      if (tgChatId) {
+        const tgText = formatZaloInboundMessage({
+          accountName:   zaloAccount.account_name,
+          customerName:  lead.full_name,
+          customerType:  lead.status,
+          bookingCode:   bookingCtx?.booking_code ?? null,
+          tourName:      bookingCtx?.tour_name ?? null,
+          departureDate: bookingCtx?.departure_date ?? null,
+          messageText:   text,
+        })
+
+        const tgMessageId = await sendTelegramToChatAndGetId(tgChatId, tgText)
+
+        if (tgMessageId) {
+          await supabase.from('telegram_zalo_mappings').insert({
+            tg_message_id:    tgMessageId,
+            zalo_account_id:  zaloAccount.id,
+            customer_zalo_id: zaloId,
+            lead_id:          lead.id,
+          })
+        }
+
+        await logConversation({
+          supabase,
+          leadId:        lead.id,
+          zaloAccountId: zaloAccount.id,
+          direction:     'inbound',
+          messageText:   text,
+          tgMessageId:   tgMessageId ?? undefined,
+        })
+      }
+
+      // Auto-create ticket nếu chưa có ticket open
+      await ensureOpenTicket({
+        supabase,
+        leadId:  lead.id,
+        subject: text.slice(0, 100),
+      })
+    }
   } else {
     // Chưa có lead — hướng dẫn điền form để nhận tư vấn
     await sendZaloWithButtons(
@@ -219,7 +303,6 @@ async function handleTextMessage(event: ZaloEvent, zaloId: string | null) {
 }
 
 async function handleFollow(zaloId: string) {
-  // Gửi tin chào khi user follow OA
   await sendZaloWithButtons(
     zaloId,
     '🎉 Chào mừng bạn đến với Nam Ngân Travel!\n' +
@@ -231,4 +314,104 @@ async function handleFollow(zaloId: string) {
       { title: '💰 Báo giá ngay',      payload: 'get_quote'    },
     ]
   )
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+interface BookingContext {
+  booking_code: string
+  tour_name: string
+  departure_date: string
+}
+
+async function getBookingContext(
+  supabase: ReturnType<typeof createAdminClient>,
+  leadId: string,
+): Promise<BookingContext | null> {
+  try {
+    // Lấy phone của lead → tìm booking của user có phone tương ứng
+    const { data: lead } = await supabase
+      .from('leads')
+      .select('phone')
+      .eq('id', leadId)
+      .maybeSingle()
+
+    if (!lead?.phone) return null
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('phone', lead.phone)
+      .maybeSingle()
+
+    if (!user?.id) return null
+
+    const { data: booking } = await supabase
+      .from('bookings')
+      .select(`
+        code,
+        tour_schedules (
+          departure_date,
+          tours ( name )
+        )
+      `)
+      .eq('user_id', user.id)
+      .not('booking_status', 'eq', 'cancelled')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (!booking) return null
+
+    const schedule = booking.tour_schedules as unknown as { departure_date: string; tours: { name: string } } | null
+    return {
+      booking_code:   booking.code,
+      tour_name:      schedule?.tours?.name ?? 'Tour',
+      departure_date: schedule?.departure_date ?? '',
+    }
+  } catch {
+    return null
+  }
+}
+
+async function logConversation(opts: {
+  supabase: ReturnType<typeof createAdminClient>
+  leadId: string
+  zaloAccountId: string
+  direction: 'inbound' | 'outbound'
+  messageText: string
+  tgMessageId?: number
+  adminUserId?: string
+}): Promise<void> {
+  await opts.supabase.from('conversation_logs').insert({
+    lead_id:         opts.leadId,
+    zalo_account_id: opts.zaloAccountId,
+    direction:       opts.direction,
+    channel:         'zalo',
+    message_text:    opts.messageText,
+    tg_message_id:   opts.tgMessageId ?? null,
+    admin_user_id:   opts.adminUserId ?? null,
+  })
+}
+
+async function ensureOpenTicket(opts: {
+  supabase: ReturnType<typeof createAdminClient>
+  leadId: string
+  subject?: string
+}): Promise<void> {
+  const { data: existing } = await opts.supabase
+    .from('support_tickets')
+    .select('id')
+    .eq('lead_id', opts.leadId)
+    .in('status', ['open', 'in_progress'])
+    .maybeSingle()
+
+  if (!existing) {
+    await opts.supabase.from('support_tickets').insert({
+      lead_id:  opts.leadId,
+      subject:  opts.subject ?? 'Tin nhắn Zalo mới',
+      priority: 'normal',
+      status:   'open',
+    })
+  }
 }
