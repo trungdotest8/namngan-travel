@@ -1,0 +1,100 @@
+# Nam Ngân Travel — AI Coding Rules
+
+## Project identity
+- Next.js 14 App Router + TypeScript strict + Tailwind CSS v3 + pnpm
+- Deploy: Vercel. Database: Supabase (PostgreSQL). Package manager: pnpm only.
+- Path alias: `@/*` → `src/*`. Always use `@/` for internal imports.
+- Language: UI text and error messages in Vietnamese. Code identifiers in English.
+
+## 8 immutable rules — never violate
+1. Never delete or replace an existing file or module; only patch/extend.
+2. Never import MUI, Ant Design, Chakra UI, or any heavy UI library.
+3. Never merge code from a Child module until type contracts are verified against `src/types/`.
+4. Every module rendered as a React subtree MUST be wrapped in `<ErrorBoundary moduleName="...">` from `@/components/ui/ErrorBoundary`.
+5. Every form input and every API route body MUST be validated with Zod before any DB write. Schemas live in `src/lib/validations/`.
+6. Every `fetch()` call MUST have `try/catch` and a UI fallback for network errors.
+7. New Lead or Booking events MUST trigger BOTH Resend email AND Supabase Realtime broadcast simultaneously. Neither alone is acceptable.
+8. Every upload/Drive feature MUST show a clear error UI — never a blank screen on failure.
+
+## Supabase client — three-tier, never mix tiers
+- `createAdminClient()` from `@/lib/supabase/admin` — server-only API routes needing service role (bypasses RLS)
+- `createClient()` from `@/lib/supabase/server` — Server Components and API routes using cookie-based auth
+- `createClient()` from `@/lib/supabase/client` — client components only ('use client' files)
+- NEVER use the admin client in a component file. NEVER use the browser client in an API route.
+
+## Critical data contracts — do not invent alternatives
+- `Tour.name` — NOT `.title`. `Tour.code` = "NN-HN-001" format.
+- `Tour.category` = "trong nước" | "nước ngoài" (exact Vietnamese strings)
+- `Tour.itinerary` = `TourItineraryDay[]` JSONB — NOT a string field
+- `Tour.images` = `(string | TourImage)[]` JSONB — handles both old string[] and new object format
+- `TourSchedule` lives in table `tour_schedules` (not `departures`)
+- `TourSchedule.status` = 'open' | 'full' | 'cancelled' | 'completed'
+- `Booking.total_price` and `Booking.final_price` are GENERATED columns — never write them
+- `Lead.status` = 'new' | 'contacted' | 'consulting' | 'deposited' | 'converted' | 'lost'
+- `Lead.lead_source` = 'popup' | 'chat' | 'fb_ads' | 'web_ads' | 'organic' | 'other'
+- All prices: `number` in VND (never formatted string like "1.000.000đ")
+- All timestamps: ISO 8601 UTC strings; display in UTC+7 in UI
+
+## Tech stack constraints
+- Styling: Tailwind CSS utility classes only. Never inline styles for anything Tailwind can express.
+- State: Zustand. One store per module. `ui.store.ts` is the cross-cutting event bus.
+- Icons: `lucide-react` only. Do not add heroicons, react-icons, or other icon libraries.
+- Fonts: `Be Vietnam Pro` (sans) + `Playfair Display` (display) — already configured in layout.tsx.
+- Forms: No react-hook-form. Use controlled inputs + Zod safeParse directly.
+
+## Brand colors — use Tailwind custom tokens
+- Primary CTA, header: `brand-blue` = `#005BAA` → Tailwind: `bg-brand-blue`, `text-brand-blue`
+- Hover state: `brand-light` = `#0078D7`
+- Prices, badges: `brand-accent` = `#FF6B00`
+- Section background: `brand-bg` = `#F0F7FF`
+- Text primary: `#1A1A2E`
+- NEVER use `green-600` or `#16a34a` — old Child A mistake, corrected to brand-blue
+
+## File structure — where things go
+- UI atoms: `src/components/ui/`
+- Module components: `src/components/<module>/`
+- Zustand stores: `src/store/<module>.store.ts`
+- API routes: `src/app/api/<module>/route.ts`
+- TypeScript types: `src/types/<entity>.types.ts`
+- Zod schemas: `src/lib/validations/<entity>.schema.ts`
+- Supabase helpers: `src/lib/supabase/` (admin | server | client only)
+- AI lib: `src/lib/ai/` (claude.ts, classify.ts, rag.ts)
+
+## TypeScript patterns
+- `strict: true` is enforced. Use `as unknown as T` instead of `as any`.
+- Export types from `src/types/index.ts` for cross-module reuse.
+- API route handlers: always `export async function GET/POST/PATCH/DELETE(req: NextRequest)`.
+- Server Components: async functions returning JSX, no 'use client' directive.
+- Client Components: first line MUST be `'use client'`.
+
+## API route pattern — follow exactly
+```typescript
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json()
+    const parsed = SomeSchema.safeParse(body)
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+    // ... business logic
+    return NextResponse.json({ data }, { status: 201 })
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Lỗi hệ thống' },
+      { status: 500 },
+    )
+  }
+}
+```
+
+## Notification dual-trigger pattern (Principle #7)
+After any Lead INSERT or Booking confirm:
+1. Call `triggerNotification(...)` from `@/lib/notifications`
+2. Call Resend email for customer-facing confirmation
+Both calls must be fire-and-forget with `.catch()` — never block the 201 response.
+
+## Admin auth
+- Use `isAdminRequest()` from `@/lib/admin-auth` at the top of every admin mutation route.
+- Admin session cookie: `admin_session`
+
+## Child module isolation
+- Each Child (A–G + CRM + TripGenie) owns its folder. Never cross-import between module folders.
+- New modules: create `src/components/<name>/`, `src/store/<name>.store.ts`, `src/app/api/<name>/route.ts`.

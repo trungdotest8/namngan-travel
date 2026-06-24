@@ -1,0 +1,40 @@
+{
+  "models": [
+    {
+      "title": "Claude Sonnet",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-6",
+      "apiKeyEnvVar": "ANTHROPIC_API_KEY"
+    }
+  ],
+  "tabAutocompleteModel": {
+    "title": "Claude Haiku",
+    "provider": "anthropic",
+    "model": "claude-haiku-4-5-20251001",
+    "apiKeyEnvVar": "ANTHROPIC_API_KEY"
+  },
+  "contextProviders": [
+    { "name": "file",     "params": {} },
+    { "name": "code",     "params": {} },
+    { "name": "terminal", "params": {} },
+    { "name": "problems", "params": {} }
+  ],
+  "slashCommands": [
+    {
+      "name": "api-route",
+      "description": "Tạo API route chuẩn Next.js 14 với Zod + Supabase",
+      "prompt": "Generate a Next.js 14 App Router API route for Nam Ngân Travel. Use: NextResponse/NextRequest from 'next/server'; createAdminClient from '@/lib/supabase/admin' for writes; Zod safeParse before any DB write; try/catch wrapping entire handler; return { error } for 4xx/5xx. Standard status codes: 201 POST create, 200 GET/PATCH. Describe the route purpose."
+    },
+    {
+      "name": "zod-schema",
+      "description": "Tạo Zod schema cho một entity trong dự án",
+      "prompt": "Generate a Zod schema for Nam Ngân Travel. Rules: all required strings use .min(1); phone regex /^(0|\\+84)[0-9]{8,10}$/; UUID fields z.string().uuid(); dates z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/); prices z.number().positive() (VND). Export both schema and inferred type: export type X = z.infer<typeof XSchema>. Place in src/lib/validations/<entity>.schema.ts. Describe the entity."
+    },
+    {
+      "name": "store",
+      "description": "Tạo Zustand store cho module mới",
+      "prompt": "Generate a Zustand store for Nam Ngân Travel. Pattern: define State and Actions interfaces separately; all fetch calls have try/catch with setError(msg); isLoading boolean; error string|null. File: src/store/<module>.store.ts. Export as useXStore named export. Do NOT persist unless asked. Describe the module."
+    }
+  ],
+  "ui": { "codeBlockToolbarPosition": "bottom" }
+}

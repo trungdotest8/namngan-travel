@@ -19,8 +19,8 @@ supabase/.temp
 .DS_Store
 Thumbs.db
 
-# Editor
-.vscode/
+# Editor — commit shared workspace config, ignore personal overrides
+.vscode/*.local.json
 .idea/
 
 # Build
