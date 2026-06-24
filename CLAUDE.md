@@ -444,6 +444,217 @@ File gốc: `CHANGELOG.md` (Downloads) + `temp.jsx` (chưa ghép)
 | CONTACT-INFO | Thông tin liên lạc | ✅ v1.0.0 | Header+Footer+JSON-LD: 525/44 Huỳnh Văn Bánh ✅ |
 | OMNICHANNEL-GATEWAY | Zalo↔Telegram bidirectional | ✅ **v1.0.0** | migration #29; `zalo_accounts`+`telegram_zalo_mappings`+`conversation_logs`+`support_tickets` |
 | CRM-GATEWAY-API | CRM Omnichannel Routes | ✅ **v1.0.0** | `/api/crm/customers/[leadId]`+`/conversations`+`/notes`; `/api/crm/tickets` |
+| DX-TOOLCHAIN | Cline+Continue+Roo Code | ✅ **v1.0.0** | `.clinerules` + `.continue/config.json` + `.vscode/` + `.prettierrc` + `.eslintrc.json` |
+
+### Trạng thái API Routes
+
+| Route | Method | Trạng thái | Ghi chú |
+|-------|--------|-----------|---------|
+| `/api/leads` | POST | ✅ v2.1.0 | adminClient + honeypot(`website_hp`) + Telegram + classify → 201 |
+| `/api/leads` | GET | ✅ | Auth + filter ?channel= ?status= ?page= ?limit= |
+| `/api/leads/[id]` | PATCH | ✅ | field: `lead_status` + auth |
+| `/api/leads/[id]/activities` | GET+POST | ✅ | field: `action_type` enum note\|call\|email\|other |
+| `/api/leads/import` | POST | ✅ | Bulk insert max 500 |
+| `/api/ai/chat` | POST | ✅ v1.2.0 | Node.js + RAG + SSE — **claude-sonnet-4-6** |
+| `/api/ai/classify-lead` | POST | ✅ | classifyLead() — **claude-haiku-4-5-20251001** |
+| `/api/ai/itinerary` | POST | ✅ | 4096 tokens SSE — **claude-sonnet-4-6** |
+| `/api/affiliate/track` | GET | ✅ | param: `link_id` UUID; 302 redirect |
+| `/api/customer-profile` | GET+PATCH | ✅ | Auth + limit 200 |
+| `/api/search` | POST | ✅ | destination + adults + children (required) |
+| `/api/cms` | GET/POST | ✅ | pagination + new_article notification |
+| `/api/tours` | GET | ✅ | filter: category + country + is_active |
+| `/api/tours/[id]` | PATCH | ✅ v1.2.0 | adminClient; itinerary JSONB; PGRST116→404 |
+| `/api/tours/[id]` | DELETE | ✅ v1.1.0 | adminClient; soft delete (is_active=false) |
+| `/api/featured-destinations` | ALL | ✅ | |
+| `/api/admin/upload-image` | POST | ✅ v1.1.0 | isAdminRequest() ✅; base64→`tour-galleries` |
+| `/api/admin/landing-page/generate` | POST | ✅ v1.0.0 | AI extract claude-sonnet-4-6 + Zod + upsert slug |
+| `/api/admin/landing-pages` | GET | ✅ v1.0.0 | ⚠️ cần migration #28 cloud |
+| `/api/notifications` | POST | ✅ | x-webhook-secret |
+| `/api/departures` | GET | ✅ | filter destination/month/status/country; max 1000 |
+| `/api/departures` | POST | ✅ v2.2.0 | SeaStar-only; 6 tháng; broadcast Realtime |
+| `/api/departures/sync` | POST | ✅ | Apps Script UPSERT |
+| `/api/itinerary/[tourId]` | GET | ✅ | |
+| `/api/pdf-index` | GET | ✅ | FTS RPC |
+| `/api/webhooks/n8n` | POST | ✅ | |
+| `/api/webhooks/moda` | POST | ✅ | |
+| `/api/webhooks/zalo` | POST+GET | ✅ **v2.0.0** | HMAC SHA256 + multi-account + mapping + conversation_log + auto-ticket |
+| `/api/webhooks/telegram` | POST+GET | ✅ **v1.0.0** | Staff reply → Zalo; secret_token verify; mapping lookup |
+| `/api/webhooks/fb-leads` | POST+GET | ✅ | hub.challenge + Graph API + dedup fb_lead_id |
+| `/api/content/generate` | POST | ✅ | Admin auth; claude-opus-4-8; INSERT articles draft |
+| `/api/admin/audiences/export` | GET | ✅ | ?platform=facebook\|tiktok; SHA-256; paginate |
+| `/api/crm/customers/[leadId]` | GET | ✅ **v1.0.0** | lead + booking history + ticket summary |
+| `/api/crm/customers/[leadId]/conversations` | GET | ✅ **v1.0.0** | conversation_logs với zalo_account + admin_user join |
+| `/api/crm/customers/[leadId]/notes` | POST | ✅ **v1.0.0** | Thêm lead_activity; Zod validate |
+| `/api/crm/tickets` | GET | ✅ **v1.0.0** | filter ?status= ?priority= ?page= ?limit= |
+| `/api/crm/tickets/[id]` | PATCH | ✅ **v1.0.0** | update status/priority/assigned; auto set resolved_at |
+
+### Zustand Stores
+
+```
+useUIStore              (store/ui.store.ts)               ✅
+useNotificationStore    (store/notification.store.ts)      ✅ — wired vào CRM bell
+useSearchStore          (store/search.store.ts)            ✅
+useCalendarStore        (store/calendar.store.ts)          ✅ — limit 1000
+useChatStore            (store/chat.store.ts)              ✅
+useCmsStore             (store/cms.store.ts)               ✅
+useCustomerProfileStore (store/customer-profile.store.ts)  ✅ — default filter 'deposited'
+useAiChatStore          (store/ai-chat.store.ts)           ✅ — appendDelta O(1) index-based ⚡
+```
+
+### Hạ tầng & Tích hợp bên ngoài
+
+```
+GitHub  : https://github.com/trungdotest8/namngan-travel (branch: main)
+Vercel  : namngan-travel — deploy tự động từ main
+Supabase: indjoegnsvcteaozmgrg — 27 migrations local / 25 cloud
+          ⚠️ migration #28 (tour_landing_pages) CẦN APPLY cloud
+          ⚠️ migration #29 (omnichannel_gateway) CẦN APPLY cloud
+          ✅ bucket 'tour-galleries' | ✅ ai_conversations | ✅ featured_destinations
+          ✅ SeaStar 476 lịch synced tháng 6–11/2026
+          ✅ 36 tours có detail_synced_at NOT NULL
+          ✅ tours.images jsonb — migration #27: {url,alt,caption,order}[] + source_url column
+Resend  : Domain namngantravel.com — PENDING DNS (chưa verify)
+ANTHROPIC_API_KEY: ⚠️ hết credit cho agent.py --gen-alt (TripAgent Next.js vẫn OK)
+TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID: ✅ Vercel đã set
+NEXT_PUBLIC_SALES_NAME=Lê Hoài Nam: ✅ Vercel Production + Development
+NEXT_PUBLIC_SALES_PHONE=0932611933: ✅ Vercel Production + Development
+Env vars CẦN THÊM Vercel: ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
+                           TELEGRAM_WEBHOOK_SECRET (tùy chọn)
+Remote Dev: Tailscale ✅ | code-server ✅ | Mac 100.117.250.21:8080 | pw: 074f49a444ee24314c07bda0
+Python venv: .venv/ — activate: source .venv/bin/activate
+
+Google Sheets:
+  Tab "tour_schedules": SeaStar sync 2h sáng hàng ngày (Apps Script Code.gs)
+  Tab "tours_master": 83 tours crawled ✅ (36 unique codes upsert Supabase ✅)
+
+pnpm build (Handover #71): ✅ CLEAN — 0 TypeScript errors
+pnpm lint  (Handover #71): ✅ warnings only (5× catch(e) → đổi thành catch(_e) khi chỉnh file)
+
+Claude models (phiên #71 — giữ nguyên từ #70):
+  src/lib/ai/claude.ts              → claude-sonnet-4-6
+  src/lib/ai/classify.ts            → claude-haiku-4-5-20251001
+  src/app/api/ai/itinerary/route.ts → claude-sonnet-4-6
+  src/app/api/content/generate/route.ts → claude-opus-4-8
+  src/app/api/admin/landing-page/generate/route.ts → claude-sonnet-4-6
+
+DX Toolchain mới (phiên #71):
+  .clinerules        → Cline + Roo Code: 8 nguyên tắc + data contracts + patterns
+  .continue/config.json → Claude Sonnet chat + Haiku autocomplete + 3 slash commands
+  .vscode/settings.json → formatOnSave + ESLint auto-fix + Tailwind IntelliSense
+  .vscode/extensions.json → 9 extensions recommended
+  .prettierrc        → single quotes, semi, trailing commas, printWidth 100
+  .eslintrc.json     → @typescript-eslint plugin: no-explicit-any warn, no-console warn
+  .editorconfig      → 2-space indent, LF, UTF-8
+```
+
+### Files ưu tiên cao cần làm
+
+```
+# ƯU TIÊN #1 — APPLY MIGRATION #28 + #29 LÊN SUPABASE CLOUD:
+  Supabase Dashboard → SQL Editor → chạy LẦN LƯỢT:
+  1. supabase/migrations/20260623000001_landing_pages.sql
+  2. supabase/migrations/20260624000029_omnichannel_gateway.sql
+
+# ƯU TIÊN #2 — ĐĂNG KÝ TELEGRAM WEBHOOK:
+  curl -X POST "https://api.telegram.org/bot{TOKEN}/setWebhook" \
+       -d "url=https://namngantravel.com/api/webhooks/telegram"
+
+# ƯU TIÊN #3 — SEED BẢNG zalo_accounts (sau khi apply #29):
+  Supabase Table Editor → INSERT:
+  { oa_id: "APP_ID_từ_Zalo_Dev", phone_number: "0774623514",
+    account_name: "Nam Ngân Travel OA", department: "sales",
+    access_token: "...", telegram_chat_id: "8718234653", is_active: true }
+
+# ƯU TIÊN #4 — THÊM VERCEL ENV VARS:
+  ZALO_OA_SECRET, ZALO_OA_ACCESS_TOKEN, FB_VERIFY_TOKEN, FB_APP_SECRET
+  TELEGRAM_WEBHOOK_SECRET (tùy chọn)
+
+# ƯU TIÊN #5 — NẠP CREDIT ANTHROPIC:
+  console.anthropic.com → Plans & Billing → nạp credit cho agent.py --gen-alt
+
+# ƯU TIÊN #6 — VERIFY RESEND DNS:
+  Resend dashboard → check DNS records cho namngantravel.com
+```
+
+### Next Steps (3 việc làm ngay khi mở phiên mới)
+
+1. **Apply migration #28 + #29 cloud** — cả hai đang pending; thiếu #28 → CRM LandingPages tab 500; thiếu #29 → Omnichannel Gateway 500
+2. **Seed `zalo_accounts` + đăng ký Telegram webhook** — không có thì Flow B (staff reply → Zalo) không hoạt động dù code đã deploy
+3. **Thêm 4 Vercel env vars** — ZALO_OA_SECRET + ZALO_OA_ACCESS_TOKEN + FB_VERIFY_TOKEN + FB_APP_SECRET
+
+### Change Log
+
+| Ngày | Giai đoạn | Thay đổi |
+|------|-----------|---------|
+| 2026-06-24 | Handover #71 — DX Toolchain ✅ | .clinerules + .continue + .vscode + .prettierrc + ESLint @typescript-eslint |
+| 2026-06-24 | Handover #70 — Omnichannel Gateway v1.0.0 ✅ | migration #29; 4 bảng; Telegram↔Zalo bidirectional; 5 CRM routes; integrity fix |
+| 2026-06-23 | Handover #69 — Landing Page Factory + Contact update ✅ | /promo/[slug] ISR; AI extract; LandingPageTab CRM; địa chỉ+email mới; revert models |
+| 2026-06-22 | Handover #68 — Itinerary Editor + Model Opus + Image fix ✅ | ItineraryEditor admin; day.images render; tất cả model → opus-4-8 |
+| 2026-06-16 | Handover #67 — Tour Detail v5.0.0 + Upload fix ✅ | 2-col scrollspy; TourBookingWidget+ItineraryNav mới; upload auth bug fixed |
+| 2026-06-16 | Handover #66 — Listing UI đồng nhất ✅ | HScrollRow ← → arrows; 4 trang filter+sort chuẩn hoá |
+| 2026-06-16 | Handover #65 — Agent.py Image Scraper ✅ | scripts/agent.py v1.1.0; migration #27 images format; TourGallery backward-compat |
+| 2026-06-15 | Handover #64 — Gallery Layout Fix + Seed Script ✅ | TourGallery 2/3→60/40; 4→L+2up+1down; ≥5 button ảnh[4]; seed script |
+| 2026-06-15 | Handover #63 — Health Check + Bug Fix ✅ | 15 pages + 9 APIs green; fix tours PATCH adminClient; PGRST116→404 |
+| 2026-06-13 | Handover #62 — Tour Gallery ✅ | migration #26; TourGalleryManager drag+upload; TourGallery grid/carousel |
+| 2026-06-12 | Handover #61 — TripAgent Chat Perf ✅ | ChatBubble.memo+SmartScroll; AiInput isolated; appendDelta O(1) |
+| 2026-06-12 | Handover #60 — Homepage FPS Fix ✅ | shadow-overlay×3 cards; backdrop-blur removed; content-visibility; ISR 1800 |
+| 2026-06-12 | Handover #59 — Tour Detail 500 fix + Import ✅ | force-dynamic; 36 tours imported; ws+dedup fix |
+| 2026-06-12 | Handover #58 — Tour Detail v3.0.0 + Crawler ✅ | TourLeadBox+TabNav+Timeline; crawler batch fix; 83 tours Sheets |
+| 2026-06-11 | Handover #55 — Tour Ecosystem Linking DONE | sitemap /tour/[slug]; TourListingCard slug prop |
+| 2026-06-11 | Handover #54 — Tour Detail Page DONE | page.tsx Server Component ISR + TourDetailClient.tsx |
+| 2026-06-11 | Handover #52 — Crawler DONE + migration fix | crawl-seastar-tours.ts ✅; migration IF NOT EXISTS fix |
+| 2026-06-11 | Handover #50 — Sheets Sync LIVE + Audience spec | Sheets sync live ✅; migrations #16-21 cloud ✅ |
+| 2026-06-09 | Handover #44–49 — Phase 6 + Remote Dev + TQ Scraper | /du-lich/[country] ✅; Tailscale+code-server |
+
+### Trạng thái Child Modules
+
+| Child | Module | Trạng thái | Files chính |
+|-------|--------|-----------|-------------|
+| A | Search UI | ✅ v2.1.0 | `src/components/search/TourSearchBar.tsx` + `SearchResults.tsx` |
+| B | Lịch khởi hành + PDF Indexer | ✅ v1.3.1 | `src/lib/integrations/seastar.ts` — 6 tháng; limit 1000 |
+| C | Itinerary + PDF Embed | ✅ v2.1.0 | `TourDetail.tsx` + `PdfViewer.tsx` |
+| D | Hồ sơ khách | ✅ v1.3.0 | `CustomerProfileDrawer.tsx` + `CustomerTable.tsx` — Export+Import CSV ✅ |
+| E | Chat & Lead | ✅ v2.2.0 | `ChatWidget.tsx` — 2 tab: "Để lại số" + "Chat AI" |
+| F | CMS / RSS | ✅ v1.3.0 | `ArticleFeed.tsx` — TiptapEditor ✅ |
+| G | DB Schema | ✅ **27 local / 25 cloud** | `supabase/migrations/` — migration #28+#29 chưa push cloud ⚠️ |
+| CRM | Admin CRM | ✅ **v9.1.0** | `crm/page.tsx` — tab `landing-pages` + `Layers` icon ✅ |
+| AUTH | Admin Auth | ✅ v2.0.0 | `login/page.tsx` + `middleware.ts` — cookie: `admin_session` |
+| TRIPGENIE | AI Chat Core | ✅ v1.2.0 | `/api/ai/chat` Node.js runtime; RAG ✅ — **claude-sonnet-4-6** |
+| TRIPGENIE-LEADS | Lead Capture | ✅ v2.1.0 | `/api/leads` POST (adminClient); `/api/leads/[id]` PATCH ✅ |
+| TRIPGENIE-CLASSIFY | AI Classification | ✅ v1.1.0 | `src/lib/ai/classify.ts` — **claude-haiku-4-5-20251001** |
+| TRIPGENIE-AFFILIATE | Affiliate Engine | ✅ v1.0.0 | migration #18; `src/lib/affiliate/tracker.ts` |
+| TRIPGENIE-ITINERARY | Itinerary Builder AI | ✅ v1.1.0 | `/api/ai/itinerary` 4096 tokens SSE — **claude-sonnet-4-6** |
+| LEADS-ACTIVITIES | Nhật ký chăm sóc | ✅ v1.0.0 | migration #19; `/api/leads/[id]/activities` |
+| LEADS-IMPORT | Bulk Import CSV | ✅ v1.0.0 | `/api/leads/import` POST max 500 |
+| NOTIFY | Notification | ✅ v2.1.0 | Email + Realtime + Telegram; `src/lib/notifications/index.ts` |
+| RAG | AI Context | ✅ v1.0.0 | `src/lib/ai/rag.ts` — searchRelevantTours() |
+| ZALO-WEBHOOK | Phase 4 Zalo OA | ✅ **v2.0.0** | `/api/webhooks/zalo/route.ts` — multi-account + mapping + ticket ✅ |
+| FB-LEADS-WEBHOOK | Phase 4 FB Lead Ads | ✅ v1.0.0 | `/api/webhooks/fb-leads/route.ts` |
+| TELEGRAM-WEBHOOK | Omnichannel Gateway | ✅ **v1.0.0** | `/api/webhooks/telegram/route.ts` — staff reply → Zalo ✅ |
+| GSHEET-SYNC | Google Sheets Sync | ✅ v1.1.0 | `scripts/sheets-sync/Code.gs` — LIVE ✅ |
+| PHASE6-SEO | Programmatic SEO | ✅ v1.0.0 | `src/app/du-lich/[country]/page.tsx` + `CountryToursClient.tsx` |
+| PHASE6-CONTENT | Content Generate AI | ✅ v1.0.1 | `/api/content/generate` — claude-opus-4-8 |
+| REMOTE-DEV | Tailscale + code-server | ✅ v1.0.0 | Mac 100.117.250.21:8080 \| pw: 074f49a444ee24314c07bda0 |
+| SCRAPER-TQ | TrieuHao TQ Downloader | ✅ v1.0.0 | `scripts/download-trieuhao-tq.mjs` — 30 tours; 128MB |
+| AUDIENCE-CONTACTS | SMS Audience Import | ✅ v1.0.0 | migration #22 ✅ cloud; `/api/admin/audiences/export` ✅ |
+| SEASTAR-CRAWLER | SeaStar Crawler v3 | ✅ v1.2.0 | `scripts/crawl-seastar-tours.ts` — 83 tours Sheets ✅ |
+| TOURS-IMPORT | Tour Detail Import từ Sheets | ✅ v1.0.1 | `scripts/import-tours-from-sheet.ts` — 36 tours upsert ✅ |
+| TOUR-DETAIL-PAGE | Trang chi tiết tour | ✅ v5.1.0 | `TourDetailClient.tsx` — 2-col scrollspy; day.images[] render ✅ |
+| TOUR-BOOKING-WIDGET | Sticky Booking Widget | ✅ v1.0.0 | `src/components/tour/TourBookingWidget.tsx` |
+| ITINERARY-NAV | Scrollspy Sidebar Nav | ✅ v1.0.0 | `src/components/tour/ItineraryNav.tsx` |
+| ITINERARY-EDITOR | Admin Itinerary Editor | ✅ v1.0.0 | `ToursTab.tsx` — days+meals+ảnh ✅ |
+| TOUR-LEADBOX | Lead Capture trên Tour | ✅ v1.0.0 | `src/components/tour/TourLeadBox.tsx` |
+| TOUR-LINKS | Tour ecosystem linking | ✅ v1.0.0 | sitemap, TourCard, TourListingCard, /lich-khoi-hanh |
+| HOMEPAGE-PERF | Homepage FPS Fix | ✅ v1.0.0 | shadow-overlay; content-visibility ⚡ |
+| TRIPAGENT-PERF | TripAgent Chat Perf | ✅ v1.0.0 | React.memo; smart-scroll; appendDelta O(1) ⚡ |
+| TOUR-GALLERY | Tour Gallery | ✅ v2.1.0 | `TourGallery.tsx` — backward-compat helpers ✅ |
+| IMAGES-FORMAT | tours.images format | ✅ v1.0.0 | migration #27 cloud ✅; {url,alt,caption,order}[] |
+| LISTING-UI | Tour Listing UI đồng nhất | ✅ v1.0.0 | `HScrollRow.tsx`; 4 Client filter+sort chuẩn |
+| UPLOAD-IMAGE-FIX | Admin upload auth fix | ✅ v1.0.0 | `isAdminRequest()` ✅ |
+| LANDING-PAGE-FACTORY | Landing Page từ FB Ads | ✅ v1.0.0 | `/promo/[slug]` ISR 1800s; AI extract sonnet-4-6 ✅ |
+| CONTACT-INFO | Thông tin liên lạc | ✅ v1.0.0 | Header+Footer+JSON-LD: 525/44 Huỳnh Văn Bánh ✅ |
+| OMNICHANNEL-GATEWAY | Zalo↔Telegram bidirectional | ✅ **v1.0.0** | migration #29; `zalo_accounts`+`telegram_zalo_mappings`+`conversation_logs`+`support_tickets` |
+| CRM-GATEWAY-API | CRM Omnichannel Routes | ✅ **v1.0.0** | `/api/crm/customers/[leadId]`+`/conversations`+`/notes`; `/api/crm/tickets` |
 
 ### Trạng thái API Routes
 
