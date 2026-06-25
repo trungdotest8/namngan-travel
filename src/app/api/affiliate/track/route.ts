@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { getLinkById, recordClick } from '@/lib/affiliate/tracker'
 
 // GET /api/affiliate/track?link_id=<uuid>&lead_id=<uuid>&session_id=<str>

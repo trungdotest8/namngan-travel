@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 agent.py — Tour Image Scraper cho Nam Ngân Travel
-Crawl ảnh tour → convert WebP → upload Supabase Storage → sinh alt text Claude → sync DB
+Crawl ảnh tour → convert WebP → upload Supabase Storage → sinh alt text Gemini → sync DB
 Python 3.11+
 """
 
@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import base64
 import csv
 import json
 import logging
 import re
 import sys
+import time
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
@@ -40,7 +40,24 @@ import os
 SUPABASE_URL    = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL", "")
 SUPABASE_KEY    = os.getenv("SUPABASE_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "tour-galleries")
-ANTHROPIC_KEY   = os.getenv("ANTHROPIC_API_KEY", "")
+GEMINI_API_KEY  = os.getenv("GEMINI_API_KEY", "")
+
+# Gemini Free Tier: 15 RPM → sleep 4s giữa các request để an toàn
+_GEMINI_RATE_LIMIT_SLEEP = 4.0
+
+# Cache model instance (chỉ khởi tạo một lần)
+_gemini_model = None
+
+
+def _get_gemini_model():
+    """Lazy-init Gemini model (gemini-1.5-flash) — thread-safe."""
+    global _gemini_model
+    if _gemini_model is None:
+        import google.generativeai as genai
+        genai.configure(api_key=GEMINI_API_KEY)
+        _gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+        log.info("[Gemini Vision] Đã khởi tạo model gemini-1.5-flash")
+    return _gemini_model
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 
@@ -434,65 +451,95 @@ async def upload_image(
     return await loop.run_in_executor(THREAD_POOL, _sync_upload)
 
 
-# ── Alt Text Generation (Claude API) ──────────────────────────────────────────
+# ── Alt Text Generation (Google Gemini API, Free Tier) ────────────────────────
+
+# Prompt chuẩn SEO — chỉ trả về 1 câu tiếng Việt ≤ 15 từ
+_ALT_TEXT_PROMPT = (
+    "Bạn là chuyên gia SEO du lịch. "
+    "Hãy viết ĐÚNG MỘT CÂU (dưới 15 từ) miêu tả cảnh vật trong bức ảnh này "
+    "bằng tiếng Việt để làm thẻ alt HTML. "
+    "Không giải thích, không dùng dấu ngoặc kép."
+)
+
 
 async def generate_alt_text(
     image_path: Path,
     tour_title: str,
-    ant_client,         # anthropic.Anthropic
 ) -> str:
     """
-    Gọi Claude claude-haiku-4-5-20251001 (vision) để sinh alt text tiếng Việt.
-    Đọc ảnh WebP → base64 → gửi kèm tên tour.
-    Sleep 0.5s sau mỗi lần gọi để tránh rate limit.
+    Gọi Google Gemini Vision (gemini-1.5-flash) để sinh alt text tiếng Việt.
+    Đọc file ảnh WebP từ ổ cứng cục bộ → gửi lên Gemini cùng prompt SEO.
+    Có try/catch bao lót, không làm crash pipeline nếu API lỗi.
+    Sleep 4s giữa các request để tuân thủ giới hạn 15 RPM của Gemini Free Tier.
+
+    Returns:
+        Alt text tiếng Việt (≤ 15 từ) hoặc "" nếu lỗi.
     """
-    SYSTEM = (
-        "Bạn là chuyên gia SEO du lịch. Sinh alt text tiếng Việt cho ảnh tour, "
-        "ngắn gọn 10-15 từ, chứa tên điểm đến, không spam từ khóa. "
-        "Chỉ trả về alt text, không giải thích."
-    )
-
-    async def _call() -> str:
-        async with aiofiles.open(image_path, "rb") as f:
-            raw = await f.read()
-        b64 = base64.standard_b64encode(raw).decode()
-
-        loop = asyncio.get_running_loop()
-
-        def _sync():
-            return ant_client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=100,
-                system=SYSTEM,
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type":       "base64",
-                                "media_type": "image/webp",
-                                "data":       b64,
-                            },
-                        },
-                        {
-                            "type": "text",
-                            "text": f"Tour: {tour_title}. Sinh alt text cho ảnh này.",
-                        },
-                    ],
-                }],
-            )
-
-        resp = await loop.run_in_executor(THREAD_POOL, _sync)
-        return resp.content[0].text.strip()
+    if not GEMINI_API_KEY:
+        log.warning("[Gemini Vision] GEMINI_API_KEY chưa cấu hình — bỏ qua sinh alt")
+        return ""
 
     try:
-        result = await _call()
-        await asyncio.sleep(0.5)
-        return result
+        loop = asyncio.get_running_loop()
+
+        # Đọc ảnh từ local path (ThreadPool để không block event loop)
+        def _read_image() -> bytes:
+            with open(image_path, "rb") as f:
+                return f.read()
+
+        image_bytes = await loop.run_in_executor(THREAD_POOL, _read_image)
+
+        # Gọi Gemini Vision API trong ThreadPool (blocking SDK)
+        def _call_gemini_vision() -> str:
+            import google.generativeai as genai
+
+            model = _get_gemini_model()
+            # Tạo Part từ ảnh bytes
+            image_part = {"mime_type": "image/webp", "data": image_bytes}
+
+            response = model.generate_content(
+                contents=[_ALT_TEXT_PROMPT, image_part],
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=60,
+                    temperature=0.4,
+                ),
+            )
+
+            # Xử lý response (text hoặc blocked)
+            if response.text and response.text.strip():
+                alt = response.text.strip()
+                # Làm sạch: bỏ dấu ngoặc kép nếu có
+                alt = alt.replace('"', "").replace("'", "")
+                # Giới hạn 100 ký tự
+                if len(alt) > 100:
+                    alt = alt[:97] + "..."
+                return alt
+
+            # Fallback nếu Gemini trả về rỗng hoặc bị block
+            if response.prompt_feedback and response.prompt_feedback.block_reason:
+                log.warning(
+                    "[Gemini Vision] Bị chặn: %s — %s",
+                    response.prompt_feedback.block_reason,
+                    image_path.name,
+                )
+            return ""
+
+        alt_text = await loop.run_in_executor(THREAD_POOL, _call_gemini_vision)
+
+        if alt_text:
+            log.info("[Gemini Vision] Đã sinh thẻ Alt: %s", alt_text)
+        else:
+            log.warning("[Gemini Vision] Không sinh được alt cho: %s", image_path.name)
+
+        # Rate limit: Gemini Free Tier 15 RPM → sleep 4s
+        await asyncio.sleep(_GEMINI_RATE_LIMIT_SLEEP)
+
+        return alt_text
+
     except Exception as exc:
-        log.error("Lỗi sinh alt text cho %s: %s", image_path.name, exc)
-        await asyncio.sleep(0.5)
+        log.error("[Gemini Vision] Lỗi khi sinh alt text cho %s: %s", image_path.name, exc)
+        # Vẫn sleep để tránh spam retry ngay lập tức
+        await asyncio.sleep(_GEMINI_RATE_LIMIT_SLEEP)
         return ""
 
 
@@ -649,7 +696,6 @@ async def process_tour(
     args: argparse.Namespace,
     session: aiohttp.ClientSession,
     sb_client,
-    ant_client,
     semaphore: asyncio.Semaphore,
     csv_path: Path,
 ) -> TourRecord | None:
@@ -730,11 +776,11 @@ async def process_tour(
                 except Exception as exc:
                     log.error("Upload lỗi %s: %s", img.local_path, exc)
 
-        # 5. Sinh alt text
-        if args.gen_alt and ant_client:
+        # 5. Sinh alt text bằng Gemini Vision
+        if args.gen_alt:
             for img in tour.images:
                 try:
-                    img.alt = await generate_alt_text(Path(img.local_path), title, ant_client)
+                    img.alt = await generate_alt_text(Path(img.local_path), title)
                     log.info("  Alt [%d]: %s", img.order, img.alt[:60])
                 except Exception as exc:
                     log.error("Alt text lỗi: %s", exc)
@@ -778,7 +824,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--yes", "-y",  action="store_true",        help="Tự động xác nhận, không hỏi")
     p.add_argument("--single",     action="store_true",        help="Crawl đúng 1 URL (không discovery link con)")
     p.add_argument("--upload",     action="store_true",        help="Upload lên Supabase Storage")
-    p.add_argument("--gen-alt",    action="store_true",        help="Sinh alt text bằng Claude API")
+    p.add_argument("--gen-alt",    action="store_true",        help="Sinh alt text bằng Gemini Vision (Free Tier)")
     p.add_argument("--sync-db",    action="store_true",        help="Upsert vào bảng tours Supabase")
     return p.parse_args()
 
@@ -801,18 +847,17 @@ async def main() -> None:
             log.error("Không thể kết nối Supabase: %s", exc)
             sys.exit(1)
 
-    # Khởi tạo Anthropic client
-    ant_client = None
+    # Kiểm tra Gemini API key
     if args.gen_alt:
-        if not ANTHROPIC_KEY:
-            log.error("Thiếu ANTHROPIC_API_KEY trong .env")
+        if not GEMINI_API_KEY:
+            log.error("Thiếu GEMINI_API_KEY trong .env — cần cho --gen-alt")
             sys.exit(1)
+        # Warm-up model init
         try:
-            import anthropic
-            ant_client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
-            log.info("Anthropic client: OK")
+            _get_gemini_model()
+            log.info("Gemini client: OK (gemini-1.5-flash)")
         except Exception as exc:
-            log.error("Không thể khởi tạo Anthropic client: %s", exc)
+            log.error("Không thể khởi tạo Gemini: %s", exc)
             sys.exit(1)
 
     output_dir = Path(args.output)
@@ -850,7 +895,7 @@ async def main() -> None:
         # Bước 4: Xử lý song song
         semaphore = asyncio.Semaphore(args.workers)
         tasks = [
-            process_tour(url, args, session, sb_client, ant_client, semaphore, csv_path)
+            process_tour(url, args, session, sb_client, semaphore, csv_path)
             for url in links
         ]
         results = await tqdm_asyncio.gather(*tasks, desc="Crawling tours")

@@ -1,4 +1,4 @@
-import { MetadataRoute } from 'next'
+import type { MetadataRoute } from 'next'
 import { createClient } from '@supabase/supabase-js'
 import { slugify } from '@/lib/utils'
 import { COUNTRY_MAP, countryToSlug } from '@/lib/tour-country'

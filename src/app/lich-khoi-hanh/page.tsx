@@ -7,7 +7,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { createClient } from '@/lib/supabase/client'
 import { useCalendarStore } from '@/store/calendar.store'
-import { COUNTRY_MAP, deriveCountry } from '@/lib/tour-country'
+import { deriveCountry } from '@/lib/tour-country'
 import type { TourSchedule } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

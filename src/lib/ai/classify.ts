@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { callDeepSeek } from './deepseek'
 
 export type LeadTier = 'hot' | 'warm' | 'cold'
 
@@ -35,22 +35,12 @@ Trả về JSON hợp lệ (không có markdown, không có text ngoài JSON):
   "reasoning": "1 câu ngắn bằng tiếng Việt"
 }`
 
-let anthropic: Anthropic | null = null
-
-function getClient(): Anthropic | null {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.warn('[Classify] ANTHROPIC_API_KEY chưa cấu hình — bỏ qua classify')
-    return null
-  }
-  if (!anthropic) anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  return anthropic
-}
-
 export async function classifyLead(lead: LeadForClassify): Promise<ClassifyResult> {
-  const client = getClient()
-
   // Fallback khi không có API key: rule-based đơn giản
-  if (!client) return ruleBased(lead)
+  if (!process.env.DEEPSEEK_API_KEY) {
+    console.warn('[Classify] DEEPSEEK_API_KEY chưa cấu hình — dùng rule-based')
+    return ruleBased(lead)
+  }
 
   const userContent = JSON.stringify({
     lead_score:           lead.lead_score,
@@ -65,14 +55,7 @@ export async function classifyLead(lead: LeadForClassify): Promise<ClassifyResul
   })
 
   try {
-    const res = await client.messages.create({
-      model:      'claude-haiku-4-5-20251001',
-      max_tokens: 256,
-      system:     SYSTEM_PROMPT,
-      messages:   [{ role: 'user', content: userContent }],
-    })
-
-    const text = res.content[0]?.type === 'text' ? res.content[0].text.trim() : ''
+    const text = await callDeepSeek(SYSTEM_PROMPT, userContent, 256)
     const parsed = JSON.parse(text) as { tier: LeadTier; ai_tags: string[]; reasoning: string }
 
     return {
@@ -81,12 +64,12 @@ export async function classifyLead(lead: LeadForClassify): Promise<ClassifyResul
       reasoning: parsed.reasoning ?? '',
     }
   } catch (err) {
-    console.error('[Classify] Claude error, fallback rule-based:', err)
+    console.error('[Classify] DeepSeek error, fallback rule-based:', err)
     return ruleBased(lead)
   }
 }
 
-// Rule-based fallback khi không có API key hoặc Claude thất bại
+// Rule-based fallback khi không có API key hoặc DeepSeek thất bại
 function ruleBased(lead: LeadForClassify): ClassifyResult {
   const score = lead.lead_score ?? 0
   const tags: string[] = []

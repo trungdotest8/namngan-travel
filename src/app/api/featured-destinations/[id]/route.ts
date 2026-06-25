@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { ADMIN_COOKIE } from '@/lib/admin-auth-constants'
@@ -38,7 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       .single()
     if (error) throw error
     return NextResponse.json({ data })
-  } catch (e) {
+  } catch (_e) {
     return NextResponse.json({ error: 'Lỗi cập nhật điểm đến' }, { status: 500 })
   }
 }
@@ -67,7 +67,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }).catch(() => {})
 
     return NextResponse.json({ ok: true })
-  } catch (e) {
+  } catch (_e) {
     return NextResponse.json({ error: 'Lỗi xóa điểm đến' }, { status: 500 })
   }
 }

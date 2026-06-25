@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { ADMIN_COOKIE } from '@/lib/admin-auth-constants'
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await query
     if (error) throw error
     return NextResponse.json({ data })
-  } catch (e) {
+  } catch (_e) {
     return NextResponse.json({ error: 'Lỗi tải điểm đến' }, { status: 500 })
   }
 }
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     }).catch(() => {})
 
     return NextResponse.json({ data }, { status: 201 })
-  } catch (e) {
+  } catch (_e) {
     return NextResponse.json({ error: 'Lỗi tạo điểm đến' }, { status: 500 })
   }
 }

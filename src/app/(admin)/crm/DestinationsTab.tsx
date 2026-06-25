@@ -188,7 +188,7 @@ export function DestinationsTab() {
       })
       if (!res.ok) throw new Error('Lỗi cập nhật')
       load()
-    } catch (e: unknown) {
+    } catch (_e: unknown) {
       flash('Lỗi cập nhật trạng thái', true)
     }
   }

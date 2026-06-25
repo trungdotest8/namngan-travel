@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { streamChatResponse } from '@/lib/ai/claude'
 import { buildTravelConsultantPrompt } from '@/lib/ai/prompts'
@@ -20,9 +20,9 @@ const ChatRequestSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.DEEPSEEK_API_KEY) {
     return NextResponse.json(
-      { error: 'AI chưa được cấu hình. Vui lòng thêm ANTHROPIC_API_KEY.' },
+      { error: 'AI chưa được cấu hình. Vui lòng thêm DEEPSEEK_API_KEY.' },
       { status: 503 },
     )
   }

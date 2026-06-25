@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { getCurrentAdminUser } from '@/lib/admin-auth'
 
 // GET /api/admin/me — trả thông tin admin đang đăng nhập (từ httpOnly cookie)

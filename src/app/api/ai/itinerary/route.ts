@@ -1,11 +1,9 @@
 export const runtime = 'nodejs'
 
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import Anthropic from '@anthropic-ai/sdk'
+import { streamDeepSeek } from '@/lib/ai/deepseek'
 import { getActiveLinks } from '@/lib/affiliate/tracker'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 const ItineraryRequestSchema = z.object({
   destination: z.string().min(2).max(100),
@@ -51,13 +49,6 @@ NGUYÊN TẮC:
 }
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json(
-      { error: 'AI chưa được cấu hình. Vui lòng thêm ANTHROPIC_API_KEY.' },
-      { status: 503 },
-    )
-  }
-
   let parsed: z.SafeParseReturnType<typeof ItineraryRequestSchema._type, typeof ItineraryRequestSchema._output>
   try {
     const body = await req.json()
@@ -95,48 +86,13 @@ export async function POST(req: NextRequest) {
     .filter(Boolean)
     .join(' ')
 
-  const encoder = new TextEncoder()
+  const dsStream = streamDeepSeek(
+    systemPrompt,
+    [{ role: 'user' as const, content: userContent }],
+    4096,
+  )
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      // 1. Gửi affiliate links trước để client render ngay sau khi done
-      controller.enqueue(
-        encoder.encode(`data: ${JSON.stringify({ affiliate_links: affiliateLinks })}\n\n`),
-      )
-
-      // 2. Stream nội dung lịch trình từ Claude
-      try {
-        const claudeStream = anthropic.messages.stream({
-          model:      'claude-sonnet-4-6',
-          max_tokens: 4096,
-          system:     systemPrompt,
-          messages:   [{ role: 'user', content: userContent }],
-        })
-
-        for await (const event of claudeStream) {
-          if (
-            event.type === 'content_block_delta' &&
-            event.delta.type === 'text_delta'
-          ) {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ content: event.delta.text })}\n\n`),
-            )
-          }
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Unknown error'
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`),
-        )
-      }
-
-      // 3. Done
-      controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-      controller.close()
-    },
-  })
-
-  return new Response(stream, {
+  return new Response(dsStream, {
     headers: {
       'Content-Type':  'text/event-stream',
       'Cache-Control': 'no-cache',

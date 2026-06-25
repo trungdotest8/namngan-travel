@@ -7,7 +7,7 @@
 // KHÔNG delete bảng. Yêu cầu migration #21 (unique index + cột source).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache';
 import { timingSafeEqual } from 'crypto';
 import { z } from 'zod';

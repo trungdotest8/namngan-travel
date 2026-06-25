@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminRequest } from '@/lib/admin-auth'
 import { CreateAdminUserSchema } from '@/lib/validations/admin-user.schema'

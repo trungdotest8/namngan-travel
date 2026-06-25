@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import Anthropic from '@anthropic-ai/sdk'
+import { callDeepSeek } from '@/lib/ai/deepseek'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminRequest } from '@/lib/admin-auth'
 
@@ -141,23 +141,14 @@ export async function POST(req: NextRequest) {
     tours = data ?? []
   }
 
-  // Gọi Claude API
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  // Gọi DeepSeek API
   const prompt = buildPrompt(style, country, tours)
 
   let markdown: string
   try {
-    const message = await anthropic.messages.create({
-      model:      'claude-opus-4-8',
-      max_tokens: 2048,
-      messages:   [{ role: 'user', content: prompt }],
-    })
-    markdown = message.content
-      .filter((b) => b.type === 'text')
-      .map((b) => (b as { type: 'text'; text: string }).text)
-      .join('')
+    markdown = await callDeepSeek('', prompt, 2048)
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Claude API error'
+    const msg = err instanceof Error ? err.message : 'DeepSeek API error'
     return NextResponse.json({ error: msg }, { status: 502 })
   }
 

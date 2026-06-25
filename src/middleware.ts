@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { ADMIN_COOKIE } from '@/lib/admin-auth-constants'
 
 export function middleware(req: NextRequest) {

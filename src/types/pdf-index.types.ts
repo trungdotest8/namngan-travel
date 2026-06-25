@@ -28,6 +28,8 @@ export interface PdfSearchResult {
   rank:              number          // ts_rank từ PostgreSQL FTS
 }
 
+import type { TourItineraryDay } from './tour.types'
+
 // Response của /api/itinerary/[tourId] — dùng bởi Child C
 export interface ItineraryResponse {
   tour_id:       string
@@ -40,8 +42,7 @@ export interface ItineraryResponse {
   hashtags:      string[]
   includes:      string[] | null
   excludes:      string[] | null
-  // Lịch trình cấu trúc từ tours.itinerary (JSONB)
-  structured: import('./tour.types').TourItineraryDay[] | null
+  structured: TourItineraryDay[] | null
   // PDF từ tour_pdf_index (ưu tiên bản mới nhất)
   pdf: {
     drive_link:  string           // dùng làm iframe src

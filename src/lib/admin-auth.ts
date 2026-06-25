@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { AdminUser, AdminUserRow } from '@/types/admin.types'
 

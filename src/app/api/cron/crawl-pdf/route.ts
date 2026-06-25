@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       throw new Error(`n8n trả về ${res.status}`)
     }
 
-    console.log(`[cron/crawl-pdf] trigger thành công via n8n — ${at}`)
+    console.warn(`[cron/crawl-pdf] trigger thành công via n8n — ${at}`)
     return NextResponse.json({ ok: true, via: 'n8n', at })
   } catch (err) {
     console.error('[cron/crawl-pdf] n8n trigger thất bại:', err)

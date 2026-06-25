@@ -11,6 +11,6 @@ export async function syncModaBooking(
   }
 
   // TODO: implement Moda API call
-  console.log('[Moda] syncBooking:', payload.booking_id)
+  console.warn('[Moda] syncBooking:', payload.booking_id)
   return { success: true }
 }

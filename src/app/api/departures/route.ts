@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { syncSeaStarSchedules } from '@/lib/integrations/seastar'
@@ -47,8 +47,9 @@ export async function GET(request: Request) {
     if (status)   query = query.eq('status', status)
     if (tour_id)  query = query.eq('tour_id', tour_id)
 
-    // Filter DB-level via embedded table (chỉ hoạt động với !inner join)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase SDK không type được embedded table filter
     if (category) query = (query as any).eq('tours.category', category)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (country)  query = (query as any).eq('tours.country', country)
 
     // Filter theo tháng: departure_date trong khoảng YYYY-MM-01 .. YYYY-MM-31

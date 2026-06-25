@@ -1,5 +1,10 @@
 export type MessageRole = 'user' | 'assistant'
 
+export interface StreamMessage {
+  role: MessageRole
+  content: string
+}
+
 export interface AiMessage {
   id: string
   role: MessageRole

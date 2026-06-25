@@ -1,13 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod';
-import Anthropic from '@anthropic-ai/sdk';
+import { callDeepSeek } from '@/lib/ai/deepseek';
 import { isAdminRequest } from '@/lib/admin-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { PromoFeature } from '@/types/landing-page';
 
 export const dynamic = 'force-dynamic';
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const BodySchema = z.object({
   fb_text:  z.string().min(10, 'fb_text quá ngắn'),
@@ -58,14 +56,8 @@ export async function POST(req: NextRequest) {
 
     const { fb_text, tour_id, slug } = parsed.data;
 
-    // ── Gọi AI bóc tách ─────────────────────────────────────────────
-    const aiRes = await anthropic.messages.create({
-      model:      'claude-sonnet-4-6',
-      max_tokens: 1024,
-      messages:   [{ role: 'user', content: AI_PROMPT(fb_text) }],
-    });
-
-    const rawText = aiRes.content[0]?.type === 'text' ? aiRes.content[0].text.trim() : '';
+    // ── Gọi AI bóc tách bằng DeepSeek ─────────────────────────────────
+    const rawText = await callDeepSeek('', AI_PROMPT(fb_text), 1024);
 
     let extracted: AiExtracted = {};
     try {
