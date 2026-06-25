@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Menu, X, Phone, MapPin, ChevronDown, Globe } from 'lucide-react'
 import { INTL_COLUMNS, DOMESTIC_COLUMNS } from '@/lib/mega-menu-data'
@@ -60,14 +61,15 @@ export default function Header() {
       {/* Main nav */}
       <nav className="container-main flex items-center justify-between h-16">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="w-9 h-9 rounded-full bg-brand-blue flex items-center justify-center">
-            <span className="text-white font-black text-sm leading-none">NN</span>
-          </div>
-          <div className="leading-tight">
-            <div className="font-bold text-brand-blue text-base leading-none">Nam Ngân</div>
-            <div className="text-[11px] text-text-secondary tracking-wide uppercase">Travel</div>
-          </div>
+        <Link href="/" className="flex items-center shrink-0">
+          <Image
+            src="https://res.cloudinary.com/dykx5rz7m/image/upload/v1782390217/nntravel_jjo3oj.png"
+            alt="Nam Ngân Travel"
+            width={140}
+            height={48}
+            className="h-12 w-auto"
+            priority
+          />
         </Link>
 
         {/* Desktop nav links */}

@@ -1,10 +1,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Calendar, Tag, ArrowLeft, Clock, Sparkles } from 'lucide-react'
+import { Calendar, Tag, ArrowLeft, Clock } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import { TripGenieLeadModal } from '@/components/booking/TripGenieLeadModal'
 import { fetchArticleBySlug } from '@/lib/directus'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -73,7 +72,7 @@ export default async function BlogDetailPage({ params }: Props) {
       name:    'Nam Ngân Travel',
       logo: {
         '@type': 'ImageObject',
-        url:     'https://namngantravel.com/logo.png',
+        url:     'https://res.cloudinary.com/dykx5rz7m/image/upload/v1782390217/nntravel_jjo3oj.png',
       },
     },
     datePublished: article.published_at ?? undefined,

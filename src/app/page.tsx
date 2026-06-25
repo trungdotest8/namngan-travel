@@ -39,7 +39,7 @@ const travelAgencySchema = {
   '@type':     'TravelAgency',
   name:        'Nam Ngân Travel',
   url:         'https://namngantravel.com',
-  logo:        'https://namngantravel.com/logo.png',
+  logo:        'https://res.cloudinary.com/dykx5rz7m/image/upload/v1782390217/nntravel_jjo3oj.png',
   description: 'Công ty du lịch Nam Ngân Travel — chuyên tour trọn gói trong nước và quốc tế hơn 10 năm kinh nghiệm.',
   telephone:   '+84932611933',
   address: {

@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { Phone, Mail, MapPin, Facebook, Youtube } from 'lucide-react'
 
@@ -7,14 +8,14 @@ export default function Footer() {
       <div className="container-main py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* Brand */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-full bg-brand-blue flex items-center justify-center shrink-0">
-              <span className="text-white font-black text-sm">NN</span>
-            </div>
-            <div className="leading-tight">
-              <div className="font-bold text-white text-base leading-none">Nam Ngân Travel</div>
-              <div className="text-[11px] text-gray-400 tracking-wide uppercase">Du lịch trọn gói</div>
-            </div>
+          <div className="flex items-center">
+            <Image
+              src="https://res.cloudinary.com/dykx5rz7m/image/upload/v1782390217/nntravel_jjo3oj.png"
+              alt="Nam Ngân Travel"
+              width={140}
+              height={48}
+              className="h-12 w-auto brightness-0 invert"
+            />
           </div>
           <p className="text-sm leading-relaxed text-gray-400">
             Đồng hành cùng hàng ngàn du khách khám phá vẻ đẹp Việt Nam và thế giới. Chất lượng — Uy tín — Tận tâm.

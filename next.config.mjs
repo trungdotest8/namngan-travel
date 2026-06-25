@@ -5,10 +5,10 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
     ],
   },
-  // @anthropic-ai/sdk v0.102+ dùng node:fs / node:path — phải external khỏi webpack
-  serverExternalPackages: ['@anthropic-ai/sdk'],
+  serverExternalPackages: [],
 }
 
 export default nextConfig
